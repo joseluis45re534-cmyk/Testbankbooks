@@ -1,12 +1,15 @@
 import { db } from "./db";
 import { 
   products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags, downloadTokens,
+  chatConversations, chatMessages,
   type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct,
   type Order, type InsertOrder, type AbandonedCart, type InsertAbandonedCart,
   type AdminUser, type InsertAdminUser, type PaymentSetting, type InsertPaymentSetting,
-  type Tag, type InsertTag, type DownloadToken, type InsertDownloadToken
+  type Tag, type InsertTag, type DownloadToken, type InsertDownloadToken,
+  type ChatConversation, type InsertChatConversation, type ChatMessage, type InsertChatMessage,
+  type ChatConversationWithMessages
 } from "@shared/schema";
-import { eq, ilike, or, and, sql, desc, lt, inArray } from "drizzle-orm";
+import { eq, ilike, or, and, sql, desc, lt, inArray, count } from "drizzle-orm";
 
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
@@ -63,6 +66,16 @@ export interface IStorage {
   getProductsWithoutDownloadPath(): Promise<Product[]>;
   updateProductDownloadPath(id: string, downloadPath: string): Promise<Product | undefined>;
   bulkUpdateDownloadPaths(updates: { id: string; downloadPath: string }[]): Promise<void>;
+  
+  getAllConversations(): Promise<ChatConversationWithMessages[]>;
+  getConversationById(id: string): Promise<ChatConversationWithMessages | undefined>;
+  getConversationByVisitorId(visitorId: string): Promise<ChatConversation | undefined>;
+  createConversation(conversation: InsertChatConversation): Promise<ChatConversation>;
+  updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined>;
+  getMessagesByConversationId(conversationId: string): Promise<ChatMessage[]>;
+  createMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
+  getUnreadMessageCount(): Promise<number>;
 }
 
 function slugify(title: string): string {
@@ -410,6 +423,65 @@ export class DatabaseStorage implements IStorage {
     for (const { id, downloadPath } of updates) {
       await db.update(products).set({ downloadPath }).where(eq(products.id, id));
     }
+  }
+
+  async getAllConversations(): Promise<ChatConversationWithMessages[]> {
+    const conversations = await db.select().from(chatConversations).orderBy(desc(chatConversations.lastMessageAt));
+    
+    const result: ChatConversationWithMessages[] = [];
+    for (const conv of conversations) {
+      const messages = await db.select().from(chatMessages).where(eq(chatMessages.conversationId, conv.id)).orderBy(chatMessages.createdAt);
+      const unreadCount = messages.filter(m => !m.isRead && m.senderType === 'visitor').length;
+      result.push({ ...conv, messages, unreadCount });
+    }
+    return result;
+  }
+
+  async getConversationById(id: string): Promise<ChatConversationWithMessages | undefined> {
+    const [conversation] = await db.select().from(chatConversations).where(eq(chatConversations.id, id));
+    if (!conversation) return undefined;
+    
+    const messages = await db.select().from(chatMessages).where(eq(chatMessages.conversationId, id)).orderBy(chatMessages.createdAt);
+    const unreadCount = messages.filter(m => !m.isRead && m.senderType === 'visitor').length;
+    return { ...conversation, messages, unreadCount };
+  }
+
+  async getConversationByVisitorId(visitorId: string): Promise<ChatConversation | undefined> {
+    const [conversation] = await db.select().from(chatConversations)
+      .where(and(eq(chatConversations.visitorId, visitorId), eq(chatConversations.status, 'active')));
+    return conversation;
+  }
+
+  async createConversation(conversation: InsertChatConversation): Promise<ChatConversation> {
+    const [created] = await db.insert(chatConversations).values(conversation).returning();
+    return created;
+  }
+
+  async updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined> {
+    const [updated] = await db.update(chatConversations).set({ status }).where(eq(chatConversations.id, id)).returning();
+    return updated;
+  }
+
+  async getMessagesByConversationId(conversationId: string): Promise<ChatMessage[]> {
+    return db.select().from(chatMessages).where(eq(chatMessages.conversationId, conversationId)).orderBy(chatMessages.createdAt);
+  }
+
+  async createMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    const [created] = await db.insert(chatMessages).values(message).returning();
+    await db.update(chatConversations).set({ lastMessageAt: new Date() }).where(eq(chatConversations.id, message.conversationId));
+    return created;
+  }
+
+  async markMessagesAsRead(conversationId: string, senderType: string): Promise<void> {
+    await db.update(chatMessages)
+      .set({ isRead: true })
+      .where(and(eq(chatMessages.conversationId, conversationId), eq(chatMessages.senderType, senderType)));
+  }
+
+  async getUnreadMessageCount(): Promise<number> {
+    const result = await db.select({ count: count() }).from(chatMessages)
+      .where(and(eq(chatMessages.isRead, false), eq(chatMessages.senderType, 'visitor')));
+    return result[0]?.count || 0;
   }
 }
 

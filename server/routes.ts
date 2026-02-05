@@ -1,9 +1,17 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { importFromCsv } from "./csvParser";
 import { z } from "zod";
 import path from "path";
+import bcrypt from "bcryptjs";
+
+declare module 'express-session' {
+  interface SessionData {
+    adminId?: string;
+    adminUsername?: string;
+  }
+}
 
 const addToCartSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
@@ -13,6 +21,40 @@ const addToCartSchema = z.object({
 const updateCartSchema = z.object({
   quantity: z.number().int().positive("Quantity must be a positive integer"),
 });
+
+const adminLoginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+const updateProductSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  price: z.string().optional(),
+  salePrice: z.string().nullable().optional(),
+  category: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+});
+
+const bulkUpdateSchema = z.object({
+  ids: z.array(z.string()),
+  updates: updateProductSchema,
+});
+
+const paymentSettingSchema = z.object({
+  provider: z.string(),
+  enabled: z.boolean(),
+  config: z.string().optional(),
+});
+
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.session.adminId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  next();
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -170,14 +212,11 @@ export async function registerRoutes(
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
       
-      // Home page
       xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
-      
-      // Cart and Checkout pages
+      xml += `  <url>\n    <loc>${baseUrl}/shop</loc>\n    <priority>0.9</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/cart</loc>\n    <priority>0.5</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/checkout</loc>\n    <priority>0.5</priority>\n  </url>\n`;
       
-      // Product pages
       for (const product of products) {
         xml += `  <url>\n    <loc>${baseUrl}/products/${product.slug}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
       }
@@ -189,6 +228,235 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error generating sitemap:", error);
       res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  // =====================
+  // ADMIN ROUTES
+  // =====================
+
+  // Admin login
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const validation = adminLoginSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid credentials" });
+      }
+
+      const { username, password } = validation.data;
+
+      // Check if admin exists
+      let admin = await storage.getAdminByUsername(username);
+      
+      // Create default admin if none exists
+      if (!admin && username === "admin") {
+        const hashedPassword = await bcrypt.hash("admin123", 10);
+        admin = await storage.createAdminUser({ username: "admin", password: hashedPassword });
+      }
+
+      if (!admin) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const isValid = await bcrypt.compare(password, admin.password);
+      if (!isValid) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      req.session.adminId = admin.id;
+      req.session.adminUsername = admin.username;
+      
+      res.json({ success: true, username: admin.username });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // Check admin session
+  app.get("/api/admin/me", async (req, res) => {
+    if (req.session.adminId) {
+      res.json({ authenticated: true, username: req.session.adminUsername });
+    } else {
+      res.json({ authenticated: false });
+    }
+  });
+
+  // Admin logout
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.adminId = undefined;
+    req.session.adminUsername = undefined;
+    res.json({ success: true });
+  });
+
+  // Dashboard stats
+  app.get("/api/admin/stats", requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // Sales trend
+  app.get("/api/admin/sales-trend", requireAdmin, async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 30;
+      const trend = await storage.getSalesTrend(days);
+      res.json(trend);
+    } catch (error) {
+      console.error("Error fetching sales trend:", error);
+      res.status(500).json({ error: "Failed to fetch sales trend" });
+    }
+  });
+
+  // Orders
+  app.get("/api/admin/orders", requireAdmin, async (req, res) => {
+    try {
+      const search = req.query.search as string;
+      if (search) {
+        const orders = await storage.getOrdersByEmail(search);
+        return res.json(orders);
+      }
+      const orders = await storage.getAllOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ error: "Failed to fetch orders" });
+    }
+  });
+
+  // Create order (for testing)
+  app.post("/api/admin/orders", requireAdmin, async (req, res) => {
+    try {
+      const order = await storage.createOrder(req.body);
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
+  // Update order status
+  app.patch("/api/admin/orders/:id", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.body;
+      const order = await storage.updateOrderStatus(req.params.id as string, status);
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ error: "Failed to update order" });
+    }
+  });
+
+  // Abandoned carts
+  app.get("/api/admin/abandoned-carts", requireAdmin, async (req, res) => {
+    try {
+      const carts = await storage.getAllAbandonedCarts();
+      res.json(carts);
+    } catch (error) {
+      console.error("Error fetching abandoned carts:", error);
+      res.status(500).json({ error: "Failed to fetch abandoned carts" });
+    }
+  });
+
+  // Send recovery email (mock)
+  app.post("/api/admin/abandoned-carts/:id/send-recovery", requireAdmin, async (req, res) => {
+    try {
+      await storage.markRecoveryEmailSent(req.params.id as string);
+      res.json({ success: true, message: "Recovery email sent (mock)" });
+    } catch (error) {
+      console.error("Error sending recovery email:", error);
+      res.status(500).json({ error: "Failed to send recovery email" });
+    }
+  });
+
+  // Update product
+  app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
+    try {
+      const validation = updateProductSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const product = await storage.updateProduct(req.params.id as string, validation.data);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  });
+
+  // Bulk update products
+  app.post("/api/admin/products/bulk-update", requireAdmin, async (req, res) => {
+    try {
+      const validation = bulkUpdateSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      await storage.bulkUpdateProducts(validation.data.ids, validation.data.updates);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error bulk updating products:", error);
+      res.status(500).json({ error: "Failed to bulk update products" });
+    }
+  });
+
+  // Tags
+  app.get("/api/admin/tags", requireAdmin, async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      res.json(tags);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      res.status(500).json({ error: "Failed to fetch tags" });
+    }
+  });
+
+  app.post("/api/admin/tags", requireAdmin, async (req, res) => {
+    try {
+      const { name } = req.body;
+      const tag = await storage.createTag({ name });
+      res.json(tag);
+    } catch (error) {
+      console.error("Error creating tag:", error);
+      res.status(500).json({ error: "Failed to create tag" });
+    }
+  });
+
+  app.delete("/api/admin/tags/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteTag(req.params.id as string);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      res.status(500).json({ error: "Failed to delete tag" });
+    }
+  });
+
+  // Payment settings
+  app.get("/api/admin/payment-settings", requireAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getAllPaymentSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching payment settings:", error);
+      res.status(500).json({ error: "Failed to fetch payment settings" });
+    }
+  });
+
+  app.post("/api/admin/payment-settings", requireAdmin, async (req, res) => {
+    try {
+      const validation = paymentSettingSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid data", details: validation.error.errors });
+      }
+      const setting = await storage.upsertPaymentSetting(validation.data);
+      res.json(setting);
+    } catch (error) {
+      console.error("Error saving payment setting:", error);
+      res.status(500).json({ error: "Failed to save payment setting" });
     }
   });
 

@@ -248,9 +248,14 @@ export default function LandingPage() {
                         {product.category && (
                           <p className="text-xs text-primary mb-1">{product.category}</p>
                         )}
-                        <h3 className="font-medium text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                        <h3 className="font-medium text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
                           {product.title}
                         </h3>
+                        {product.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            {product.description}
+                          </p>
+                        )}
                         <div className="flex items-center gap-1 mb-2">
                           <Star className="w-3 h-3 fill-primary text-primary" />
                           <span className="text-xs">4.9</span>

@@ -47,6 +47,11 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
             {product.title}
           </h3>
         </Link>
+        {product.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-2" data-testid={`text-description-${product.id}`}>
+            {product.description}
+          </p>
+        )}
         {product.category && (
           <Badge variant="secondary" className="text-xs mb-2">
             {product.category}

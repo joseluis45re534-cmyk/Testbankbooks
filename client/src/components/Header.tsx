@@ -23,9 +23,9 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setLocation(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      setLocation(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      setLocation("/");
+      setLocation("/shop");
     }
   };
 

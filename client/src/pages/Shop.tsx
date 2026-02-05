@@ -13,13 +13,15 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, CartItem } from "@shared/schema";
 
-export default function Home() {
+export default function Shop() {
   const searchParams = useSearch();
-  const urlSearch = new URLSearchParams(searchParams).get("search") || "";
+  const params = new URLSearchParams(searchParams);
+  const urlSearch = params.get("search") || "";
+  const urlCategory = params.get("category") || null;
   
   const [searchQuery, setSearchQuery] = useState(urlSearch);
   const [activeSearch, setActiveSearch] = useState(urlSearch);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(urlCategory);
   const [addingProductId, setAddingProductId] = useState<string | undefined>();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -28,6 +30,10 @@ export default function Home() {
     setSearchQuery(urlSearch);
     setActiveSearch(urlSearch);
   }, [urlSearch]);
+
+  useEffect(() => {
+    setSelectedCategory(urlCategory);
+  }, [urlCategory]);
 
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", activeSearch, selectedCategory],
@@ -83,9 +89,9 @@ export default function Home() {
   const handleSearch = () => {
     setActiveSearch(searchQuery);
     if (searchQuery.trim()) {
-      setLocation(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      setLocation(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      setLocation("/");
+      setLocation("/shop");
     }
   };
 

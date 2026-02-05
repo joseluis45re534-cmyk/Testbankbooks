@@ -14,6 +14,7 @@ export interface IStorage {
   getProductBySlug(slug: string): Promise<Product | undefined>;
   getProductById(id: string): Promise<Product | undefined>;
   insertProduct(product: InsertProduct): Promise<Product>;
+  insertProductWithSlug(product: InsertProduct, customSlug: string): Promise<Product>;
   insertProducts(productList: InsertProduct[]): Promise<void>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   updateProductTags(id: string, tags: string[]): Promise<Product | undefined>;
@@ -114,6 +115,11 @@ export class DatabaseStorage implements IStorage {
   async insertProduct(product: InsertProduct): Promise<Product> {
     const slug = slugify(product.title);
     const [inserted] = await db.insert(products).values({ ...product, slug }).returning();
+    return inserted;
+  }
+
+  async insertProductWithSlug(product: InsertProduct, customSlug: string): Promise<Product> {
+    const [inserted] = await db.insert(products).values({ ...product, slug: customSlug }).returning();
     return inserted;
   }
 

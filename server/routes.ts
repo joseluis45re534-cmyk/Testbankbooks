@@ -229,6 +229,19 @@ export async function registerRoutes(
     }
   });
 
+  // Import products from Shopify CSV
+  app.post("/api/import-shopify-csv", async (req, res) => {
+    try {
+      const { importFromShopifyCsv } = await import("./shopifyParser");
+      const csvPath = path.join(process.cwd(), "attached_assets/products_export_1770303278268.csv");
+      const count = await importFromShopifyCsv(csvPath);
+      res.json({ success: true, imported: count });
+    } catch (error) {
+      console.error("Error importing Shopify CSV:", error);
+      res.status(500).json({ error: "Failed to import products from Shopify CSV" });
+    }
+  });
+
   // Sitemap.xml for SEO
   app.get("/sitemap.xml", async (req, res) => {
     try {

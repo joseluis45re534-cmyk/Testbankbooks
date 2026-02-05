@@ -18,6 +18,11 @@ import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDownloads from "@/pages/admin/AdminDownloads";
 import AdminChat from "@/pages/admin/AdminChat";
 import ThankYou from "@/pages/ThankYou";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import TermsConditions from "@/pages/TermsConditions";
+import RefundPolicy from "@/pages/RefundPolicy";
+import ShippingPolicy from "@/pages/ShippingPolicy";
+import ContactUs from "@/pages/ContactUs";
 import { ChatWidget } from "@/components/ChatWidget";
 
 function ChatWidgetWrapper() {
@@ -44,6 +49,11 @@ function Router() {
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/downloads" component={AdminDownloads} />
       <Route path="/admin/chat" component={AdminChat} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-conditions" component={TermsConditions} />
+      <Route path="/refund-policy" component={RefundPolicy} />
+      <Route path="/shipping-policy" component={ShippingPolicy} />
+      <Route path="/contact" component={ContactUs} />
       <Route component={NotFound} />
     </Switch>
   );

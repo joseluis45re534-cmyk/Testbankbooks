@@ -242,6 +242,27 @@ export async function registerRoutes(
     }
   });
 
+  // Contact form endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const contactSchema = z.object({
+        name: z.string().min(1, "Name is required"),
+        email: z.string().email("Valid email is required"),
+        subject: z.string().min(1, "Subject is required"),
+        message: z.string().min(10, "Message must be at least 10 characters"),
+      });
+      const validation = contactSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+      console.log("Contact form submission:", validation.data);
+      res.json({ success: true, message: "Your message has been received. We'll respond within 24 hours." });
+    } catch (error) {
+      console.error("Error processing contact form:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
   // Sitemap.xml for SEO
   app.get("/sitemap.xml", async (req, res) => {
     try {
@@ -251,13 +272,16 @@ export async function registerRoutes(
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
       
-      xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <priority>1.0</priority>\n  </url>\n`;
-      xml += `  <url>\n    <loc>${baseUrl}/shop</loc>\n    <priority>0.9</priority>\n  </url>\n`;
-      xml += `  <url>\n    <loc>${baseUrl}/cart</loc>\n    <priority>0.5</priority>\n  </url>\n`;
-      xml += `  <url>\n    <loc>${baseUrl}/checkout</loc>\n    <priority>0.5</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/shop</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/contact</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/privacy-policy</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/terms-conditions</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/refund-policy</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/shipping-policy</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>\n`;
       
       for (const product of products) {
-        xml += `  <url>\n    <loc>${baseUrl}/products/${product.slug}</loc>\n    <priority>0.8</priority>\n  </url>\n`;
+        xml += `  <url>\n    <loc>${baseUrl}/products/${product.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
       }
       
       xml += '</urlset>';
@@ -268,6 +292,106 @@ export async function registerRoutes(
       console.error("Error generating sitemap:", error);
       res.status(500).send("Error generating sitemap");
     }
+  });
+
+  // Google Shopping XML Product Feed
+  app.get("/feed/google-shopping.xml", async (req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      
+      const escapeXml = (str: string | null | undefined): string => {
+        if (!str) return "";
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+      };
+
+      const stripHtml = (str: string | null | undefined): string => {
+        if (!str) return "";
+        return str.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+      };
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n';
+      xml += '<channel>\n';
+      xml += `  <title>Testbankbooks - Test Banks &amp; Study Guides</title>\n`;
+      xml += `  <link>${baseUrl}</link>\n`;
+      xml += `  <description>Premium nursing test banks and study guides for exam preparation</description>\n`;
+      
+      for (const product of products) {
+        const productPrice = product.salePrice && parseFloat(product.salePrice) < parseFloat(product.price)
+          ? product.salePrice
+          : product.price;
+        const regularPrice = product.price;
+        const hasSale = product.salePrice && parseFloat(product.salePrice) < parseFloat(product.price);
+        
+        const cleanDescription = stripHtml(product.description || product.title);
+        const truncatedDescription = cleanDescription.substring(0, 5000);
+        const cleanTitle = escapeXml(product.title).substring(0, 150);
+        
+        xml += '  <item>\n';
+        xml += `    <g:id>${escapeXml(product.id)}</g:id>\n`;
+        xml += `    <g:title>${cleanTitle}</g:title>\n`;
+        xml += `    <g:description>${escapeXml(truncatedDescription)}</g:description>\n`;
+        xml += `    <g:link>${baseUrl}/products/${product.slug}</g:link>\n`;
+        
+        if (product.imageUrl) {
+          xml += `    <g:image_link>${escapeXml(product.imageUrl)}</g:image_link>\n`;
+        }
+        
+        if (product.additionalImages && product.additionalImages.length > 0) {
+          for (const img of product.additionalImages.slice(0, 10)) {
+            xml += `    <g:additional_image_link>${escapeXml(img)}</g:additional_image_link>\n`;
+          }
+        }
+        
+        xml += `    <g:availability>${product.availability === "in_stock" ? "in_stock" : "out_of_stock"}</g:availability>\n`;
+        xml += `    <g:price>${parseFloat(regularPrice).toFixed(2)} USD</g:price>\n`;
+        
+        if (hasSale) {
+          xml += `    <g:sale_price>${parseFloat(product.salePrice!).toFixed(2)} USD</g:sale_price>\n`;
+        }
+        
+        xml += `    <g:brand>Testbankbooks</g:brand>\n`;
+        xml += `    <g:condition>${product.condition || "new"}</g:condition>\n`;
+        xml += `    <g:google_product_category>Media &gt; Books &gt; Non-Fiction Books &gt; Education Books</g:google_product_category>\n`;
+        xml += `    <g:product_type>${escapeXml(product.category || "Educational Materials")}</g:product_type>\n`;
+        xml += `    <g:identifier_exists>false</g:identifier_exists>\n`;
+        
+        xml += '  </item>\n';
+      }
+      
+      xml += '</channel>\n';
+      xml += '</rss>';
+      
+      res.set('Content-Type', 'application/xml');
+      res.set('Content-Disposition', 'inline; filename="google-shopping-feed.xml"');
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating Google Shopping feed:", error);
+      res.status(500).send("Error generating feed");
+    }
+  });
+
+  // Robots.txt
+  app.get("/robots.txt", (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const robotsTxt = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /thank-you
+Disallow: /api/
+
+Sitemap: ${baseUrl}/sitemap.xml
+`;
+    res.set('Content-Type', 'text/plain');
+    res.send(robotsTxt);
   });
 
   // =====================

@@ -80,7 +80,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Live Chat System (Latest - Feb 2026)
+### Google Merchant Center Compliance (Latest - Feb 2026)
+- **Legal pages**: Privacy Policy, Terms & Conditions, Refund Policy, Shipping Policy, Contact Us - all linked in footer
+- **Google Shopping XML feed**: Available at `/feed/google-shopping.xml` with all required fields (id, title, description, link, image, price, sale_price, availability, condition, brand, google_product_category, product_type, identifier_exists)
+- **Enhanced structured data**: Product JSON-LD with brand, SKU, condition, priceValidUntil, canonical URLs; Organization and WebSite schemas on homepage
+- **robots.txt**: Proper directives at `/robots.txt` blocking admin/API routes
+- **Sitemap updated**: Includes all legal pages with changefreq attributes
+- **Contact form**: POST `/api/contact` endpoint with Zod validation
+- **Product data cleanup**: Fixed 4 products with insufficient descriptions
+
+### Live Chat System (Feb 2026)
 - **Customer chat widget**: Floating chat button on all non-admin pages with real-time messaging
 - **Admin chat interface**: Dedicated `/admin/chat` page to manage customer conversations
 - **Database tables**: chat_conversations and chat_messages for persistent storage

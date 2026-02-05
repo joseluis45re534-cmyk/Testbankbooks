@@ -229,9 +229,15 @@ export default function ProductDetail() {
         title={seoTitle}
         description={seoDescription}
         image={product.imageUrl || undefined}
+        url={typeof window !== "undefined" ? `${window.location.origin}/products/${product.slug}` : undefined}
         type="product"
-        price={displayPrice.toFixed(2)}
+        price={price.toFixed(2)}
+        salePrice={hasDiscount ? salePrice.toFixed(2) : undefined}
         availability={product.availability || "in_stock"}
+        category={product.category || "Educational Materials"}
+        brand={product.brand || "Testbankbooks"}
+        sku={product.id}
+        condition={product.condition || "new"}
       />
       <Header cartCount={cartCount} />
 

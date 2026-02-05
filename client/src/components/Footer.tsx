@@ -23,8 +23,11 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="/" className="hover:text-foreground transition-colors">All Products</a></li>
               <li><a href="/cart" className="hover:text-foreground transition-colors">Shopping Cart</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Contact</a></li>
+              <li><a href="/contact" className="hover:text-foreground transition-colors">Contact Us</a></li>
+              <li><a href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
+              <li><a href="/terms-conditions" className="hover:text-foreground transition-colors">Terms & Conditions</a></li>
+              <li><a href="/refund-policy" className="hover:text-foreground transition-colors">Refund Policy</a></li>
+              <li><a href="/shipping-policy" className="hover:text-foreground transition-colors">Shipping Policy</a></li>
             </ul>
           </div>
 

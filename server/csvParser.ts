@@ -104,7 +104,7 @@ export async function parseWooCommerceCsv(csvPath: string): Promise<InsertProduc
   for (const row of records) {
     const id = row["ID"] || "";
     const title = cleanHtmlEntities(row["Name"] || "");
-    const description = cleanHtmlEntities(row["Short description"] || row["Description"] || "");
+    const description = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
     const price = row["Regular price"] || "0";
     const salePrice = row["Sale price"] || null;
     const imagesStr = row["Images"] || "";

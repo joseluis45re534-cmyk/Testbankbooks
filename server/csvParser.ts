@@ -20,20 +20,18 @@ function cleanHtmlEntities(text: string): string {
 function cleanDescription(text: string): string {
   if (!text) return "";
   
-  let cleaned = text
+  let cleaned = text;
+  
+  const faqStartIndex = cleaned.indexOf("What is a test bank?");
+  if (faqStartIndex !== -1) {
+    cleaned = cleaned.substring(0, faqStartIndex);
+  }
+  
+  cleaned = cleaned
     .replace(/\\n/g, " ")
     .replace(/\n/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  
-  const faqPatterns = [
-    /What is a test bank\?.*?How can I ensure the accuracy and reliability of questions in a test bank\?.*?academic standards\./is,
-    /What is a test bank\?.*$/is,
-  ];
-  
-  for (const pattern of faqPatterns) {
-    cleaned = cleaned.replace(pattern, "").trim();
-  }
   
   return cleaned;
 }

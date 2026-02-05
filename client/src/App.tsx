@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,6 +19,14 @@ import AdminDownloads from "@/pages/admin/AdminDownloads";
 import AdminChat from "@/pages/admin/AdminChat";
 import ThankYou from "@/pages/ThankYou";
 import { ChatWidget } from "@/components/ChatWidget";
+
+function ChatWidgetWrapper() {
+  const [location] = useLocation();
+  const isAdminRoute = location.startsWith("/admin");
+  
+  if (isAdminRoute) return null;
+  return <ChatWidget />;
+}
 
 function Router() {
   return (
@@ -42,15 +50,13 @@ function Router() {
 }
 
 function App() {
-  const isAdminRoute = window.location.pathname.startsWith("/admin");
-  
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Router />
-          {!isAdminRoute && <ChatWidget />}
+          <ChatWidgetWrapper />
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

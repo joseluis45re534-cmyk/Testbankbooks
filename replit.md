@@ -36,6 +36,8 @@ Preferred communication style: Simple, everyday language.
 - **cart_items**: Session-based cart with product references and quantities
 - **users**: Basic user authentication table
 - **session**: PostgreSQL session storage table (auto-created)
+- **chat_conversations**: Customer chat sessions with visitor tracking
+- **chat_messages**: Individual messages with sender type and read status
 
 ### Data Import
 - XML parser in `server/xmlParser.ts` fetches and imports products from external Google Shopping XML feed
@@ -78,7 +80,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### SEO Implementation (Latest)
+### Live Chat System (Latest - Feb 2026)
+- **Customer chat widget**: Floating chat button on all non-admin pages with real-time messaging
+- **Admin chat interface**: Dedicated `/admin/chat` page to manage customer conversations
+- **Database tables**: chat_conversations and chat_messages for persistent storage
+- **Real-time updates**: Polling-based message synchronization every 3 seconds
+- **Unread indicators**: Badge notifications for new messages on both customer and admin sides
+- **Message read tracking**: Separate read status for visitor and admin messages
+
+### SEO Implementation
 - **react-helmet-async**: Per-page meta tags with unique titles and descriptions
 - **Open Graph tags**: Facebook/Twitter sharing optimization
 - **JSON-LD schema**: Product structured data for rich search results
@@ -96,7 +106,9 @@ Preferred communication style: Simple, everyday language.
 - `server/storage.ts` - Database storage interface
 - `client/src/components/SEO.tsx` - SEO meta tag component
 - `client/src/components/Header.tsx` - Global header with search
+- `client/src/components/ChatWidget.tsx` - Customer live chat widget
 - `client/src/pages/Home.tsx` - Product listing with search/filter
 - `client/src/pages/ProductDetail.tsx` - Product detail with add to cart
 - `client/src/pages/Cart.tsx` - Shopping cart management
 - `client/src/pages/Checkout.tsx` - Two-step checkout flow
+- `client/src/pages/admin/AdminChat.tsx` - Admin chat management interface

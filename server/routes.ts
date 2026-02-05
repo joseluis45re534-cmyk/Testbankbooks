@@ -788,6 +788,17 @@ export async function registerRoutes(
     }
   });
 
+  // Mark admin messages as read (for visitor)
+  app.post("/api/chat/mark-read/:conversationId", async (req, res) => {
+    try {
+      await storage.markMessagesAsRead(req.params.conversationId, "admin");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
   // Admin: Get all conversations
   app.get("/api/admin/chat/conversations", requireAdmin, async (req, res) => {
     try {

@@ -53,7 +53,19 @@ export function ChatWidget() {
     if (isOpen && !conversation) {
       initConversation();
     }
-  }, [isOpen]);
+    if (isOpen && conversation) {
+      markAdminMessagesAsRead();
+    }
+  }, [isOpen, conversation]);
+
+  const markAdminMessagesAsRead = async () => {
+    if (!conversation) return;
+    try {
+      await apiRequest("POST", `/api/chat/mark-read/${conversation.id}`);
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
 
   useEffect(() => {
     if (!conversation) return;
@@ -129,12 +141,12 @@ export function ChatWidget() {
       <Button
         data-testid="button-chat-open"
         onClick={openChat}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-        size="icon"
+        className="fixed bottom-6 right-6 rounded-full shadow-lg z-50"
+        size="lg"
       >
         <MessageCircle className="h-6 w-6" />
         {hasUnread && (
-          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-pulse" />
+          <span data-testid="indicator-unread" className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 animate-pulse" />
         )}
       </Button>
     );
@@ -153,7 +165,6 @@ export function ChatWidget() {
               data-testid="button-chat-expand"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
               onClick={(e) => { e.stopPropagation(); setIsMinimized(false); }}
             >
               <MessageCircle className="h-4 w-4" />
@@ -162,7 +173,6 @@ export function ChatWidget() {
               data-testid="button-chat-close-minimized"
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
               onClick={(e) => { e.stopPropagation(); setIsOpen(false); }}
             >
               <X className="h-4 w-4" />
@@ -185,7 +195,6 @@ export function ChatWidget() {
             data-testid="button-chat-minimize"
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
             onClick={() => setIsMinimized(true)}
           >
             <MinusCircle className="h-4 w-4" />
@@ -194,7 +203,6 @@ export function ChatWidget() {
             data-testid="button-chat-close"
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
             onClick={() => setIsOpen(false)}
           >
             <X className="h-4 w-4" />

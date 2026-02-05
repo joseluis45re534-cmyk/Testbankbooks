@@ -9,6 +9,7 @@ export interface IStorage {
   getProductById(id: string): Promise<Product | undefined>;
   insertProduct(product: InsertProduct): Promise<Product>;
   insertProducts(productList: InsertProduct[]): Promise<void>;
+  clearAllProducts(): Promise<void>;
   getCartItems(sessionId: string): Promise<CartItemWithProduct[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
   updateCartItemQuantity(itemId: string, quantity: number): Promise<CartItem | undefined>;
@@ -84,6 +85,11 @@ export class DatabaseStorage implements IStorage {
         console.error(`Failed to insert product ${product.id}:`, error);
       }
     }
+  }
+
+  async clearAllProducts(): Promise<void> {
+    await db.delete(cartItems);
+    await db.delete(products);
   }
 
   async getCartItems(sessionId: string): Promise<CartItemWithProduct[]> {

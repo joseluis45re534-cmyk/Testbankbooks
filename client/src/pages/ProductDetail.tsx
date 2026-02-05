@@ -1,6 +1,7 @@
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { ArrowLeft, ShoppingCart, Zap, Shield, CheckCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Zap, Shield, CheckCircle, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +14,7 @@ import type { Product, CartItem } from "@shared/schema";
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:slug");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { toast } = useToast();
 
   const { data: product, isLoading, error } = useQuery<Product>({
@@ -52,6 +54,24 @@ export default function ProductDetail() {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const allImages = useMemo(() => {
+    if (!product) return [];
+    const images: string[] = [];
+    if (product.imageUrl) images.push(product.imageUrl);
+    if (product.additionalImages && Array.isArray(product.additionalImages)) {
+      images.push(...product.additionalImages);
+    }
+    return images;
+  }, [product]);
+
+  const handlePrevImage = () => {
+    setSelectedImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setSelectedImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -60,7 +80,14 @@ export default function ProductDetail() {
         <main className="flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="grid md:grid-cols-2 gap-12">
-              <Skeleton className="aspect-square rounded-lg" />
+              <div>
+                <Skeleton className="aspect-square rounded-lg" />
+                <div className="flex gap-2 mt-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="w-16 h-16 rounded-md" />
+                  ))}
+                </div>
+              </div>
               <div className="space-y-4">
                 <Skeleton className="h-8 w-3/4" />
                 <Skeleton className="h-6 w-1/4" />
@@ -105,6 +132,8 @@ export default function ProductDetail() {
   const seoTitle = `${product.title} - Instant Download`;
   const seoDescription = `${product.title}. $${displayPrice.toFixed(2)} - Instant Access for Exam Prep. Complete test bank with all chapters included.`.substring(0, 160);
 
+  const currentImage = allImages[selectedImageIndex] || null;
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
@@ -127,22 +156,74 @@ export default function ProductDetail() {
           </Link>
 
           <div className="grid md:grid-cols-2 gap-12">
-            <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
-              {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <BookOpen className="w-24 h-24 text-muted-foreground" />
+            <div className="space-y-4">
+              <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+                {currentImage ? (
+                  <img
+                    src={currentImage}
+                    alt={`${product.title} - Image ${selectedImageIndex + 1}`}
+                    className="w-full h-full object-cover"
+                    data-testid="img-product-main"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen className="w-24 h-24 text-muted-foreground" />
+                  </div>
+                )}
+                {hasDiscount && (
+                  <Badge className="absolute top-4 left-4 bg-destructive text-destructive-foreground text-base px-4 py-2">
+                    Sale
+                  </Badge>
+                )}
+                
+                {allImages.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
+                      onClick={handlePrevImage}
+                      data-testid="button-prev-image"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
+                      onClick={handleNextImage}
+                      data-testid="button-next-image"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </Button>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm px-3 py-1 rounded-full text-sm">
+                      {selectedImageIndex + 1} / {allImages.length}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {allImages.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2" data-testid="gallery-thumbnails">
+                  {allImages.map((img, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-colors ${
+                        index === selectedImageIndex
+                          ? "border-primary"
+                          : "border-transparent hover:border-muted-foreground/50"
+                      }`}
+                      data-testid={`button-thumbnail-${index}`}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.title} thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
                 </div>
-              )}
-              {hasDiscount && (
-                <Badge className="absolute top-4 left-4 bg-destructive text-destructive-foreground text-base px-4 py-2">
-                  Sale
-                </Badge>
               )}
             </div>
 

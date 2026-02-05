@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { importFromCsv } from "./csvParser";
 import { z } from "zod";
+import path from "path";
 
 const addToCartSchema = z.object({
   productId: z.string().min(1, "Product ID is required"),
@@ -144,6 +146,18 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error clearing cart:", error);
       res.status(500).json({ error: "Failed to clear cart" });
+    }
+  });
+
+  // Import products from WooCommerce CSV
+  app.post("/api/import-csv", async (req, res) => {
+    try {
+      const csvPath = path.join(process.cwd(), "attached_assets/wc-product-export-5-2-2026-1770294821775_1770294931862.csv");
+      const count = await importFromCsv(csvPath);
+      res.json({ success: true, imported: count });
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      res.status(500).json({ error: "Failed to import products from CSV" });
     }
   });
 

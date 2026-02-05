@@ -141,7 +141,7 @@ export function ChatWidget() {
       <Button
         data-testid="button-chat-open"
         onClick={openChat}
-        className="fixed bottom-6 right-6 rounded-full shadow-lg z-[9999]"
+        className="!fixed !bottom-6 !right-6 rounded-full shadow-lg z-[9999]"
         size="lg"
       >
         <MessageCircle className="h-6 w-6" />
@@ -154,7 +154,7 @@ export function ChatWidget() {
 
   if (isMinimized) {
     return (
-      <Card className="fixed bottom-6 right-6 w-72 shadow-lg z-[9999]">
+      <Card className="!fixed !bottom-6 !right-6 w-72 shadow-lg z-[9999]">
         <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-4 cursor-pointer" onClick={() => setIsMinimized(false)}>
           <div className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
@@ -184,7 +184,7 @@ export function ChatWidget() {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-80 h-96 shadow-lg z-[9999] flex flex-col">
+    <Card className="!fixed !bottom-6 !right-6 w-80 h-96 shadow-lg z-[9999] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between gap-2 py-3 px-4 border-b">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />

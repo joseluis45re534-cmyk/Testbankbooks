@@ -100,12 +100,15 @@ export async function importFromShopifyCsv(csvPath: string): Promise<number> {
     price: string;
     comparePrice: string;
     imageUrl: string;
+    additionalImages: string[];
     slug: string;
   }>();
 
   for (const row of records) {
     const handle = row.Handle?.trim();
     if (!handle) continue;
+
+    const imageSrc = row["Image Src"]?.trim() || "";
 
     if (!productMap.has(handle)) {
       const title = row.Title?.trim();
@@ -120,13 +123,16 @@ export async function importFromShopifyCsv(csvPath: string): Promise<number> {
         tags: row.Tags || "",
         price,
         comparePrice,
-        imageUrl: row["Image Src"]?.trim() || "",
+        imageUrl: imageSrc,
+        additionalImages: [],
         slug: handle,
       });
-    } else {
+    } else if (imageSrc) {
       const existing = productMap.get(handle)!;
-      if (!existing.imageUrl && row["Image Src"]?.trim()) {
-        existing.imageUrl = row["Image Src"].trim();
+      if (!existing.imageUrl) {
+        existing.imageUrl = imageSrc;
+      } else {
+        existing.additionalImages.push(imageSrc);
       }
     }
   }
@@ -149,6 +155,7 @@ export async function importFromShopifyCsv(csvPath: string): Promise<number> {
       price: originalPrice,
       salePrice: salePrice !== originalPrice ? salePrice : null,
       imageUrl: data.imageUrl || null,
+      additionalImages: data.additionalImages.length > 0 ? data.additionalImages : null,
       category,
     };
 
@@ -161,6 +168,7 @@ export async function importFromShopifyCsv(csvPath: string): Promise<number> {
           price: product.price,
           salePrice: product.salePrice,
           imageUrl: product.imageUrl,
+          additionalImages: product.additionalImages,
           category: product.category,
         });
       } else {

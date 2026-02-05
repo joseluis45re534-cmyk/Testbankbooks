@@ -724,5 +724,150 @@ export async function registerRoutes(
     }
   });
 
+  // ========== CHAT ROUTES ==========
+  
+  // Get or create conversation for visitor
+  app.post("/api/chat/conversation", async (req, res) => {
+    try {
+      const { visitorId, visitorName, visitorEmail } = req.body;
+      
+      if (!visitorId) {
+        return res.status(400).json({ error: "Visitor ID is required" });
+      }
+
+      let conversation = await storage.getConversationByVisitorId(visitorId);
+      
+      if (!conversation) {
+        conversation = await storage.createConversation({
+          visitorId,
+          visitorName: visitorName || null,
+          visitorEmail: visitorEmail || null,
+          status: "active",
+        });
+      }
+
+      const messages = await storage.getMessagesByConversationId(conversation.id);
+      res.json({ ...conversation, messages });
+    } catch (error) {
+      console.error("Error with chat conversation:", error);
+      res.status(500).json({ error: "Failed to handle conversation" });
+    }
+  });
+
+  // Send message (visitor)
+  app.post("/api/chat/message", async (req, res) => {
+    try {
+      const { conversationId, message, senderType } = req.body;
+      
+      if (!conversationId || !message) {
+        return res.status(400).json({ error: "Conversation ID and message are required" });
+      }
+
+      const newMessage = await storage.createMessage({
+        conversationId,
+        message,
+        senderType: senderType || "visitor",
+        isRead: false,
+      });
+
+      res.json(newMessage);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Get messages for a conversation
+  app.get("/api/chat/messages/:conversationId", async (req, res) => {
+    try {
+      const messages = await storage.getMessagesByConversationId(req.params.conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error getting messages:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Admin: Get all conversations
+  app.get("/api/admin/chat/conversations", requireAdmin, async (req, res) => {
+    try {
+      const conversations = await storage.getAllConversations();
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error getting conversations:", error);
+      res.status(500).json({ error: "Failed to get conversations" });
+    }
+  });
+
+  // Admin: Get single conversation with messages
+  app.get("/api/admin/chat/conversations/:id", requireAdmin, async (req, res) => {
+    try {
+      const conversation = await storage.getConversationById(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error getting conversation:", error);
+      res.status(500).json({ error: "Failed to get conversation" });
+    }
+  });
+
+  // Admin: Send message
+  app.post("/api/admin/chat/message", requireAdmin, async (req, res) => {
+    try {
+      const { conversationId, message } = req.body;
+      
+      if (!conversationId || !message) {
+        return res.status(400).json({ error: "Conversation ID and message are required" });
+      }
+
+      const newMessage = await storage.createMessage({
+        conversationId,
+        message,
+        senderType: "admin",
+        isRead: false,
+      });
+
+      res.json(newMessage);
+    } catch (error) {
+      console.error("Error sending admin message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Admin: Mark messages as read
+  app.post("/api/admin/chat/mark-read/:conversationId", requireAdmin, async (req, res) => {
+    try {
+      await storage.markMessagesAsRead(req.params.conversationId, "visitor");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
+  // Admin: Close conversation
+  app.post("/api/admin/chat/close/:conversationId", requireAdmin, async (req, res) => {
+    try {
+      const updated = await storage.updateConversationStatus(req.params.conversationId, "closed");
+      res.json(updated);
+    } catch (error) {
+      console.error("Error closing conversation:", error);
+      res.status(500).json({ error: "Failed to close conversation" });
+    }
+  });
+
+  // Admin: Get unread message count
+  app.get("/api/admin/chat/unread-count", requireAdmin, async (req, res) => {
+    try {
+      const count = await storage.getUnreadMessageCount();
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ error: "Failed to get unread count" });
+    }
+  });
+
   return httpServer;
 }

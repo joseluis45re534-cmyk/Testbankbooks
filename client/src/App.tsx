@@ -16,7 +16,9 @@ import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import AdminDownloads from "@/pages/admin/AdminDownloads";
+import AdminChat from "@/pages/admin/AdminChat";
 import ThankYou from "@/pages/ThankYou";
+import { ChatWidget } from "@/components/ChatWidget";
 
 function Router() {
   return (
@@ -33,18 +35,22 @@ function Router() {
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/settings" component={AdminSettings} />
       <Route path="/admin/downloads" component={AdminDownloads} />
+      <Route path="/admin/chat" component={AdminChat} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function App() {
+  const isAdminRoute = window.location.pathname.startsWith("/admin");
+  
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
           <Router />
+          {!isAdminRoute && <ChatWidget />}
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

@@ -1,6 +1,12 @@
 import { db } from "./db";
-import { products, cartItems, type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct } from "@shared/schema";
-import { eq, ilike, or, and, sql } from "drizzle-orm";
+import { 
+  products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags,
+  type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct,
+  type Order, type InsertOrder, type AbandonedCart, type InsertAbandonedCart,
+  type AdminUser, type InsertAdminUser, type PaymentSetting, type InsertPaymentSetting,
+  type Tag, type InsertTag
+} from "@shared/schema";
+import { eq, ilike, or, and, sql, desc } from "drizzle-orm";
 
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
@@ -9,6 +15,9 @@ export interface IStorage {
   getProductById(id: string): Promise<Product | undefined>;
   insertProduct(product: InsertProduct): Promise<Product>;
   insertProducts(productList: InsertProduct[]): Promise<void>;
+  updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
+  updateProductTags(id: string, tags: string[]): Promise<Product | undefined>;
+  bulkUpdateProducts(ids: string[], updates: Partial<InsertProduct>): Promise<void>;
   clearAllProducts(): Promise<void>;
   getCartItems(sessionId: string): Promise<CartItemWithProduct[]>;
   addToCart(item: InsertCartItem): Promise<CartItem>;
@@ -17,6 +26,35 @@ export interface IStorage {
   clearCart(sessionId: string): Promise<void>;
   getProductCount(): Promise<number>;
   getCategories(): Promise<{ name: string; count: number }[]>;
+  
+  getAllOrders(): Promise<Order[]>;
+  getOrderById(id: string): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
+  getOrdersByEmail(email: string): Promise<Order[]>;
+  
+  getAllAbandonedCarts(): Promise<AbandonedCart[]>;
+  createAbandonedCart(cart: InsertAbandonedCart): Promise<AbandonedCart>;
+  markRecoveryEmailSent(id: string): Promise<void>;
+  
+  getAdminByUsername(username: string): Promise<AdminUser | undefined>;
+  createAdminUser(admin: InsertAdminUser): Promise<AdminUser>;
+  
+  getAllPaymentSettings(): Promise<PaymentSetting[]>;
+  getPaymentSetting(provider: string): Promise<PaymentSetting | undefined>;
+  upsertPaymentSetting(setting: InsertPaymentSetting): Promise<PaymentSetting>;
+  
+  getAllTags(): Promise<Tag[]>;
+  createTag(tag: InsertTag): Promise<Tag>;
+  deleteTag(id: string): Promise<void>;
+  
+  getDashboardStats(): Promise<{
+    totalRevenue: number;
+    totalOrders: number;
+    abandonedCartCount: number;
+    conversionRate: number;
+  }>;
+  getSalesTrend(days: number): Promise<{ date: string; amount: number }[]>;
 }
 
 function slugify(title: string): string {
@@ -73,7 +111,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async insertProducts(productList: InsertProduct[]): Promise<void> {
-    const productsWithSlugs = productList.map((p, index) => ({
+    const productsWithSlugs = productList.map((p) => ({
       ...p,
       slug: slugify(p.title) + '-' + p.id,
     }));
@@ -84,6 +122,30 @@ export class DatabaseStorage implements IStorage {
       } catch (error) {
         console.error(`Failed to insert product ${product.id}:`, error);
       }
+    }
+  }
+
+  async updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined> {
+    const [updated] = await db
+      .update(products)
+      .set(product)
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateProductTags(id: string, newTags: string[]): Promise<Product | undefined> {
+    const [updated] = await db
+      .update(products)
+      .set({ tags: newTags })
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
+
+  async bulkUpdateProducts(ids: string[], updates: Partial<InsertProduct>): Promise<void> {
+    for (const id of ids) {
+      await db.update(products).set(updates).where(eq(products.id, id));
     }
   }
 
@@ -167,6 +229,134 @@ export class DatabaseStorage implements IStorage {
     return result
       .filter(r => r.name)
       .map(r => ({ name: r.name!, count: Number(r.count) }));
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    return db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrderById(id: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const [created] = await db.insert(orders).values(order).returning();
+    return created;
+  }
+
+  async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
+    const [updated] = await db
+      .update(orders)
+      .set({ status })
+      .where(eq(orders.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getOrdersByEmail(email: string): Promise<Order[]> {
+    return db.select().from(orders).where(ilike(orders.customerEmail, `%${email}%`));
+  }
+
+  async getAllAbandonedCarts(): Promise<AbandonedCart[]> {
+    return db.select().from(abandonedCarts).orderBy(desc(abandonedCarts.createdAt));
+  }
+
+  async createAbandonedCart(cart: InsertAbandonedCart): Promise<AbandonedCart> {
+    const [created] = await db.insert(abandonedCarts).values(cart).returning();
+    return created;
+  }
+
+  async markRecoveryEmailSent(id: string): Promise<void> {
+    await db.update(abandonedCarts).set({ recoveryEmailSent: true }).where(eq(abandonedCarts.id, id));
+  }
+
+  async getAdminByUsername(username: string): Promise<AdminUser | undefined> {
+    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
+    return admin;
+  }
+
+  async createAdminUser(admin: InsertAdminUser): Promise<AdminUser> {
+    const [created] = await db.insert(adminUsers).values(admin).returning();
+    return created;
+  }
+
+  async getAllPaymentSettings(): Promise<PaymentSetting[]> {
+    return db.select().from(paymentSettings);
+  }
+
+  async getPaymentSetting(provider: string): Promise<PaymentSetting | undefined> {
+    const [setting] = await db.select().from(paymentSettings).where(eq(paymentSettings.provider, provider));
+    return setting;
+  }
+
+  async upsertPaymentSetting(setting: InsertPaymentSetting): Promise<PaymentSetting> {
+    const existing = await this.getPaymentSetting(setting.provider);
+    if (existing) {
+      const [updated] = await db
+        .update(paymentSettings)
+        .set({ ...setting, updatedAt: new Date() })
+        .where(eq(paymentSettings.provider, setting.provider))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(paymentSettings).values(setting).returning();
+    return created;
+  }
+
+  async getAllTags(): Promise<Tag[]> {
+    return db.select().from(tags);
+  }
+
+  async createTag(tag: InsertTag): Promise<Tag> {
+    const [created] = await db.insert(tags).values(tag).returning();
+    return created;
+  }
+
+  async deleteTag(id: string): Promise<void> {
+    await db.delete(tags).where(eq(tags.id, id));
+  }
+
+  async getDashboardStats(): Promise<{
+    totalRevenue: number;
+    totalOrders: number;
+    abandonedCartCount: number;
+    conversionRate: number;
+  }> {
+    const ordersResult = await db.select({ 
+      count: sql<number>`count(*)`,
+      total: sql<number>`COALESCE(sum(amount), 0)`
+    }).from(orders);
+    
+    const abandonedResult = await db.select({ 
+      count: sql<number>`count(*)` 
+    }).from(abandonedCarts);
+
+    const totalOrders = Number(ordersResult[0].count) || 0;
+    const totalRevenue = Number(ordersResult[0].total) || 0;
+    const abandonedCartCount = Number(abandonedResult[0].count) || 0;
+    const conversionRate = totalOrders + abandonedCartCount > 0 
+      ? (totalOrders / (totalOrders + abandonedCartCount)) * 100 
+      : 0;
+
+    return { totalRevenue, totalOrders, abandonedCartCount, conversionRate };
+  }
+
+  async getSalesTrend(days: number): Promise<{ date: string; amount: number }[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        DATE(created_at) as date,
+        COALESCE(SUM(amount), 0) as amount
+      FROM orders
+      WHERE created_at >= NOW() - INTERVAL '${sql.raw(days.toString())} days'
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `);
+    
+    return (result.rows as any[]).map(r => ({
+      date: r.date,
+      amount: Number(r.amount)
+    }));
   }
 }
 

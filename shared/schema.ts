@@ -86,6 +86,25 @@ export const tags = pgTable("tags", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const chatConversations = pgTable("chat_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  visitorId: varchar("visitor_id", { length: 255 }).notNull(),
+  visitorName: varchar("visitor_name", { length: 100 }),
+  visitorEmail: varchar("visitor_email", { length: 255 }),
+  status: varchar("status", { length: 20 }).default("active"),
+  lastMessageAt: timestamp("last_message_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id", { length: 255 }).notNull().references(() => chatConversations.id),
+  senderType: varchar("sender_type", { length: 20 }).notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({ slug: true });
 export const insertCartItemSchema = createInsertSchema(cartItems).omit({ id: true, createdAt: true });
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
@@ -94,6 +113,8 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: t
 export const insertPaymentSettingSchema = createInsertSchema(paymentSettings).omit({ id: true, updatedAt: true });
 export const insertTagSchema = createInsertSchema(tags).omit({ id: true, createdAt: true });
 export const insertDownloadTokenSchema = createInsertSchema(downloadTokens).omit({ id: true, createdAt: true });
+export const insertChatConversationSchema = createInsertSchema(chatConversations).omit({ id: true, createdAt: true, lastMessageAt: true });
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertDownloadToken = z.infer<typeof insertDownloadTokenSchema>;
@@ -111,6 +132,15 @@ export type InsertPaymentSetting = z.infer<typeof insertPaymentSettingSchema>;
 export type PaymentSetting = typeof paymentSettings.$inferSelect;
 export type InsertTag = z.infer<typeof insertTagSchema>;
 export type Tag = typeof tags.$inferSelect;
+export type InsertChatConversation = z.infer<typeof insertChatConversationSchema>;
+export type ChatConversation = typeof chatConversations.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+
+export type ChatConversationWithMessages = ChatConversation & {
+  messages: ChatMessage[];
+  unreadCount: number;
+};
 
 export type CartItemWithProduct = CartItem & {
   product: Product;

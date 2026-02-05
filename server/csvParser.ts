@@ -17,6 +17,27 @@ function cleanHtmlEntities(text: string): string {
     .trim();
 }
 
+function cleanDescription(text: string): string {
+  if (!text) return "";
+  
+  let cleaned = text
+    .replace(/\\n/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  
+  const faqPatterns = [
+    /What is a test bank\?.*?How can I ensure the accuracy and reliability of questions in a test bank\?.*?academic standards\./is,
+    /What is a test bank\?.*$/is,
+  ];
+  
+  for (const pattern of faqPatterns) {
+    cleaned = cleaned.replace(pattern, "").trim();
+  }
+  
+  return cleaned;
+}
+
 function extractCategory(title: string): string {
   const titleLower = title.toLowerCase();
   
@@ -104,7 +125,8 @@ export async function parseWooCommerceCsv(csvPath: string): Promise<InsertProduc
   for (const row of records) {
     const id = row["ID"] || "";
     const title = cleanHtmlEntities(row["Name"] || "");
-    const description = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
+    const rawDescription = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
+    const description = cleanDescription(rawDescription);
     const price = row["Regular price"] || "0";
     const salePrice = row["Sale price"] || null;
     const imagesStr = row["Images"] || "";

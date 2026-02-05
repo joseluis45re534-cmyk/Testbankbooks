@@ -19,12 +19,32 @@ import type { Product, CartItem } from "@shared/schema";
 
 const faqs = [
   {
-    question: "What is the format of questions in this test bank?",
-    answer: "The test bank includes multiple-choice, true/false, short answer, and essay questions. These question types evaluate different aspects of a student's understanding."
+    question: "What is a test bank?",
+    answer: "A test bank comprises a curated collection of exam questions and answers, designed to complement educational resources and aid in the creation of course assessments."
   },
   {
-    question: "Is this test bank suitable for NCLEX preparation?",
-    answer: "Yes, this test bank is designed to help nursing students prepare for NCLEX and other standardized exams by providing practice questions that mirror the exam format."
+    question: "How many questions does a test bank include?",
+    answer: "The number of questions in a test bank can significantly vary based on the specific resource and the publisher. Typically, test banks consist of a substantial number of questions, often ranging from several dozen to several hundred. They cover various topics and difficulty levels within a course's curriculum."
+  },
+  {
+    question: "What question types do test banks commonly contain?",
+    answer: "Test banks typically encompass multiple-choice, true/false, short answer, and essay questions. These question types evaluate different aspects of a student's understanding."
+  },
+  {
+    question: "How can I effectively utilize a test bank for exam preparation?",
+    answer: "To make efficient use of a test bank, practice answering questions regularly, review your responses, and concentrate on areas that require improvement. Simulating exam conditions can also be beneficial."
+  },
+  {
+    question: "Are test banks identical to actual exam questions?",
+    answer: "Test banks do not replicate actual exam questions precisely. However, they often address similar content and concepts, serving as valuable practice material."
+  },
+  {
+    question: "What is the procedure for selecting and crafting questions for a test bank?",
+    answer: "Subject matter experts and educators meticulously craft test bank questions. They carefully choose questions that align with the course curriculum and educational objectives."
+  },
+  {
+    question: "How can I ensure the accuracy and reliability of questions in a test bank?",
+    answer: "Test banks undergo thorough review processes to validate their accuracy and reliability. Expert educators and publishers scrutinize the questions to ensure they meet academic standards."
   },
   {
     question: "How do I receive my purchase?",

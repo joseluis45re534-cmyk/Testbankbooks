@@ -2,6 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { importFromCsv } from "./csvParser";
+import { generateSecureToken, generateSignedUrl, verifySignedUrl, createWooCommerceAPI } from "./woocommerce";
 import { z } from "zod";
 import path from "path";
 import bcrypt from "bcryptjs";
@@ -457,6 +458,231 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error saving payment setting:", error);
       res.status(500).json({ error: "Failed to save payment setting" });
+    }
+  });
+
+  // ============ DOWNLOAD & THANK YOU PAGE ROUTES ============
+
+  // Get order details for Thank You page
+  app.get("/api/orders/:id", async (req, res) => {
+    try {
+      const order = await storage.getOrderById(req.params.id as string);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+      
+      // Get products in order
+      const productIds = order.productIds || [];
+      const orderProducts = [];
+      for (const productId of productIds) {
+        const product = await storage.getProductById(productId);
+        if (product) {
+          orderProducts.push({
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            imageUrl: product.imageUrl,
+          });
+        }
+      }
+
+      res.json({
+        ...order,
+        products: orderProducts,
+      });
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ error: "Failed to fetch order" });
+    }
+  });
+
+  // Generate download token after payment verification
+  app.post("/api/orders/:id/generate-download", async (req, res) => {
+    try {
+      const order = await storage.getOrderById(req.params.id as string);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      if (order.status !== "paid" && order.status !== "completed") {
+        return res.status(403).json({ error: "Order not verified" });
+      }
+
+      const productIds = order.productIds || [];
+      const tokens = [];
+
+      for (const productId of productIds) {
+        const product = await storage.getProductById(productId);
+        if (!product) continue;
+
+        const token = generateSecureToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        await storage.createDownloadToken({
+          orderId: order.id,
+          productId,
+          token,
+          expiresAt,
+          downloadCount: 0,
+          maxDownloads: 5,
+        });
+
+        const signedUrl = generateSignedUrl(token, expiresAt);
+        tokens.push({
+          productId,
+          productTitle: product.title,
+          downloadUrl: `/api/download/${signedUrl}`,
+          expiresAt: expiresAt.toISOString(),
+        });
+      }
+
+      res.json({ tokens });
+    } catch (error) {
+      console.error("Error generating download tokens:", error);
+      res.status(500).json({ error: "Failed to generate download links" });
+    }
+  });
+
+  // Secure download endpoint
+  app.get("/api/download/:signedToken", async (req, res) => {
+    try {
+      const { signedToken } = req.params;
+      const { valid, token } = verifySignedUrl(signedToken as string);
+
+      if (!valid) {
+        return res.status(403).json({ error: "Download link expired or invalid" });
+      }
+
+      const downloadToken = await storage.getDownloadToken(token);
+      if (!downloadToken) {
+        return res.status(404).json({ error: "Download token not found" });
+      }
+
+      if (new Date() > downloadToken.expiresAt) {
+        return res.status(403).json({ error: "Download link has expired" });
+      }
+
+      if ((downloadToken.downloadCount ?? 0) >= (downloadToken.maxDownloads ?? 5)) {
+        return res.status(403).json({ error: "Maximum downloads exceeded" });
+      }
+
+      const product = await storage.getProductById(downloadToken.productId);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      // Check for download path (local file)
+      if (product.downloadPath) {
+        await storage.incrementDownloadCount(token);
+        // Redirect to the file or return the path for client-side handling
+        res.json({
+          success: true,
+          downloadUrl: product.downloadPath,
+          productTitle: product.title,
+          remainingDownloads: (downloadToken.maxDownloads ?? 5) - (downloadToken.downloadCount ?? 0) - 1,
+        });
+        return;
+      }
+
+      // If no local path, try WooCommerce API
+      const wooApi = createWooCommerceAPI();
+      if (wooApi && product.wooProductId) {
+        const files = await wooApi.getDownloadableFiles(product.wooProductId);
+        if (files.length > 0) {
+          await storage.incrementDownloadCount(token);
+          res.json({
+            success: true,
+            downloadUrl: files[0].file,
+            productTitle: product.title,
+            remainingDownloads: (downloadToken.maxDownloads ?? 5) - (downloadToken.downloadCount ?? 0) - 1,
+          });
+          return;
+        }
+      }
+
+      res.status(404).json({ error: "Download file not configured for this product" });
+    } catch (error) {
+      console.error("Error processing download:", error);
+      res.status(500).json({ error: "Failed to process download" });
+    }
+  });
+
+  // Admin: Get products without download paths
+  app.get("/api/admin/products/missing-downloads", requireAdmin, async (req, res) => {
+    try {
+      const productsWithoutDownloads = await storage.getProductsWithoutDownloadPath();
+      res.json(productsWithoutDownloads);
+    } catch (error) {
+      console.error("Error fetching products without downloads:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  // Admin: Update single product download path
+  app.patch("/api/admin/products/:id/download-path", requireAdmin, async (req, res) => {
+    try {
+      const { downloadPath } = req.body;
+      if (!downloadPath || typeof downloadPath !== "string") {
+        return res.status(400).json({ error: "Invalid download path" });
+      }
+      const product = await storage.updateProductDownloadPath(req.params.id as string, downloadPath);
+      res.json(product);
+    } catch (error) {
+      console.error("Error updating download path:", error);
+      res.status(500).json({ error: "Failed to update download path" });
+    }
+  });
+
+  // Admin: Bulk update download paths
+  app.post("/api/admin/products/bulk-download-paths", requireAdmin, async (req, res) => {
+    try {
+      const { updates } = req.body;
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ error: "Invalid updates format" });
+      }
+      await storage.bulkUpdateDownloadPaths(updates);
+      res.json({ success: true, updated: updates.length });
+    } catch (error) {
+      console.error("Error bulk updating download paths:", error);
+      res.status(500).json({ error: "Failed to bulk update download paths" });
+    }
+  });
+
+  // WooCommerce sync endpoint (fetch download files from WooCommerce)
+  app.post("/api/admin/sync-woocommerce-downloads", requireAdmin, async (req, res) => {
+    try {
+      const wooApi = createWooCommerceAPI();
+      if (!wooApi) {
+        return res.status(400).json({ error: "WooCommerce API not configured. Please set WC_URL, WC_KEY, and WC_SECRET." });
+      }
+
+      // Get all products with wooProductId
+      const allProducts = await storage.getAllProducts();
+      const productsToSync = allProducts.filter(p => p.wooProductId);
+      
+      const results = [];
+      for (const product of productsToSync) {
+        try {
+          const files = await wooApi.getDownloadableFiles(product.wooProductId!);
+          if (files.length > 0) {
+            await storage.updateProductDownloadPath(product.id, files[0].file);
+            results.push({ id: product.id, success: true, file: files[0].name });
+          } else {
+            results.push({ id: product.id, success: false, error: "No downloadable files" });
+          }
+        } catch (error) {
+          results.push({ id: product.id, success: false, error: "API error" });
+        }
+      }
+
+      res.json({ 
+        synced: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+        results 
+      });
+    } catch (error) {
+      console.error("Error syncing WooCommerce downloads:", error);
+      res.status(500).json({ error: "Failed to sync WooCommerce downloads" });
     }
   });
 

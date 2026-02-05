@@ -1,12 +1,12 @@
 import { db } from "./db";
 import { 
-  products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags,
+  products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags, downloadTokens,
   type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct,
   type Order, type InsertOrder, type AbandonedCart, type InsertAbandonedCart,
   type AdminUser, type InsertAdminUser, type PaymentSetting, type InsertPaymentSetting,
-  type Tag, type InsertTag
+  type Tag, type InsertTag, type DownloadToken, type InsertDownloadToken
 } from "@shared/schema";
-import { eq, ilike, or, and, sql, desc } from "drizzle-orm";
+import { eq, ilike, or, and, sql, desc, lt, inArray } from "drizzle-orm";
 
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
@@ -55,6 +55,13 @@ export interface IStorage {
     conversionRate: number;
   }>;
   getSalesTrend(days: number): Promise<{ date: string; amount: number }[]>;
+  
+  createDownloadToken(token: InsertDownloadToken): Promise<DownloadToken>;
+  getDownloadToken(token: string): Promise<DownloadToken | undefined>;
+  incrementDownloadCount(token: string): Promise<void>;
+  getProductsWithoutDownloadPath(): Promise<Product[]>;
+  updateProductDownloadPath(id: string, downloadPath: string): Promise<Product | undefined>;
+  bulkUpdateDownloadPaths(updates: { id: string; downloadPath: string }[]): Promise<void>;
 }
 
 function slugify(title: string): string {
@@ -357,6 +364,46 @@ export class DatabaseStorage implements IStorage {
       date: r.date,
       amount: Number(r.amount)
     }));
+  }
+
+  async createDownloadToken(token: InsertDownloadToken): Promise<DownloadToken> {
+    const [created] = await db.insert(downloadTokens).values(token).returning();
+    return created;
+  }
+
+  async getDownloadToken(token: string): Promise<DownloadToken | undefined> {
+    const [result] = await db.select().from(downloadTokens).where(eq(downloadTokens.token, token));
+    return result;
+  }
+
+  async incrementDownloadCount(token: string): Promise<void> {
+    await db.update(downloadTokens)
+      .set({ downloadCount: sql`download_count + 1` })
+      .where(eq(downloadTokens.token, token));
+  }
+
+  async getProductsWithoutDownloadPath(): Promise<Product[]> {
+    return db.select().from(products).where(
+      or(
+        eq(products.downloadPath, ''),
+        sql`${products.downloadPath} IS NULL`
+      )
+    );
+  }
+
+  async updateProductDownloadPath(id: string, downloadPath: string): Promise<Product | undefined> {
+    const [updated] = await db
+      .update(products)
+      .set({ downloadPath })
+      .where(eq(products.id, id))
+      .returning();
+    return updated;
+  }
+
+  async bulkUpdateDownloadPaths(updates: { id: string; downloadPath: string }[]): Promise<void> {
+    for (const { id, downloadPath } of updates) {
+      await db.update(products).set({ downloadPath }).where(eq(products.id, id));
+    }
   }
 }
 

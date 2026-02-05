@@ -20,6 +20,19 @@ export const products = pgTable("products", {
   tags: text("tags").array(),
   seoTitle: text("seo_title"),
   seoDescription: text("seo_description"),
+  downloadPath: text("download_path"),
+  wooProductId: varchar("woo_product_id", { length: 50 }),
+});
+
+export const downloadTokens = pgTable("download_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id", { length: 255 }).notNull(),
+  productId: varchar("product_id", { length: 50 }).notNull().references(() => products.id),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  downloadCount: integer("download_count").default(0),
+  maxDownloads: integer("max_downloads").default(5),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const cartItems = pgTable("cart_items", {
@@ -80,8 +93,11 @@ export const insertAbandonedCartSchema = createInsertSchema(abandonedCarts).omit
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true, createdAt: true });
 export const insertPaymentSettingSchema = createInsertSchema(paymentSettings).omit({ id: true, updatedAt: true });
 export const insertTagSchema = createInsertSchema(tags).omit({ id: true, createdAt: true });
+export const insertDownloadTokenSchema = createInsertSchema(downloadTokens).omit({ id: true, createdAt: true });
 
 export type InsertProduct = z.infer<typeof insertProductSchema>;
+export type InsertDownloadToken = z.infer<typeof insertDownloadTokenSchema>;
+export type DownloadToken = typeof downloadTokens.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type CartItem = typeof cartItems.$inferSelect;

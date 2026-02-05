@@ -15,6 +15,8 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminDownloads from "@/pages/admin/AdminDownloads";
+import ThankYou from "@/pages/ThankYou";
 
 function Router() {
   return (
@@ -24,11 +26,13 @@ function Router() {
       <Route path="/products/:slug" component={ProductDetail} />
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
+      <Route path="/thank-you/:orderId" component={ThankYou} />
       <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/orders" component={AdminOrders} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/downloads" component={AdminDownloads} />
       <Route component={NotFound} />
     </Switch>
   );

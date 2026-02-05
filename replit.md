@@ -75,3 +75,28 @@ Preferred communication style: Simple, everyday language.
 - **@replit/vite-plugin-runtime-error-modal**: Error overlay in development
 - **@replit/vite-plugin-cartographer**: Development tooling
 - **@replit/vite-plugin-dev-banner**: Development banner
+
+## Recent Changes
+
+### SEO Implementation (Latest)
+- **react-helmet-async**: Per-page meta tags with unique titles and descriptions
+- **Open Graph tags**: Facebook/Twitter sharing optimization
+- **JSON-LD schema**: Product structured data for rich search results
+- **sitemap.xml**: Dynamic sitemap generation at `/sitemap.xml`
+- **Global search**: Header search works on all pages, routes to home with query
+
+### API Validation
+- Zod schema validation on cart endpoints (POST/PATCH)
+- Proper error responses with detailed validation messages
+
+## Key Files
+- `shared/schema.ts` - Database schema definitions
+- `server/routes.ts` - API endpoints with validation
+- `server/xmlParser.ts` - XML feed parser for product import
+- `server/storage.ts` - Database storage interface
+- `client/src/components/SEO.tsx` - SEO meta tag component
+- `client/src/components/Header.tsx` - Global header with search
+- `client/src/pages/Home.tsx` - Product listing with search/filter
+- `client/src/pages/ProductDetail.tsx` - Product detail with add to cart
+- `client/src/pages/Cart.tsx` - Shopping cart management
+- `client/src/pages/Checkout.tsx` - Two-step checkout flow

@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
+import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock, Loader2 } from "lucide-react";
 import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +12,14 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { CartItemWithProduct } from "@shared/schema";
 
 export default function Checkout() {
   const [step, setStep] = useState(1);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [email, setEmail] = useState("");
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -28,15 +31,43 @@ export default function Checkout() {
     return sum + price * item.quantity;
   }, 0);
 
+  const placeOrderMutation = useMutation({
+    mutationFn: async () => {
+      const productIds = cartItems.map(item => item.productId);
+      const productTitles = cartItems.map(item => item.product?.title || "");
+      
+      return apiRequest("POST", "/api/orders", {
+        customerEmail: email,
+        amount: subtotal.toFixed(2),
+        status: "paid",
+        paymentMethod: "card",
+        productIds,
+        productTitles,
+      });
+    },
+    onSuccess: async (response) => {
+      const order = await response.json();
+      await apiRequest("DELETE", "/api/cart");
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      setLocation(`/thank-you/${order.id}`);
+    },
+    onError: () => {
+      toast({
+        title: "Order Failed",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
+      const emailInput = document.getElementById("email") as HTMLInputElement;
+      setEmail(emailInput?.value || "");
       setStep(2);
     } else {
-      toast({
-        title: "Order Placed!",
-        description: "Thank you for your purchase. Check your email for download links.",
-      });
+      placeOrderMutation.mutate();
     }
   };
 
@@ -179,8 +210,21 @@ export default function Checkout() {
                           <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(1)}>
                             Back
                           </Button>
-                          <Button type="submit" className="flex-1" size="lg" data-testid="button-place-order">
-                            Place Order - ${subtotal.toFixed(2)}
+                          <Button 
+                            type="submit" 
+                            className="flex-1" 
+                            size="lg" 
+                            disabled={placeOrderMutation.isPending}
+                            data-testid="button-place-order"
+                          >
+                            {placeOrderMutation.isPending ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              `Place Order - $${subtotal.toFixed(2)}`
+                            )}
                           </Button>
                         </div>
                       </div>

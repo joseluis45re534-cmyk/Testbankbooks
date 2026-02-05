@@ -192,6 +192,31 @@ export async function registerRoutes(
     }
   });
 
+  // Create order (public checkout endpoint)
+  app.post("/api/orders", async (req, res) => {
+    try {
+      const { customerEmail, amount, status, paymentMethod, productIds, productTitles } = req.body;
+      
+      if (!customerEmail || !amount) {
+        return res.status(400).json({ error: "Email and amount are required" });
+      }
+
+      const order = await storage.createOrder({
+        customerEmail,
+        amount,
+        status: status || "paid",
+        paymentMethod: paymentMethod || "card",
+        productIds: productIds || [],
+        productTitles: productTitles || [],
+      });
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ error: "Failed to create order" });
+    }
+  });
+
   // Import products from WooCommerce CSV
   app.post("/api/import-csv", async (req, res) => {
     try {

@@ -1,7 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { fetchAndImportProducts } from "./xmlParser";
+import { pool } from "./db";
+import connectPg from "connect-pg-simple";
 
 const app = express();
 const httpServer = createServer(app);
@@ -11,6 +15,25 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+const PostgresSessionStore = connectPg(session);
+
+app.use(
+  session({
+    store: new PostgresSessionStore({
+      pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || "testbankbooks-secret-key",
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      secure: process.env.NODE_ENV === "production",
+    },
+  })
+);
 
 app.use(
   express.json({
@@ -96,8 +119,16 @@ app.use((req, res, next) => {
       host: "0.0.0.0",
       reusePort: true,
     },
-    () => {
+    async () => {
       log(`serving on port ${port}`);
+      
+      // Import products from XML feed on startup
+      try {
+        const count = await fetchAndImportProducts();
+        log(`Product database ready with ${count} products`, "import");
+      } catch (error) {
+        log(`Warning: Could not import products: ${error}`, "import");
+      }
     },
   );
 })();

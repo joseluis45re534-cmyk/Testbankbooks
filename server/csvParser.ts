@@ -173,3 +173,83 @@ export async function importFromCsv(csvPath: string): Promise<number> {
     throw error;
   }
 }
+
+export async function parseWooCommerceCsvFromBuffer(buffer: Buffer): Promise<InsertProduct[]> {
+  const content = buffer.toString("utf-8");
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    bom: true,
+    relax_column_count: true
+  }) as WooCommerceRow[];
+
+  const products: InsertProduct[] = [];
+
+  for (const row of records) {
+    const id = row["ID"] || "";
+    const title = cleanHtmlEntities(row["Name"] || "");
+    const rawDescription = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
+    const description = cleanDescription(rawDescription);
+    const price = row["Regular price"] || "0";
+    const salePrice = row["Sale price"] || null;
+    const imagesStr = row["Images"] || "";
+    const downloadUrl = row["Download 1 URL"] || row["Download file URL 1"] || null;
+    
+    if (!id || !title) continue;
+    
+    const { mainImage, additionalImages } = parseImages(imagesStr);
+
+    products.push({
+      id: String(id),
+      title,
+      description: description || null,
+      price: parseFloat(price) ? String(parseFloat(price).toFixed(2)) : "0.00",
+      salePrice: salePrice && parseFloat(salePrice) ? String(parseFloat(salePrice).toFixed(2)) : null,
+      imageUrl: mainImage,
+      additionalImages: additionalImages.length > 0 ? additionalImages : null,
+      productUrl: null,
+      availability: "in_stock",
+      condition: "new",
+      brand: "TestBankGrade",
+      category: extractCategory(title),
+      downloadPath: downloadUrl,
+    });
+  }
+
+  return products;
+}
+
+export async function importFromCsvBuffer(buffer: Buffer, mode: "replace" | "merge" = "replace"): Promise<{ imported: number; skipped: number; total: number }> {
+  try {
+    const products = await parseWooCommerceCsvFromBuffer(buffer);
+    console.log(`Parsed ${products.length} products from uploaded CSV`);
+    
+    if (products.length === 0) {
+      return { imported: 0, skipped: 0, total: 0 };
+    }
+
+    if (mode === "replace") {
+      await storage.clearAllProducts();
+      await storage.insertProducts(products);
+      const finalCount = await storage.getProductCount();
+      return { imported: finalCount, skipped: 0, total: finalCount };
+    } else {
+      let imported = 0;
+      let skipped = 0;
+      for (const product of products) {
+        const existing = await storage.getProductById(product.id);
+        if (existing) {
+          skipped++;
+        } else {
+          await storage.insertProducts([product]);
+          imported++;
+        }
+      }
+      const total = await storage.getProductCount();
+      return { imported, skipped, total };
+    }
+  } catch (error) {
+    console.error("Error importing from CSV buffer:", error);
+    throw error;
+  }
+}

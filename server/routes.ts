@@ -1,11 +1,12 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { importFromCsv } from "./csvParser";
+import { importFromCsv, importFromCsvBuffer } from "./csvParser";
 import { generateSecureToken, generateSignedUrl, verifySignedUrl, createWooCommerceAPI } from "./woocommerce";
 import { z } from "zod";
 import path from "path";
 import bcrypt from "bcryptjs";
+import multer from "multer";
 
 declare module 'express-session' {
   interface SessionData {
@@ -217,8 +218,8 @@ export async function registerRoutes(
     }
   });
 
-  // Import products from WooCommerce CSV
-  app.post("/api/import-csv", async (req, res) => {
+  // Import products from WooCommerce CSV (admin-protected)
+  app.post("/api/import-csv", requireAdmin, async (req, res) => {
     try {
       const csvPath = path.join(process.cwd(), "attached_assets/wc-product-export-5-2-2026-1770294821775_1770294931862.csv");
       const count = await importFromCsv(csvPath);
@@ -229,8 +230,8 @@ export async function registerRoutes(
     }
   });
 
-  // Import products from Shopify CSV
-  app.post("/api/import-shopify-csv", async (req, res) => {
+  // Import products from Shopify CSV (admin-protected)
+  app.post("/api/import-shopify-csv", requireAdmin, async (req, res) => {
     try {
       const { importFromShopifyCsv } = await import("./shopifyParser");
       const csvPath = path.join(process.cwd(), "attached_assets/products_export_1770303278268.csv");
@@ -563,6 +564,23 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error bulk updating products:", error);
       res.status(500).json({ error: "Failed to bulk update products" });
+    }
+  });
+
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
+
+  app.post("/api/admin/products/import-csv", requireAdmin, upload.single("csvFile"), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No CSV file uploaded" });
+      }
+
+      const mode = (req.body?.mode === "merge" ? "merge" : "replace") as "replace" | "merge";
+      const result = await importFromCsvBuffer(req.file.buffer, mode);
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("Error importing CSV:", error);
+      res.status(500).json({ error: "Failed to import products from CSV. Please check the file format." });
     }
   });
 

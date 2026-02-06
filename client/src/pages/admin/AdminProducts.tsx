@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, Edit2, Save, X, Plus, Trash2, Tag } from "lucide-react";
+import { Search, Edit2, Save, X, Plus, Trash2, Tag, Upload, FileUp, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -45,6 +46,11 @@ export default function AdminProducts() {
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkCategory, setBulkCategory] = useState("");
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importMode, setImportMode] = useState<"replace" | "merge">("merge");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ imported: number; skipped: number; total: number } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: products, isLoading } = useQuery<Product[]>({
@@ -106,6 +112,38 @@ export default function AdminProducts() {
     },
   });
 
+  const importCsvMutation = useMutation({
+    mutationFn: async ({ file, mode }: { file: File; mode: string }) => {
+      const formData = new FormData();
+      formData.append("csvFile", file);
+      formData.append("mode", mode);
+      const res = await fetch("/api/admin/products/import-csv", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Import failed");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products"] });
+      setImportResult({ imported: data.imported, skipped: data.skipped, total: data.total });
+      toast({ title: `Imported ${data.imported} products successfully` });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleImport = () => {
+    if (!importFile) return;
+    setImportResult(null);
+    importCsvMutation.mutate({ file: importFile, mode: importMode });
+  };
+
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
     setEditForm({
@@ -161,12 +199,18 @@ export default function AdminProducts() {
             <h1 className="text-3xl font-bold" data-testid="text-products-title">Product Management</h1>
             <p className="text-muted-foreground">Edit products, manage tags, and update pricing.</p>
           </div>
-          {selectedIds.length > 0 && (
-            <Button onClick={() => setShowBulkDialog(true)} data-testid="button-bulk-edit">
-              <Edit2 className="w-4 h-4 mr-2" />
-              Bulk Edit ({selectedIds.length})
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => { setShowImportDialog(true); setImportFile(null); setImportResult(null); }} data-testid="button-import-csv">
+              <Upload className="w-4 h-4 mr-2" />
+              Import WooCommerce CSV
             </Button>
-          )}
+            {selectedIds.length > 0 && (
+              <Button onClick={() => setShowBulkDialog(true)} data-testid="button-bulk-edit">
+                <Edit2 className="w-4 h-4 mr-2" />
+                Bulk Edit ({selectedIds.length})
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-4 gap-6">
@@ -406,6 +450,7 @@ export default function AdminProducts() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Bulk Edit {selectedIds.length} Products</DialogTitle>
+              <DialogDescription>Update price or category for selected products.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
@@ -438,6 +483,128 @@ export default function AdminProducts() {
               >
                 Apply to {selectedIds.length} Products
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showImportDialog} onOpenChange={(open) => { setShowImportDialog(open); if (!open) { setImportFile(null); setImportResult(null); } }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileUp className="w-5 h-5" />
+                Import WooCommerce CSV
+              </DialogTitle>
+              <DialogDescription>
+                Upload a CSV file exported from WooCommerce to import products.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div
+                className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer transition-colors hover-elevate"
+                onClick={() => fileInputRef.current?.click()}
+                data-testid="dropzone-csv"
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setImportFile(file);
+                      setImportResult(null);
+                    }
+                  }}
+                  data-testid="input-csv-file"
+                />
+                {importFile ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="font-medium">{importFile.name}</span>
+                    <span className="text-sm text-muted-foreground">({(importFile.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                ) : (
+                  <div>
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">Click to select a CSV file</p>
+                    <p className="text-xs text-muted-foreground mt-1">WooCommerce product export format (.csv)</p>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Import Mode</label>
+                <div className="flex gap-4 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer" data-testid="radio-merge">
+                    <input
+                      type="radio"
+                      name="importMode"
+                      checked={importMode === "merge"}
+                      onChange={() => setImportMode("merge")}
+                      className="accent-primary"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">Merge</span>
+                      <p className="text-xs text-muted-foreground">Add new products, skip existing ones</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer" data-testid="radio-replace">
+                    <input
+                      type="radio"
+                      name="importMode"
+                      checked={importMode === "replace"}
+                      onChange={() => setImportMode("replace")}
+                      className="accent-primary"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">Replace All</span>
+                      <p className="text-xs text-muted-foreground">Remove all existing products first</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {importMode === "replace" && (
+                <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 text-sm">
+                  <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                  <span>This will delete all existing products before importing. This action cannot be undone.</span>
+                </div>
+              )}
+
+              {importResult && (
+                <div className="p-3 rounded-md bg-green-50 dark:bg-green-950/30 text-sm space-y-1">
+                  <div className="flex items-center gap-2 font-medium text-green-700 dark:text-green-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Import Complete
+                  </div>
+                  <p data-testid="text-import-result">Imported: {importResult.imported} | Skipped: {importResult.skipped} | Total products: {importResult.total}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowImportDialog(false)} data-testid="button-cancel-import">
+                {importResult ? "Close" : "Cancel"}
+              </Button>
+              {!importResult && (
+                <Button
+                  onClick={handleImport}
+                  disabled={!importFile || importCsvMutation.isPending}
+                  data-testid="button-start-import"
+                >
+                  {importCsvMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Products
+                    </>
+                  )}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>

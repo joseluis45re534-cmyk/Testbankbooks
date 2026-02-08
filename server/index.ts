@@ -10,6 +10,8 @@ import connectPg from "connect-pg-simple";
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -27,10 +29,12 @@ app.use(
     }),
     secret: process.env.SESSION_SECRET || "testbankbooks-secret-key",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
     },
   })
 );

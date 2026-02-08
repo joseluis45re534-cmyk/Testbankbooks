@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function AdminLogin() {
   const [, setLocation] = useLocation();
@@ -18,7 +18,8 @@ export default function AdminLogin() {
     mutationFn: async () => {
       return apiRequest("POST", "/api/admin/login", { username, password });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/me"] });
       toast({ title: "Login successful", description: "Welcome to the admin dashboard" });
       setLocation("/admin/dashboard");
     },

@@ -335,7 +335,7 @@ export async function registerRoutes(
         const cleanTitle = escapeXml(product.title).substring(0, 150);
         
         xml += '  <item>\n';
-        xml += `    <g:id>${escapeXml(product.id)}</g:id>\n`;
+        xml += `    <g:id>${escapeXml(product.id.toString())}</g:id>\n`;
         xml += `    <g:title>${cleanTitle}</g:title>\n`;
         xml += `    <g:description>${escapeXml(truncatedDescription)}</g:description>\n`;
         xml += `    <g:link>${baseUrl}/products/${product.slug}</g:link>\n`;
@@ -344,8 +344,8 @@ export async function registerRoutes(
           xml += `    <g:image_link>${escapeXml(product.imageUrl)}</g:image_link>\n`;
         }
         
-        if (product.additionalImages && product.additionalImages.length > 0) {
-          for (const img of product.additionalImages.slice(0, 10)) {
+        if (product.additionalImages && Array.isArray(product.additionalImages) && product.additionalImages.length > 0) {
+          for (const img of (product.additionalImages as string[]).slice(0, 10)) {
             xml += `    <g:additional_image_link>${escapeXml(img)}</g:additional_image_link>\n`;
           }
         }
@@ -357,7 +357,7 @@ export async function registerRoutes(
           xml += `    <g:sale_price>${parseFloat(product.salePrice!).toFixed(2)} USD</g:sale_price>\n`;
         }
         
-        xml += `    <g:brand>Testbankbooks</g:brand>\n`;
+        xml += `    <g:brand>${escapeXml(product.brand || "Testbankbooks")}</g:brand>\n`;
         xml += `    <g:condition>${product.condition || "new"}</g:condition>\n`;
         xml += `    <g:google_product_category>Media &gt; Books &gt; Non-Fiction Books &gt; Education Books</g:google_product_category>\n`;
         xml += `    <g:product_type>${escapeXml(product.category || "Educational Materials")}</g:product_type>\n`;

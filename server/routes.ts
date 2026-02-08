@@ -412,17 +412,24 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Check if admin exists
       let admin = await storage.getAdminByUsername(username);
       
+      console.log(`Admin login attempt for: ${username}, found: ${!!admin}`);
+
       // Create default admin if none exists
       if (!admin && username === "admin") {
+        console.log("Creating default admin user...");
         const hashedPassword = await bcrypt.hash("admin123", 10);
         admin = await storage.createAdminUser({ username: "admin", password: hashedPassword });
+        console.log("Default admin user created successfully");
       }
 
       if (!admin) {
+        console.log(`Login failed: user ${username} not found`);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
       const isValid = await bcrypt.compare(password, admin.password);
+      console.log(`Password check for ${username}: ${isValid}`);
+
       if (!isValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -430,7 +437,16 @@ Sitemap: ${baseUrl}/sitemap.xml
       req.session.adminId = admin.id;
       req.session.adminUsername = admin.username;
       
-      res.json({ success: true, username: admin.username });
+      console.log(`Session established for ${username}: ${admin.id}`);
+      
+      // Force session save to ensure it's persisted before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Session save failed" });
+        }
+        res.json({ success: true, username: admin.username });
+      });
     } catch (error) {
       console.error("Admin login error:", error);
       res.status(500).json({ error: "Login failed" });

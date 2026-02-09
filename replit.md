@@ -80,7 +80,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Google Merchant Center Compliance (Latest - Feb 2026)
+### PayPal Sandbox Integration (Latest - Feb 2026)
+- **PayPal checkout**: Replaced card form with PayPal Web SDK v6 checkout button
+- **Server SDK**: `@paypal/paypal-server-sdk` for order creation and capture
+- **Routes**: `/paypal/setup` (client token), `/paypal/order` (create), `/paypal/order/:orderID/capture` (capture)
+- **Two-step flow**: Contact info (step 1) then PayPal payment (step 2)
+- **Order integration**: PayPal capture success triggers internal order creation and cart clearing
+- **Environment**: Sandbox mode in development, production mode when NODE_ENV=production
+- **Key files**: `server/paypal.ts`, `client/src/components/PayPalButton.tsx`
+
+### Google Merchant Center Compliance (Feb 2026)
 - **Legal pages**: Privacy Policy, Terms & Conditions, Refund Policy, Shipping Policy, Contact Us - all linked in footer
 - **Google Shopping XML feed**: Available at `/feed/google-shopping.xml` with all required fields (id, title, description, link, image, price, sale_price, availability, condition, brand, google_product_category, product_type, identifier_exists)
 - **Enhanced structured data**: Product JSON-LD with brand, SKU, condition, priceValidUntil, canonical URLs; Organization and WebSite schemas on homepage
@@ -119,5 +128,7 @@ Preferred communication style: Simple, everyday language.
 - `client/src/pages/Home.tsx` - Product listing with search/filter
 - `client/src/pages/ProductDetail.tsx` - Product detail with add to cart
 - `client/src/pages/Cart.tsx` - Shopping cart management
-- `client/src/pages/Checkout.tsx` - Two-step checkout flow
+- `server/paypal.ts` - PayPal SDK integration (order creation, capture, client token)
+- `client/src/components/PayPalButton.tsx` - PayPal checkout button component
+- `client/src/pages/Checkout.tsx` - Two-step checkout flow with PayPal payment
 - `client/src/pages/admin/AdminChat.tsx` - Admin chat management interface

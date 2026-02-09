@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock, Loader2 } from "lucide-react";
-import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
+import { SiPaypal } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { CartItemWithProduct } from "@shared/schema";
+import PayPalButton from "@/components/PayPalButton";
 
 export default function Checkout() {
   const [step, setStep] = useState(1);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -31,44 +34,52 @@ export default function Checkout() {
     return sum + price * item.quantity;
   }, 0);
 
-  const placeOrderMutation = useMutation({
-    mutationFn: async () => {
-      const productIds = cartItems.map(item => item.productId);
-      const productTitles = cartItems.map(item => item.product?.title || "");
-      
-      return apiRequest("POST", "/api/orders", {
-        customerEmail: email,
-        amount: subtotal.toFixed(2),
-        status: "paid",
-        paymentMethod: "card",
-        productIds,
-        productTitles,
-      });
-    },
-    onSuccess: async (response) => {
-      const order = await response.json();
-      await apiRequest("DELETE", "/api/cart");
+  const handlePaymentSuccess = async (paypalOrderId: string, captureData: any) => {
+    try {
+      if (captureData.status !== "COMPLETED" || !captureData.internalOrder) {
+        toast({
+          title: "Payment Not Completed",
+          description: "Your payment was not completed. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      setLocation(`/thank-you/${order.id}`);
-    },
-    onError: () => {
+
       toast({
-        title: "Order Failed",
-        description: "There was an error processing your order. Please try again.",
+        title: "Payment Successful",
+        description: "Your order has been placed successfully!",
+      });
+
+      setLocation(`/thank-you/${captureData.internalOrder.id}`);
+    } catch (error) {
+      console.error("Order handling failed:", error);
+      toast({
+        title: "Order Error",
+        description: "Payment was received but there was an issue. Please contact support.",
         variant: "destructive",
       });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (step === 1) {
-      const emailInput = document.getElementById("email") as HTMLInputElement;
-      setEmail(emailInput?.value || "");
-      setStep(2);
-    } else {
-      placeOrderMutation.mutate();
     }
+  };
+
+  const handlePaymentError = (error: any) => {
+    toast({
+      title: "Payment Failed",
+      description: "There was an error processing your payment. Please try again.",
+      variant: "destructive",
+    });
+  };
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailInput = document.getElementById("email") as HTMLInputElement;
+    const firstNameInput = document.getElementById("firstName") as HTMLInputElement;
+    const lastNameInput = document.getElementById("lastName") as HTMLInputElement;
+    setEmail(emailInput?.value || "");
+    setFirstName(firstNameInput?.value || "");
+    setLastName(lastNameInput?.value || "");
+    setStep(2);
   };
 
   if (cartItems.length === 0 && !isLoading) {
@@ -147,8 +158,8 @@ export default function Checkout() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleSubmit}>
-                    {step === 1 ? (
+                  {step === 1 ? (
+                    <form onSubmit={handleContactSubmit}>
                       <div className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -173,67 +184,53 @@ export default function Checkout() {
                           Continue to Payment
                         </Button>
                       </div>
-                    ) : (
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
-                            <SiVisa className="w-8 h-5 text-[#1434CB]" />
+                    </form>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="p-4 bg-muted rounded-md">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Contact</p>
+                            <p className="font-medium">{firstName} {lastName}</p>
+                            <p className="text-sm text-muted-foreground">{email}</p>
                           </div>
-                          <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
-                            <SiMastercard className="w-8 h-5 text-[#EB001B]" />
-                          </div>
-                          <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
-                            <SiPaypal className="w-8 h-5 text-[#00457C]" />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="cardNumber">Card Number</Label>
-                          <Input id="cardNumber" placeholder="1234 5678 9012 3456" required data-testid="input-card-number" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiry">Expiry Date</Label>
-                            <Input id="expiry" placeholder="MM/YY" required data-testid="input-expiry" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvv">CVV</Label>
-                            <Input id="cvv" placeholder="123" required data-testid="input-cvv" />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="cardName">Name on Card</Label>
-                          <Input id="cardName" placeholder="JOHN DOE" required data-testid="input-card-name" />
-                        </div>
-
-                        <div className="flex gap-4 pt-4">
-                          <Button type="button" variant="outline" className="flex-1" onClick={() => setStep(1)}>
-                            Back
-                          </Button>
-                          <Button 
-                            type="submit" 
-                            className="flex-1" 
-                            size="lg" 
-                            disabled={placeOrderMutation.isPending}
-                            data-testid="button-place-order"
-                          >
-                            {placeOrderMutation.isPending ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Processing...
-                              </>
-                            ) : (
-                              `Place Order - $${subtotal.toFixed(2)}`
-                            )}
+                          <Button variant="ghost" size="sm" onClick={() => setStep(1)} data-testid="button-edit-contact">
+                            Edit
                           </Button>
                         </div>
                       </div>
-                    )}
-                  </form>
+
+                      <div className="text-center space-y-4">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <SiPaypal className="w-6 h-6 text-[#00457C]" />
+                          <span className="font-medium text-lg">Pay with PayPal</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Click the button below to securely pay ${subtotal.toFixed(2)} via PayPal
+                        </p>
+                        <div className="flex justify-center" data-testid="paypal-button-container">
+                          <PayPalButton
+                            amount={subtotal.toFixed(2)}
+                            currency="USD"
+                            intent="CAPTURE"
+                            customerEmail={email}
+                            onPaymentSuccess={handlePaymentSuccess}
+                            onPaymentError={handlePaymentError}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-4">
+                        <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} data-testid="button-back-step">
+                          Back to Contact Info
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              <div className="flex items-center justify-center gap-6 mt-6 text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-6 mt-6 text-sm text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 text-primary" />
                   <span>SSL Encrypted</span>

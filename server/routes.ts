@@ -7,6 +7,7 @@ import { z } from "zod";
 import path from "path";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 
 declare module 'express-session' {
   interface SessionData {
@@ -63,6 +64,97 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // PayPal integration routes
+  app.get("/paypal/setup", async (req, res) => {
+    await loadPaypalDefault(req, res);
+  });
+
+  app.post("/paypal/order", async (req, res) => {
+    try {
+      const sessionId = req.sessionID;
+      const cartItems = await storage.getCartItems(sessionId);
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ error: "Cart is empty" });
+      }
+
+      let total = 0;
+      for (const item of cartItems) {
+        const product = item.product;
+        if (!product) continue;
+        const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
+        total += price * item.quantity;
+      }
+
+      req.body.amount = total.toFixed(2);
+      req.body.currency = "USD";
+      req.body.intent = "CAPTURE";
+
+      await createPaypalOrder(req, res);
+    } catch (error) {
+      console.error("PayPal order error:", error);
+      res.status(500).json({ error: "Failed to create PayPal order" });
+    }
+  });
+
+  app.post("/paypal/order/:orderID/capture", async (req, res) => {
+    try {
+      const { customerEmail } = req.body;
+      const sessionId = req.sessionID;
+
+      const cartItems = await storage.getCartItems(sessionId);
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ error: "Cart is empty" });
+      }
+
+      let serverTotal = 0;
+      const productIds: string[] = [];
+      const productTitles: string[] = [];
+      for (const item of cartItems) {
+        const product = item.product;
+        if (!product) continue;
+        const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
+        serverTotal += price * item.quantity;
+        productIds.push(String(product.id));
+        productTitles.push(product.title);
+      }
+
+      const captureResult = await capturePaypalOrderDirect(req.params.orderID);
+
+      if (captureResult.httpStatusCode >= 400) {
+        return res.status(captureResult.httpStatusCode).json(captureResult.jsonResponse);
+      }
+
+      if (captureResult.jsonResponse.status !== "COMPLETED") {
+        return res.status(400).json({ error: "Payment not completed", details: captureResult.jsonResponse });
+      }
+
+      const capturedAmount = captureResult.jsonResponse.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value;
+      if (capturedAmount && Math.abs(parseFloat(capturedAmount) - serverTotal) > 0.01) {
+        console.error(`Amount mismatch: PayPal=${capturedAmount}, Server=${serverTotal.toFixed(2)}`);
+        return res.status(400).json({ error: "Payment amount mismatch" });
+      }
+
+      const order = await storage.createOrder({
+        customerEmail: customerEmail || "unknown@email.com",
+        amount: capturedAmount || serverTotal.toFixed(2),
+        status: "paid",
+        paymentMethod: "paypal",
+        productIds,
+        productTitles,
+      });
+
+      await storage.clearCart(sessionId);
+
+      res.json({
+        ...captureResult.jsonResponse,
+        internalOrder: order,
+      });
+    } catch (error) {
+      console.error("PayPal capture error:", error);
+      res.status(500).json({ error: "Failed to capture PayPal order" });
+    }
+  });
+
   // Get all products with optional search and category filter
   app.get("/api/products", async (req, res) => {
     try {
@@ -193,8 +285,8 @@ export async function registerRoutes(
     }
   });
 
-  // Create order (public checkout endpoint)
-  app.post("/api/orders", async (req, res) => {
+  // Create order (admin only - public orders are created via PayPal capture flow)
+  app.post("/api/orders", requireAdmin, async (req, res) => {
     try {
       const { customerEmail, amount, status, paymentMethod, productIds, productTitles } = req.body;
       

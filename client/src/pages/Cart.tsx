@@ -111,7 +111,7 @@ export default function Cart() {
               <ShoppingBag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
               <p className="text-muted-foreground mb-6">Add some products to get started</p>
-              <Link href="/">
+              <Link href="/shop">
                 <Button data-testid="button-continue-shopping">
                   Continue Shopping
                 </Button>
@@ -237,7 +237,7 @@ export default function Cart() {
                       </Button>
                     </Link>
 
-                    <Link href="/">
+                    <Link href="/shop">
                       <Button variant="ghost" className="w-full mt-2">
                         Continue Shopping
                       </Button>

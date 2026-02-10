@@ -1,0 +1,202 @@
+import { useState, useEffect, useRef } from "react";
+import { loadStripe, type Stripe, type StripeElements } from "@stripe/stripe-js";
+import { Button } from "@/components/ui/button";
+import { Loader2, CreditCard } from "lucide-react";
+
+let stripePromise: Promise<Stripe | null> | null = null;
+
+function getStripe() {
+  if (!stripePromise) {
+    stripePromise = fetch("/api/stripe/config")
+      .then((res) => res.json())
+      .then((data) => loadStripe(data.publishableKey));
+  }
+  return stripePromise;
+}
+
+interface StripeCheckoutProps {
+  amount: string;
+  customerEmail: string;
+  onPaymentSuccess: (paymentIntentId: string, orderData: any) => void;
+  onPaymentError: (error: any) => void;
+}
+
+export default function StripeCheckout({
+  amount,
+  customerEmail,
+  onPaymentSuccess,
+  onPaymentError,
+}: StripeCheckoutProps) {
+  const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [elements, setElements] = useState<StripeElements | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
+  const mountedRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+
+    let cancelled = false;
+    let elementsInstance: StripeElements | null = null;
+
+    const init = async () => {
+      try {
+        const [stripeInstance, intentRes] = await Promise.all([
+          getStripe(),
+          fetch("/api/stripe/create-payment-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customerEmail }),
+            credentials: "include",
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        if (!intentRes.ok) {
+          const err = await intentRes.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to create payment intent");
+        }
+
+        const { clientSecret: secret } = await intentRes.json();
+
+        if (stripeInstance && secret && containerRef.current) {
+          setStripe(stripeInstance);
+
+          elementsInstance = stripeInstance.elements({
+            clientSecret: secret,
+            appearance: {
+              theme: "stripe",
+              variables: {
+                colorPrimary: "#2563eb",
+                borderRadius: "6px",
+              },
+            },
+          });
+
+          const paymentElement = elementsInstance.create("payment");
+          paymentElement.mount(containerRef.current);
+
+          paymentElement.on("change", (event) => {
+            if (event.complete) {
+              setCardError(null);
+            }
+          });
+
+          setElements(elementsInstance);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Stripe init error:", error);
+          setCardError("Failed to initialize payment. Please try again.");
+          setLoading(false);
+        }
+      }
+    };
+
+    init();
+
+    return () => {
+      cancelled = true;
+      if (elementsInstance) {
+        const pe = elementsInstance.getElement("payment");
+        if (pe) pe.unmount();
+      }
+    };
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setCardError(null);
+
+    try {
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          receipt_email: customerEmail,
+          return_url: window.location.origin + "/checkout",
+        },
+        redirect: "if_required",
+      });
+
+      if (error) {
+        setCardError(error.message || "Payment failed");
+        setProcessing(false);
+        return;
+      }
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        const confirmRes = await fetch("/api/stripe/confirm-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paymentIntentId: paymentIntent.id,
+            customerEmail,
+          }),
+          credentials: "include",
+        });
+
+        if (!confirmRes.ok) {
+          const err = await confirmRes.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to confirm payment");
+        }
+
+        const orderData = await confirmRes.json();
+        onPaymentSuccess(paymentIntent.id, orderData);
+      } else {
+        setCardError("Payment was not completed. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      setCardError(error.message || "Payment failed");
+      onPaymentError(error);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div ref={containerRef} className="min-h-[120px]">
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {cardError && (
+        <p className="text-sm text-destructive" data-testid="text-stripe-error">{cardError}</p>
+      )}
+
+      <Button
+        type="submit"
+        className="w-full"
+        size="lg"
+        disabled={!stripe || !elements || processing || loading}
+        data-testid="button-stripe-pay"
+      >
+        {processing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <CreditCard className="w-4 h-4 mr-2" />
+            Pay ${amount}
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}

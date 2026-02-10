@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Zap, Shield, CheckCircle, BookOpen, 
   ChevronLeft, ChevronRight, Download, Clock, HeadphonesIcon, 
@@ -89,6 +89,7 @@ const howToSteps = [
 
 export default function ProductDetail() {
   const [, params] = useRoute("/products/:slug");
+  const [, setLocation] = useLocation();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const { toast } = useToast();
@@ -127,6 +128,24 @@ export default function ProductDetail() {
       toast({
         title: "Error",
         description: "Failed to add item to cart",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const buyNowMutation = useMutation({
+    mutationFn: async () => {
+      if (!product) return;
+      return apiRequest("POST", "/api/cart", { productId: product.id, quantity: 1 });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      setLocation("/checkout");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to process. Please try again.",
         variant: "destructive",
       });
     },
@@ -370,16 +389,29 @@ export default function ProductDetail() {
                 </span>
               </div>
 
-              <Button
-                size="lg"
-                className="w-full text-lg h-14"
-                onClick={() => addToCartMutation.mutate()}
-                disabled={addToCartMutation.isPending}
-                data-testid="button-add-to-cart"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {addToCartMutation.isPending ? "Adding to Cart..." : "Add to Cart"}
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button
+                  size="lg"
+                  className="w-full text-lg"
+                  onClick={() => buyNowMutation.mutate()}
+                  disabled={buyNowMutation.isPending}
+                  data-testid="button-buy-now"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  {buyNowMutation.isPending ? "Processing..." : "Buy Now"}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full text-lg"
+                  onClick={() => addToCartMutation.mutate()}
+                  disabled={addToCartMutation.isPending}
+                  data-testid="button-add-to-cart"
+                >
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  {addToCartMutation.isPending ? "Adding to Cart..." : "Add to Cart"}
+                </Button>
+              </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="text-center p-3 bg-muted/50 rounded-lg">

@@ -8,6 +8,7 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
+import { createStripePaymentIntent, stripe } from "./stripe";
 
 declare module 'express-session' {
   interface SessionData {
@@ -152,6 +153,116 @@ export async function registerRoutes(
     } catch (error) {
       console.error("PayPal capture error:", error);
       res.status(500).json({ error: "Failed to capture PayPal order" });
+    }
+  });
+
+  // Stripe integration routes
+  app.get("/api/stripe/config", (req, res) => {
+    res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
+  });
+
+  app.post("/api/stripe/create-payment-intent", async (req, res) => {
+    try {
+      const sessionId = req.sessionID;
+      const { customerEmail } = req.body;
+
+      const cartItems = await storage.getCartItems(sessionId);
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ error: "Cart is empty" });
+      }
+
+      let total = 0;
+      const productIds: string[] = [];
+      const productTitles: string[] = [];
+      for (const item of cartItems) {
+        const product = item.product;
+        if (!product) continue;
+        const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
+        total += price * item.quantity;
+        productIds.push(String(product.id));
+        productTitles.push(product.title);
+      }
+
+      const paymentIntent = await createStripePaymentIntent(total, "usd", {
+        customerEmail: customerEmail || "",
+        sessionId,
+        productIds: productIds.join(","),
+      });
+
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+        amount: total.toFixed(2),
+      });
+    } catch (error) {
+      console.error("Stripe payment intent error:", error);
+      res.status(500).json({ error: "Failed to create payment intent" });
+    }
+  });
+
+  app.post("/api/stripe/confirm-payment", async (req, res) => {
+    try {
+      const { paymentIntentId, customerEmail } = req.body;
+      const sessionId = req.sessionID;
+
+      if (!paymentIntentId) {
+        return res.status(400).json({ error: "Payment intent ID required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (paymentIntent.status !== "succeeded") {
+        return res.status(400).json({ error: "Payment not completed", status: paymentIntent.status });
+      }
+
+      if (paymentIntent.metadata.sessionId !== sessionId) {
+        console.error(`Session mismatch: PI=${paymentIntent.metadata.sessionId}, Current=${sessionId}`);
+        return res.status(403).json({ error: "Payment session mismatch" });
+      }
+
+      const cartItems = await storage.getCartItems(sessionId);
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ error: "Cart is empty" });
+      }
+
+      let serverTotal = 0;
+      const productIds: string[] = [];
+      const productTitles: string[] = [];
+      for (const item of cartItems) {
+        const product = item.product;
+        if (!product) continue;
+        const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
+        serverTotal += price * item.quantity;
+        productIds.push(String(product.id));
+        productTitles.push(product.title);
+      }
+
+      const piProductIds = paymentIntent.metadata.productIds?.split(",") || [];
+      if (piProductIds.length !== productIds.length || !piProductIds.every((id: string) => productIds.includes(id))) {
+        console.error(`Product mismatch: PI=${piProductIds}, Cart=${productIds}`);
+        return res.status(400).json({ error: "Cart contents changed since payment" });
+      }
+
+      const paidAmount = paymentIntent.amount / 100;
+      if (Math.abs(paidAmount - serverTotal) > 0.01) {
+        console.error(`Amount mismatch: Stripe=${paidAmount}, Server=${serverTotal.toFixed(2)}`);
+        return res.status(400).json({ error: "Payment amount mismatch" });
+      }
+
+      const order = await storage.createOrder({
+        customerEmail: customerEmail || "unknown@email.com",
+        amount: paidAmount.toFixed(2),
+        status: "paid",
+        paymentMethod: "stripe",
+        productIds,
+        productTitles,
+      });
+
+      await storage.clearCart(sessionId);
+
+      res.json({ success: true, order });
+    } catch (error) {
+      console.error("Stripe confirm error:", error);
+      res.status(500).json({ error: "Failed to confirm payment" });
     }
   });
 

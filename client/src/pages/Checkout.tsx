@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock, Loader2 } from "lucide-react";
+import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock } from "lucide-react";
 import { SiPaypal } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +12,12 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import type { CartItemWithProduct } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
+import StripeCheckout from "@/components/StripeCheckout";
+
+type PaymentMethod = "stripe" | "paypal";
 
 export default function Checkout() {
   const [step, setStep] = useState(1);
@@ -23,6 +26,7 @@ export default function Checkout() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -34,7 +38,7 @@ export default function Checkout() {
     return sum + price * item.quantity;
   }, 0);
 
-  const handlePaymentSuccess = async (paypalOrderId: string, captureData: any) => {
+  const handlePayPalSuccess = async (paypalOrderId: string, captureData: any) => {
     try {
       if (captureData.status !== "COMPLETED" || !captureData.internalOrder) {
         toast({
@@ -53,6 +57,35 @@ export default function Checkout() {
       });
 
       setLocation(`/thank-you/${captureData.internalOrder.id}`);
+    } catch (error) {
+      console.error("Order handling failed:", error);
+      toast({
+        title: "Order Error",
+        description: "Payment was received but there was an issue. Please contact support.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStripeSuccess = async (paymentIntentId: string, orderData: any) => {
+    try {
+      if (!orderData.order) {
+        toast({
+          title: "Payment Error",
+          description: "Payment processed but order creation failed. Please contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+
+      toast({
+        title: "Payment Successful",
+        description: "Your order has been placed successfully!",
+      });
+
+      setLocation(`/thank-you/${orderData.order.id}`);
     } catch (error) {
       console.error("Order handling failed:", error);
       toast({
@@ -91,7 +124,7 @@ export default function Checkout() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Your cart is empty</h1>
             <p className="text-muted-foreground mb-6">Add some products before checkout</p>
-            <Link href="/">
+            <Link href="/shop">
               <Button>
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Continue Shopping
@@ -200,25 +233,64 @@ export default function Checkout() {
                         </div>
                       </div>
 
-                      <div className="text-center space-y-4">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <SiPaypal className="w-6 h-6 text-[#00457C]" />
-                          <span className="font-medium text-lg">Pay with PayPal</span>
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-muted-foreground">Choose payment method</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("stripe")}
+                            className={`flex items-center justify-center gap-2 p-3 rounded-md border-2 transition-colors ${
+                              paymentMethod === "stripe"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-muted-foreground/50"
+                            }`}
+                            data-testid="button-select-stripe"
+                          >
+                            <CreditCard className="w-5 h-5" />
+                            <span className="font-medium text-sm">Card</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("paypal")}
+                            className={`flex items-center justify-center gap-2 p-3 rounded-md border-2 transition-colors ${
+                              paymentMethod === "paypal"
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-muted-foreground/50"
+                            }`}
+                            data-testid="button-select-paypal"
+                          >
+                            <SiPaypal className="w-5 h-5 text-[#00457C]" />
+                            <span className="font-medium text-sm">PayPal</span>
+                          </button>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Click the button below to securely pay ${subtotal.toFixed(2)} via PayPal
-                        </p>
-                        <div className="flex justify-center" data-testid="paypal-button-container">
-                          <PayPalButton
+                      </div>
+
+                      {paymentMethod === "stripe" ? (
+                        <div data-testid="stripe-checkout-container">
+                          <StripeCheckout
                             amount={subtotal.toFixed(2)}
-                            currency="USD"
-                            intent="CAPTURE"
                             customerEmail={email}
-                            onPaymentSuccess={handlePaymentSuccess}
+                            onPaymentSuccess={handleStripeSuccess}
                             onPaymentError={handlePaymentError}
                           />
                         </div>
-                      </div>
+                      ) : (
+                        <div className="text-center space-y-4">
+                          <p className="text-sm text-muted-foreground">
+                            Click the button below to securely pay ${subtotal.toFixed(2)} via PayPal
+                          </p>
+                          <div className="flex justify-center" data-testid="paypal-button-container">
+                            <PayPalButton
+                              amount={subtotal.toFixed(2)}
+                              currency="USD"
+                              intent="CAPTURE"
+                              customerEmail={email}
+                              onPaymentSuccess={handlePayPalSuccess}
+                              onPaymentError={handlePaymentError}
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       <div className="pt-4">
                         <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} data-testid="button-back-step">

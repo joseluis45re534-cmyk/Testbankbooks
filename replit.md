@@ -80,7 +80,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### PayPal Sandbox Integration (Latest - Feb 2026)
+### Stripe + PayPal Dual Payment Integration (Latest - Feb 2026)
+- **Stripe checkout**: `@stripe/stripe-js` for client-side Elements, `stripe` npm for server-side
+- **Server routes**: `/api/stripe/config` (publishable key), `/api/stripe/create-payment-intent` (server-side amount), `/api/stripe/confirm-payment` (verify + create order)
+- **Payment method selector**: Checkout step 2 lets customer choose Card (Stripe) or PayPal
+- **Stripe Elements**: Payment Element with automatic payment method detection
+- **Buy Now button**: Product detail page has "Buy Now" (add to cart + redirect to checkout) and "Add to Cart"
+- **Key files**: `server/stripe.ts`, `client/src/components/StripeCheckout.tsx`
+- **Secrets**: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` stored as Replit secrets (not via integration connector)
+
+### PayPal Sandbox Integration (Feb 2026)
 - **PayPal checkout**: Replaced card form with PayPal Web SDK v6 checkout button
 - **Server SDK**: `@paypal/paypal-server-sdk` for order creation and capture
 - **Routes**: `/paypal/setup` (client token), `/paypal/order` (create), `/paypal/order/:orderID/capture` (capture)

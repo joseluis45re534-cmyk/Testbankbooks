@@ -85,7 +85,7 @@ export default function ContactUs() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-10">
             <Card>
               <CardContent className="pt-6 text-center">
                 <Mail className="w-8 h-8 text-primary mx-auto mb-3" />
@@ -105,12 +105,20 @@ export default function ContactUs() {
                 <Phone className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Call Us</h2>
                 <a
-                  href="tel:1-800-TESTBANK"
+                  href="tel:+13392284593"
                   className="text-muted-foreground hover:underline text-sm"
                   data-testid="link-contact-phone"
                 >
-                  1-800-TESTBANK
+                  +1 (339) 228-4593
                 </a>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
+                <h2 className="font-semibold mb-1">Our Address</h2>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">66 Cliff Rd, Nottingham NG1 1GY, UK</p>
               </CardContent>
             </Card>
 
@@ -227,10 +235,17 @@ export default function ContactUs() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Phone</p>
+                      <a href="tel:+13392284593" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+1 (339) 228-4593</a>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold text-sm">Testbankbooks</p>
-                      <p className="text-muted-foreground text-sm">Your trusted source for premium nursing test banks and study guides.</p>
+                      <p className="font-semibold text-sm">Our Address</p>
+                      <p className="text-muted-foreground text-sm">66 Cliff Rd, Nottingham NG1 1GY, UK</p>
                     </div>
                   </div>
                 </CardContent>

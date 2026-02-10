@@ -1,4 +1,4 @@
-import { BookOpen, Shield, CreditCard, Zap, Mail, Phone } from "lucide-react";
+import { BookOpen, Shield, CreditCard, Zap, Mail, Phone, MapPin } from "lucide-react";
 import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
 
 export function Footer() {
@@ -40,7 +40,11 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <span>1-800-TESTBANK</span>
+                <a href="tel:+13392284593" className="hover:text-foreground transition-colors">+1 (339) 228-4593</a>
+              </li>
+              <li className="flex items-start gap-2 mt-2">
+                <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>66 Cliff Rd, Nottingham NG1 1GY, UK</span>
               </li>
             </ul>
             <div className="mt-4 space-y-2">

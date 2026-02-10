@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Save, Loader2, CreditCard, Bitcoin, DollarSign } from "lucide-react";
+import { Save, Loader2, CreditCard, DollarSign, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,12 +18,41 @@ interface PaymentSetting {
   updatedAt: string;
 }
 
-interface PaymentConfig {
-  clientId?: string;
-  clientSecret?: string;
-  publishableKey?: string;
-  secretKey?: string;
-  enabled?: boolean;
+function MaskedInput({
+  value,
+  onChange,
+  placeholder,
+  testId,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder: string;
+  testId: string;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <Input
+        type={visible ? "text" : "password"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="pr-10"
+        data-testid={testId}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="absolute right-0 top-0"
+        onClick={() => setVisible(!visible)}
+        data-testid={`${testId}-toggle`}
+      >
+        {visible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+      </Button>
+    </div>
+  );
 }
 
 export default function AdminSettings() {
@@ -31,7 +60,6 @@ export default function AdminSettings() {
 
   const [paypalConfig, setPaypalConfig] = useState({ clientId: "", clientSecret: "", enabled: false });
   const [stripeConfig, setStripeConfig] = useState({ publishableKey: "", secretKey: "", enabled: false });
-  const [cryptoEnabled, setCryptoEnabled] = useState(false);
 
   const { data: settings, isLoading } = useQuery<PaymentSetting[]>({
     queryKey: ["/api/admin/payment-settings"],
@@ -41,22 +69,22 @@ export default function AdminSettings() {
     if (settings) {
       const paypal = settings.find((s) => s.provider === "paypal");
       const stripe = settings.find((s) => s.provider === "stripe");
-      const crypto = settings.find((s) => s.provider === "crypto");
 
       if (paypal?.config) {
         try {
           const config = JSON.parse(paypal.config);
-          setPaypalConfig({ ...config, enabled: paypal.enabled });
+          setPaypalConfig({ clientId: config.clientId || "", clientSecret: config.clientSecret || "", enabled: paypal.enabled ?? false });
         } catch {}
+      } else if (paypal) {
+        setPaypalConfig((prev) => ({ ...prev, enabled: paypal.enabled ?? false }));
       }
       if (stripe?.config) {
         try {
           const config = JSON.parse(stripe.config);
-          setStripeConfig({ ...config, enabled: stripe.enabled });
+          setStripeConfig({ publishableKey: config.publishableKey || "", secretKey: config.secretKey || "", enabled: stripe.enabled ?? false });
         } catch {}
-      }
-      if (crypto) {
-        setCryptoEnabled(crypto.enabled ?? false);
+      } else if (stripe) {
+        setStripeConfig((prev) => ({ ...prev, enabled: stripe.enabled ?? false }));
       }
     }
   }, [settings]);
@@ -73,17 +101,6 @@ export default function AdminSettings() {
     },
   });
 
-  const handleSavePaypal = () => {
-    saveMutation.mutate({
-      provider: "paypal",
-      enabled: paypalConfig.enabled,
-      config: JSON.stringify({
-        clientId: paypalConfig.clientId,
-        clientSecret: paypalConfig.clientSecret,
-      }),
-    });
-  };
-
   const handleSaveStripe = () => {
     saveMutation.mutate({
       provider: "stripe",
@@ -95,10 +112,14 @@ export default function AdminSettings() {
     });
   };
 
-  const handleSaveCrypto = () => {
+  const handleSavePaypal = () => {
     saveMutation.mutate({
-      provider: "crypto",
-      enabled: cryptoEnabled,
+      provider: "paypal",
+      enabled: paypalConfig.enabled,
+      config: JSON.stringify({
+        clientId: paypalConfig.clientId,
+        clientSecret: paypalConfig.clientSecret,
+      }),
     });
   };
 
@@ -118,69 +139,14 @@ export default function AdminSettings() {
     <AdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-settings-title">Payment Settings</h1>
-          <p className="text-muted-foreground">Configure your payment gateway credentials.</p>
+          <h1 className="text-3xl font-bold" data-testid="text-settings-title">API Key Settings</h1>
+          <p className="text-muted-foreground">Manage your payment gateway API keys. Keys saved here override environment variables.</p>
         </div>
 
         <div className="grid gap-6">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                    <DollarSign className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <CardTitle>PayPal</CardTitle>
-                    <CardDescription>Accept payments via PayPal</CardDescription>
-                  </div>
-                </div>
-                <Switch
-                  checked={paypalConfig.enabled}
-                  onCheckedChange={(checked) => setPaypalConfig({ ...paypalConfig, enabled: checked })}
-                  data-testid="switch-paypal"
-                />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Client ID</label>
-                <Input
-                  type="password"
-                  placeholder="Enter PayPal Client ID"
-                  value={paypalConfig.clientId}
-                  onChange={(e) => setPaypalConfig({ ...paypalConfig, clientId: e.target.value })}
-                  data-testid="input-paypal-client-id"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Client Secret</label>
-                <Input
-                  type="password"
-                  placeholder="Enter PayPal Client Secret"
-                  value={paypalConfig.clientSecret}
-                  onChange={(e) => setPaypalConfig({ ...paypalConfig, clientSecret: e.target.value })}
-                  data-testid="input-paypal-client-secret"
-                />
-              </div>
-              <Button
-                onClick={handleSavePaypal}
-                disabled={saveMutation.isPending}
-                data-testid="button-save-paypal"
-              >
-                {saveMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                Save PayPal Settings
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
                     <CreditCard className="w-5 h-5 text-purple-600" />
@@ -198,26 +164,27 @@ export default function AdminSettings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Publishable Key</label>
-                <Input
-                  type="password"
-                  placeholder="pk_live_..."
+                <MaskedInput
+                  placeholder="pk_live_... or pk_test_..."
                   value={stripeConfig.publishableKey}
-                  onChange={(e) => setStripeConfig({ ...stripeConfig, publishableKey: e.target.value })}
-                  data-testid="input-stripe-publishable-key"
+                  onChange={(val) => setStripeConfig({ ...stripeConfig, publishableKey: val })}
+                  testId="input-stripe-publishable-key"
                 />
               </div>
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Secret Key</label>
-                <Input
-                  type="password"
-                  placeholder="sk_live_..."
+                <MaskedInput
+                  placeholder="sk_live_... or sk_test_..."
                   value={stripeConfig.secretKey}
-                  onChange={(e) => setStripeConfig({ ...stripeConfig, secretKey: e.target.value })}
-                  data-testid="input-stripe-secret-key"
+                  onChange={(val) => setStripeConfig({ ...stripeConfig, secretKey: val })}
+                  testId="input-stripe-secret-key"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                If left empty, the system will use the keys from environment variables.
+              </p>
               <Button
                 onClick={handleSaveStripe}
                 disabled={saveMutation.isPending}
@@ -235,38 +202,56 @@ export default function AdminSettings() {
 
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
-                    <Bitcoin className="w-5 h-5 text-orange-600" />
+                  <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                    <DollarSign className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <CardTitle>Crypto / Manual Payments</CardTitle>
-                    <CardDescription>Accept cryptocurrency or manual bank transfers</CardDescription>
+                    <CardTitle>PayPal</CardTitle>
+                    <CardDescription>Accept payments via PayPal</CardDescription>
                   </div>
                 </div>
                 <Switch
-                  checked={cryptoEnabled}
-                  onCheckedChange={setCryptoEnabled}
-                  data-testid="switch-crypto"
+                  checked={paypalConfig.enabled}
+                  onCheckedChange={(checked) => setPaypalConfig({ ...paypalConfig, enabled: checked })}
+                  data-testid="switch-paypal"
                 />
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                When enabled, customers will see an option to pay via cryptocurrency or manual bank transfer at checkout.
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Client ID</label>
+                <MaskedInput
+                  placeholder="Enter PayPal Client ID"
+                  value={paypalConfig.clientId}
+                  onChange={(val) => setPaypalConfig({ ...paypalConfig, clientId: val })}
+                  testId="input-paypal-client-id"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Client Secret</label>
+                <MaskedInput
+                  placeholder="Enter PayPal Client Secret"
+                  value={paypalConfig.clientSecret}
+                  onChange={(val) => setPaypalConfig({ ...paypalConfig, clientSecret: val })}
+                  testId="input-paypal-client-secret"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                If left empty, the system will use the keys from environment variables.
               </p>
               <Button
-                onClick={handleSaveCrypto}
+                onClick={handleSavePaypal}
                 disabled={saveMutation.isPending}
-                data-testid="button-save-crypto"
+                data-testid="button-save-paypal"
               >
                 {saveMutation.isPending ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <Save className="w-4 h-4 mr-2" />
                 )}
-                Save Crypto Settings
+                Save PayPal Settings
               </Button>
             </CardContent>
           </Card>

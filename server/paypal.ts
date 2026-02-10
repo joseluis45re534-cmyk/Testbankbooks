@@ -1,82 +1,78 @@
-// PayPal Web Integration
 import { Request, Response } from "express";
 import paypalSdk from "@paypal/paypal-server-sdk";
+import { getPaypalKeys } from "./settingsHelper";
+
 const { Client, Environment, LogLevel, OAuthAuthorizationController, OrdersController } = paypalSdk;
 
-/* PayPal Controllers Setup */
+let cachedClient: any = null;
+let cachedOrdersController: any = null;
+let cachedOAuthController: any = null;
+let cachedClientId: string | null = null;
+let cachedClientSecret: string | null = null;
 
-const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
+async function getPaypalClient() {
+  const { clientId, clientSecret } = await getPaypalKeys();
 
-if (!PAYPAL_CLIENT_ID) {
-  throw new Error("Missing PAYPAL_CLIENT_ID");
-}
-if (!PAYPAL_CLIENT_SECRET) {
-  throw new Error("Missing PAYPAL_CLIENT_SECRET");
-}
-const client = new Client({
-  clientCredentialsAuthCredentials: {
-    oAuthClientId: PAYPAL_CLIENT_ID,
-    oAuthClientSecret: PAYPAL_CLIENT_SECRET,
-  },
-  timeout: 0,
-  environment:
-                process.env.NODE_ENV === "production"
-                  ? Environment.Production
-                  : Environment.Sandbox,
-  logging: {
-    logLevel: LogLevel.Info,
-    logRequest: {
-      logBody: true,
+  if (!clientId || !clientSecret) {
+    throw new Error("PayPal credentials not configured. Set them in Admin Settings or as PAYPAL_CLIENT_ID/PAYPAL_CLIENT_SECRET environment variables.");
+  }
+
+  if (cachedClient && cachedClientId === clientId && cachedClientSecret === clientSecret) {
+    return { client: cachedClient, ordersController: cachedOrdersController, oAuthController: cachedOAuthController, clientId, clientSecret };
+  }
+
+  const client = new Client({
+    clientCredentialsAuthCredentials: {
+      oAuthClientId: clientId,
+      oAuthClientSecret: clientSecret,
     },
-    logResponse: {
-      logHeaders: true,
+    timeout: 0,
+    environment:
+      process.env.NODE_ENV === "production"
+        ? Environment.Production
+        : Environment.Sandbox,
+    logging: {
+      logLevel: LogLevel.Info,
+      logRequest: { logBody: true },
+      logResponse: { logHeaders: true },
     },
-  },
-});
-const ordersController = new OrdersController(client);
-const oAuthAuthorizationController = new OAuthAuthorizationController(client);
+  });
 
-/* Token generation helpers */
+  cachedClient = client;
+  cachedOrdersController = new OrdersController(client);
+  cachedOAuthController = new OAuthAuthorizationController(client);
+  cachedClientId = clientId;
+  cachedClientSecret = clientSecret;
+
+  return { client, ordersController: cachedOrdersController, oAuthController: cachedOAuthController, clientId, clientSecret };
+}
 
 export async function getClientToken() {
-  const auth = Buffer.from(
-    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`,
-  ).toString("base64");
+  const { oAuthController, clientId, clientSecret } = await getPaypalClient();
 
-  const { result } = await oAuthAuthorizationController.requestToken(
-    {
-      authorization: `Basic ${auth}`,
-    },
+  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const { result } = await oAuthController.requestToken(
+    { authorization: `Basic ${auth}` },
     { intent: "sdk_init", response_type: "client_token" },
   );
 
   return result.accessToken;
 }
 
-/*  Process transactions */
-
 export async function createPaypalOrder(req: Request, res: Response) {
   try {
+    const { ordersController } = await getPaypalClient();
     const { amount, currency, intent } = req.body;
 
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid amount. Amount must be a positive number.",
-        });
+      return res.status(400).json({ error: "Invalid amount. Amount must be a positive number." });
     }
-
     if (!currency) {
-      return res
-        .status(400)
-        .json({ error: "Invalid currency. Currency is required." });
+      return res.status(400).json({ error: "Invalid currency. Currency is required." });
     }
-
     if (!intent) {
-      return res
-        .status(400)
-        .json({ error: "Invalid intent. Intent is required." });
+      return res.status(400).json({ error: "Invalid intent. Intent is required." });
     }
 
     const collect = {
@@ -94,13 +90,9 @@ export async function createPaypalOrder(req: Request, res: Response) {
       prefer: "return=minimal",
     };
 
-    const { body, ...httpResponse } =
-          await ordersController.createOrder(collect);
-
+    const { body, ...httpResponse } = await ordersController.createOrder(collect);
     const jsonResponse = JSON.parse(String(body));
-    const httpStatusCode = httpResponse.statusCode;
-
-    res.status(httpStatusCode).json(jsonResponse);
+    res.status(httpResponse.statusCode).json(jsonResponse);
   } catch (error) {
     console.error("Failed to create order:", error);
     res.status(500).json({ error: "Failed to create order." });
@@ -119,6 +111,7 @@ export async function capturePaypalOrder(req: Request, res: Response) {
 }
 
 export async function capturePaypalOrderDirect(orderID: string): Promise<{ httpStatusCode: number; jsonResponse: any }> {
+  const { ordersController } = await getPaypalClient();
   const collect = {
     id: orderID,
     prefer: "return=minimal",
@@ -130,9 +123,11 @@ export async function capturePaypalOrderDirect(orderID: string): Promise<{ httpS
 }
 
 export async function loadPaypalDefault(req: Request, res: Response) {
-  const clientToken = await getClientToken();
-  res.json({
-    clientToken,
-  });
+  try {
+    const clientToken = await getClientToken();
+    res.json({ clientToken });
+  } catch (error: any) {
+    console.error("PayPal setup error:", error);
+    res.status(500).json({ error: error.message || "Failed to initialize PayPal" });
+  }
 }
-// <END_EXACT_CODE>

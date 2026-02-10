@@ -8,7 +8,7 @@ import path from "path";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
-import { createStripePaymentIntent, stripe } from "./stripe";
+import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 
 declare module 'express-session' {
   interface SessionData {
@@ -157,8 +157,13 @@ export async function registerRoutes(
   });
 
   // Stripe integration routes
-  app.get("/api/stripe/config", (req, res) => {
-    res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY });
+  app.get("/api/stripe/config", async (req, res) => {
+    try {
+      const publishableKey = await getStripePublishableKey();
+      res.json({ publishableKey });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Stripe not configured" });
+    }
   });
 
   app.post("/api/stripe/create-payment-intent", async (req, res) => {
@@ -208,7 +213,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: "Payment intent ID required" });
       }
 
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const stripeInstance = await getStripeInstance();
+      const paymentIntent = await stripeInstance.paymentIntents.retrieve(paymentIntentId);
 
       if (paymentIntent.status !== "succeeded") {
         return res.status(400).json({ error: "Payment not completed", status: paymentIntent.status });

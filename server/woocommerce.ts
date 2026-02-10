@@ -147,3 +147,4 @@ export function createWooCommerceAPI(): WooCommerceAPI | null {
     consumerSecret,
   });
 }
+

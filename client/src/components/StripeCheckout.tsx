@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { loadStripe, type Stripe, type StripeElements } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard } from "lucide-react";
@@ -33,79 +33,80 @@ export default function StripeCheckout({
   const [processing, setProcessing] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
   const mountedRef = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const stripeContainerRef = useRef<HTMLDivElement | null>(null);
+  const elementsRef = useRef<StripeElements | null>(null);
+
+  const mountPointRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && !stripeContainerRef.current) {
+      stripeContainerRef.current = node;
+      if (!mountedRef.current) {
+        mountedRef.current = true;
+        initStripe(node);
+      }
+    }
+  }, []);
+
+  const initStripe = async (container: HTMLDivElement) => {
+    try {
+      const [stripeInstance, intentRes] = await Promise.all([
+        getStripe(),
+        fetch("/api/stripe/create-payment-intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customerEmail }),
+          credentials: "include",
+        }),
+      ]);
+
+      if (!intentRes.ok) {
+        const err = await intentRes.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to create payment intent");
+      }
+
+      const { clientSecret: secret } = await intentRes.json();
+
+      if (stripeInstance && secret) {
+        setStripe(stripeInstance);
+
+        const elementsInstance = stripeInstance.elements({
+          clientSecret: secret,
+          appearance: {
+            theme: "stripe",
+            variables: {
+              colorPrimary: "#2563eb",
+              borderRadius: "6px",
+            },
+          },
+        });
+
+        const paymentElement = elementsInstance.create("payment");
+        paymentElement.mount(container);
+        elementsRef.current = elementsInstance;
+
+        paymentElement.on("change", (event) => {
+          if (event.complete) {
+            setCardError(null);
+          }
+        });
+
+        setElements(elementsInstance);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Stripe init error:", error);
+      setCardError("Failed to initialize payment. Please try again.");
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-
-    let cancelled = false;
-    let elementsInstance: StripeElements | null = null;
-
-    const init = async () => {
-      try {
-        const [stripeInstance, intentRes] = await Promise.all([
-          getStripe(),
-          fetch("/api/stripe/create-payment-intent", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ customerEmail }),
-            credentials: "include",
-          }),
-        ]);
-
-        if (cancelled) return;
-
-        if (!intentRes.ok) {
-          const err = await intentRes.json().catch(() => ({}));
-          throw new Error(err.error || "Failed to create payment intent");
-        }
-
-        const { clientSecret: secret } = await intentRes.json();
-
-        if (stripeInstance && secret && containerRef.current) {
-          setStripe(stripeInstance);
-
-          elementsInstance = stripeInstance.elements({
-            clientSecret: secret,
-            appearance: {
-              theme: "stripe",
-              variables: {
-                colorPrimary: "#2563eb",
-                borderRadius: "6px",
-              },
-            },
-          });
-
-          const paymentElement = elementsInstance.create("payment");
-          paymentElement.mount(containerRef.current);
-
-          paymentElement.on("change", (event) => {
-            if (event.complete) {
-              setCardError(null);
-            }
-          });
-
-          setElements(elementsInstance);
-        }
-
-        setLoading(false);
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Stripe init error:", error);
-          setCardError("Failed to initialize payment. Please try again.");
-          setLoading(false);
-        }
-      }
-    };
-
-    init();
-
     return () => {
-      cancelled = true;
-      if (elementsInstance) {
-        const pe = elementsInstance.getElement("payment");
-        if (pe) pe.unmount();
+      if (elementsRef.current) {
+        const pe = elementsRef.current.getElement("payment");
+        if (pe) {
+          try { pe.unmount(); } catch (e) {}
+        }
       }
     };
   }, []);
@@ -166,13 +167,12 @@ export default function StripeCheckout({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div ref={containerRef} className="min-h-[120px]">
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-      </div>
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      <div ref={mountPointRef} style={{ display: loading ? "none" : "block" }} />
 
       {cardError && (
         <p className="text-sm text-destructive" data-testid="text-stripe-error">{cardError}</p>

@@ -14,6 +14,7 @@ declare module 'express-session' {
   interface SessionData {
     adminId?: string;
     adminUsername?: string;
+    cartActive?: boolean;
   }
 }
 
@@ -343,6 +344,7 @@ export async function registerRoutes(
         return res.status(404).json({ error: "Product not found" });
       }
 
+      req.session.cartActive = true;
       const item = await storage.addToCart({
         sessionId,
         productId,

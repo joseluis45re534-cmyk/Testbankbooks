@@ -592,7 +592,15 @@ export async function registerRoutes(
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
     const baseUrl = `${req.protocol}://${req.get("host")}`;
-    const robotsTxt = `User-agent: *
+    const robotsTxt = `User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /checkout
+Disallow: /thank-you
+Disallow: /api/
+
+User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /admin/*

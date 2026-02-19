@@ -109,10 +109,16 @@ export default function Checkout() {
     const emailInput = document.getElementById("email") as HTMLInputElement;
     const firstNameInput = document.getElementById("firstName") as HTMLInputElement;
     const lastNameInput = document.getElementById("lastName") as HTMLInputElement;
-    setEmail(emailInput?.value || "");
+    const emailVal = emailInput?.value || "";
+    setEmail(emailVal);
     setFirstName(firstNameInput?.value || "");
     setLastName(lastNameInput?.value || "");
     setStep(2);
+    fetch("/api/cart/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailVal }),
+    }).catch(() => {});
   };
 
   if (cartItems.length === 0 && !isLoading) {

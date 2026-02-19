@@ -40,6 +40,7 @@ export interface IStorage {
   getAllAbandonedCarts(): Promise<AbandonedCart[]>;
   createAbandonedCart(cart: InsertAbandonedCart): Promise<AbandonedCart>;
   markRecoveryEmailSent(id: string): Promise<void>;
+  detectAndRecordAbandonedCarts(thresholdMinutes?: number): Promise<number>;
   
   getAdminByUsername(username: string): Promise<AdminUser | undefined>;
   createAdminUser(admin: InsertAdminUser): Promise<AdminUser>;
@@ -295,6 +296,49 @@ export class DatabaseStorage implements IStorage {
 
   async markRecoveryEmailSent(id: string): Promise<void> {
     await db.update(abandonedCarts).set({ recoveryEmailSent: true }).where(eq(abandonedCarts.id, id));
+  }
+
+  async detectAndRecordAbandonedCarts(thresholdMinutes: number = 60): Promise<number> {
+    const threshold = new Date(Date.now() - thresholdMinutes * 60 * 1000);
+
+    const staleCarts = await db.execute(sql`
+      SELECT 
+        ci.session_id,
+        MAX(ci.email) as email,
+        array_agg(ci.product_id) as product_ids,
+        SUM(
+          CASE 
+            WHEN p.sale_price IS NOT NULL THEN CAST(p.sale_price AS DECIMAL) * ci.quantity
+            ELSE CAST(p.price AS DECIMAL) * ci.quantity
+          END
+        ) as total_amount,
+        MAX(ci.created_at) as last_activity
+      FROM cart_items ci
+      JOIN products p ON ci.product_id = p.id
+      WHERE ci.session_id NOT IN (
+          SELECT session_id FROM abandoned_carts
+        )
+      GROUP BY ci.session_id
+      HAVING MAX(ci.created_at) < ${threshold}
+    `);
+
+    let count = 0;
+    for (const row of staleCarts.rows as any[]) {
+      try {
+        await db.insert(abandonedCarts).values({
+          sessionId: row.session_id,
+          email: row.email || null,
+          productIds: row.product_ids,
+          totalAmount: String(parseFloat(row.total_amount).toFixed(2)),
+          recoveryEmailSent: false,
+        });
+        count++;
+      } catch (e) {
+        console.error("Error creating abandoned cart record:", e);
+      }
+    }
+
+    return count;
   }
 
   async getAdminByUsername(username: string): Promise<AdminUser | undefined> {

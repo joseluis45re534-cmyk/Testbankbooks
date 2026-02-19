@@ -9,6 +9,9 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
+import { db } from "./db";
+import { cartItems } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 declare module 'express-session' {
   interface SessionData {
@@ -681,6 +684,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Dashboard stats
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {
     try {
+      await storage.detectAndRecordAbandonedCarts(60);
       const stats = await storage.getDashboardStats();
       res.json(stats);
     } catch (error) {
@@ -740,9 +744,26 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // Abandoned carts
+  // Save checkout email to cart items (for abandoned cart detection)
+  app.post("/api/cart/email", async (req, res) => {
+    try {
+      const sessionId = req.sessionID;
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: "Email required" });
+      await db.update(cartItems)
+        .set({ email })
+        .where(eq(cartItems.sessionId, sessionId));
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving cart email:", error);
+      res.status(500).json({ error: "Failed to save email" });
+    }
+  });
+
+  // Abandoned carts - detect fresh ones on each request
   app.get("/api/admin/abandoned-carts", requireAdmin, async (req, res) => {
     try {
+      await storage.detectAndRecordAbandonedCarts(60);
       const carts = await storage.getAllAbandonedCarts();
       res.json(carts);
     } catch (error) {

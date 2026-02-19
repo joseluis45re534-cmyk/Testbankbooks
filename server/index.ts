@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { fetchAndImportProducts } from "./xmlParser";
 import { pool } from "./db";
 import connectPg from "connect-pg-simple";
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -133,6 +134,18 @@ app.use((req, res, next) => {
       } catch (error) {
         log(`Warning: Could not import products: ${error}`, "import");
       }
+
+      // Scan for abandoned carts every 30 minutes
+      setInterval(async () => {
+        try {
+          const found = await storage.detectAndRecordAbandonedCarts(60);
+          if (found > 0) {
+            log(`Detected ${found} abandoned cart(s)`, "abandoned-carts");
+          }
+        } catch (error) {
+          log(`Error scanning abandoned carts: ${error}`, "abandoned-carts");
+        }
+      }, 30 * 60 * 1000);
     },
   );
 })();

@@ -744,14 +744,15 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // Save checkout email to cart items (for abandoned cart detection)
   app.post("/api/cart/email", async (req, res) => {
     try {
       const sessionId = req.sessionID;
-      const { email } = req.body;
+      const { email, customerName } = req.body;
       if (!email) return res.status(400).json({ error: "Email required" });
+      const updateData: any = { email };
+      if (customerName) updateData.customerName = customerName;
       await db.update(cartItems)
-        .set({ email })
+        .set(updateData)
         .where(eq(cartItems.sessionId, sessionId));
       res.json({ success: true });
     } catch (error) {

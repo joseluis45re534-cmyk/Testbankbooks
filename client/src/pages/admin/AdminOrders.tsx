@@ -34,6 +34,7 @@ interface AbandonedCart {
   id: string;
   sessionId: string;
   email: string | null;
+  customerName: string | null;
   productIds: string[] | null;
   totalAmount: string | null;
   createdAt: string;
@@ -183,7 +184,7 @@ export default function AdminOrders() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Session ID</TableHead>
+                          <TableHead>Customer</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Amount</TableHead>
                           <TableHead>Date</TableHead>
@@ -193,8 +194,8 @@ export default function AdminOrders() {
                       <TableBody>
                         {abandonedCarts.map((cart) => (
                           <TableRow key={cart.id} data-testid={`row-abandoned-${cart.id}`}>
-                            <TableCell className="font-mono text-sm">
-                              {cart.sessionId.substring(0, 8)}...
+                            <TableCell>
+                              {cart.customerName || <span className="text-muted-foreground font-mono text-xs">{cart.sessionId.substring(0, 8)}...</span>}
                             </TableCell>
                             <TableCell>{cart.email || "—"}</TableCell>
                             <TableCell>

@@ -305,6 +305,7 @@ export class DatabaseStorage implements IStorage {
       SELECT 
         ci.session_id,
         MAX(ci.email) as email,
+        MAX(ci.customer_name) as customer_name,
         array_agg(ci.product_id) as product_ids,
         SUM(
           CASE 
@@ -328,6 +329,7 @@ export class DatabaseStorage implements IStorage {
         await db.insert(abandonedCarts).values({
           sessionId: row.session_id,
           email: row.email || null,
+          customerName: row.customer_name || null,
           productIds: row.product_ids,
           totalAmount: String(parseFloat(row.total_amount).toFixed(2)),
           recoveryEmailSent: false,

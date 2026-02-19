@@ -114,10 +114,11 @@ export default function Checkout() {
     setFirstName(firstNameInput?.value || "");
     setLastName(lastNameInput?.value || "");
     setStep(2);
+    const fullName = `${firstNameInput?.value || ""} ${lastNameInput?.value || ""}`.trim();
     fetch("/api/cart/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailVal }),
+      body: JSON.stringify({ email: emailVal, customerName: fullName }),
     }).catch(() => {});
   };
 

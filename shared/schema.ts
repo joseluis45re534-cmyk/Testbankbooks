@@ -42,6 +42,7 @@ export const cartItems = pgTable("cart_items", {
   quantity: integer("quantity").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow(),
   email: text("email"),
+  customerName: text("customer_name"),
 });
 
 export const orders = pgTable("orders", {
@@ -59,6 +60,7 @@ export const abandonedCarts = pgTable("abandoned_carts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sessionId: varchar("session_id", { length: 255 }).notNull(),
   email: text("email"),
+  customerName: text("customer_name"),
   productIds: text("product_ids").array(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),

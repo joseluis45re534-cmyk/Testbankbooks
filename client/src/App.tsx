@@ -24,6 +24,7 @@ import RefundPolicy from "@/pages/RefundPolicy";
 import ShippingPolicy from "@/pages/ShippingPolicy";
 import ContactUs from "@/pages/ContactUs";
 import { ChatWidget } from "@/components/ChatWidget";
+import { CustomScripts } from "@/components/CustomScripts";
 
 function ChatWidgetWrapper() {
   const [location] = useLocation();
@@ -65,6 +66,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
+          <CustomScripts />
           <Router />
           <ChatWidgetWrapper />
         </TooltipProvider>

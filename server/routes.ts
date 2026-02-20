@@ -10,7 +10,7 @@ import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 import { db } from "./db";
-import { cartItems } from "@shared/schema";
+import { cartItems, abandonedCarts } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 declare module 'express-session' {
@@ -754,6 +754,11 @@ Sitemap: ${baseUrl}/sitemap.xml
       await db.update(cartItems)
         .set(updateData)
         .where(eq(cartItems.sessionId, sessionId));
+      const abandonedUpdate: any = { email };
+      if (customerName) abandonedUpdate.customerName = customerName;
+      await db.update(abandonedCarts)
+        .set(abandonedUpdate)
+        .where(eq(abandonedCarts.sessionId, sessionId));
       res.json({ success: true });
     } catch (error) {
       console.error("Error saving cart email:", error);

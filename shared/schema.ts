@@ -43,11 +43,15 @@ export const cartItems = pgTable("cart_items", {
   createdAt: timestamp("created_at").defaultNow(),
   email: text("email"),
   customerName: text("customer_name"),
+  phone: varchar("phone", { length: 50 }),
 });
 
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   customerEmail: text("customer_email").notNull(),
+  customerName: text("customer_name"),
+  phone: varchar("phone", { length: 50 }),
+  country: varchar("country", { length: 100 }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("paid"),
   paymentMethod: varchar("payment_method", { length: 50 }),
@@ -61,7 +65,9 @@ export const abandonedCarts = pgTable("abandoned_carts", {
   sessionId: varchar("session_id", { length: 255 }).notNull(),
   email: text("email"),
   customerName: text("customer_name"),
+  phone: varchar("phone", { length: 50 }),
   productIds: text("product_ids").array(),
+  productTitles: text("product_titles").array(),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow(),
   recoveryEmailSent: boolean("recovery_email_sent").default(false),

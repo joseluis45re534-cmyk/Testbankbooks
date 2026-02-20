@@ -103,18 +103,20 @@ export async function registerRoutes(
 
   app.post("/paypal/order/:orderID/capture", async (req, res) => {
     try {
-      const { customerEmail } = req.body;
+      const { customerEmail, customerName, phone } = req.body;
       const sessionId = req.sessionID;
 
-      const cartItems = await storage.getCartItems(sessionId);
-      if (!cartItems || cartItems.length === 0) {
+      const cartItemsList = await storage.getCartItems(sessionId);
+      if (!cartItemsList || cartItemsList.length === 0) {
         return res.status(400).json({ error: "Cart is empty" });
       }
 
       let serverTotal = 0;
       const productIds: string[] = [];
       const productTitles: string[] = [];
-      for (const item of cartItems) {
+      const savedName = customerName || cartItemsList[0]?.customerName || null;
+      const savedPhone = phone || cartItemsList[0]?.phone || null;
+      for (const item of cartItemsList) {
         const product = item.product;
         if (!product) continue;
         const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
@@ -141,6 +143,8 @@ export async function registerRoutes(
 
       const order = await storage.createOrder({
         customerEmail: customerEmail || "unknown@email.com",
+        customerName: savedName,
+        phone: savedPhone,
         amount: capturedAmount || serverTotal.toFixed(2),
         status: "paid",
         paymentMethod: "paypal",
@@ -210,7 +214,7 @@ export async function registerRoutes(
 
   app.post("/api/stripe/confirm-payment", async (req, res) => {
     try {
-      const { paymentIntentId, customerEmail } = req.body;
+      const { paymentIntentId, customerEmail, customerName, phone } = req.body;
       const sessionId = req.sessionID;
 
       if (!paymentIntentId) {
@@ -229,15 +233,17 @@ export async function registerRoutes(
         return res.status(403).json({ error: "Payment session mismatch" });
       }
 
-      const cartItems = await storage.getCartItems(sessionId);
-      if (!cartItems || cartItems.length === 0) {
+      const cartItemsList = await storage.getCartItems(sessionId);
+      if (!cartItemsList || cartItemsList.length === 0) {
         return res.status(400).json({ error: "Cart is empty" });
       }
 
       let serverTotal = 0;
       const productIds: string[] = [];
       const productTitles: string[] = [];
-      for (const item of cartItems) {
+      const savedName = customerName || cartItemsList[0]?.customerName || null;
+      const savedPhone = phone || cartItemsList[0]?.phone || null;
+      for (const item of cartItemsList) {
         const product = item.product;
         if (!product) continue;
         const price = product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price);
@@ -260,6 +266,8 @@ export async function registerRoutes(
 
       const order = await storage.createOrder({
         customerEmail: customerEmail || "unknown@email.com",
+        customerName: savedName,
+        phone: savedPhone,
         amount: paidAmount.toFixed(2),
         status: "paid",
         paymentMethod: "stripe",
@@ -747,15 +755,17 @@ Sitemap: ${baseUrl}/sitemap.xml
   app.post("/api/cart/email", async (req, res) => {
     try {
       const sessionId = req.sessionID;
-      const { email, customerName } = req.body;
+      const { email, customerName, phone } = req.body;
       if (!email) return res.status(400).json({ error: "Email required" });
       const updateData: any = { email };
       if (customerName) updateData.customerName = customerName;
+      if (phone) updateData.phone = phone;
       await db.update(cartItems)
         .set(updateData)
         .where(eq(cartItems.sessionId, sessionId));
       const abandonedUpdate: any = { email };
       if (customerName) abandonedUpdate.customerName = customerName;
+      if (phone) abandonedUpdate.phone = phone;
       await db.update(abandonedCarts)
         .set(abandonedUpdate)
         .where(eq(abandonedCarts.sessionId, sessionId));

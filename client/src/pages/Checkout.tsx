@@ -26,6 +26,7 @@ export default function Checkout() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
@@ -109,16 +110,19 @@ export default function Checkout() {
     const emailInput = document.getElementById("email") as HTMLInputElement;
     const firstNameInput = document.getElementById("firstName") as HTMLInputElement;
     const lastNameInput = document.getElementById("lastName") as HTMLInputElement;
+    const phoneInput = document.getElementById("phone") as HTMLInputElement;
     const emailVal = emailInput?.value || "";
+    const phoneVal = phoneInput?.value || "";
     setEmail(emailVal);
     setFirstName(firstNameInput?.value || "");
     setLastName(lastNameInput?.value || "");
+    setPhone(phoneVal);
     setStep(2);
     const fullName = `${firstNameInput?.value || ""} ${lastNameInput?.value || ""}`.trim();
     fetch("/api/cart/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailVal, customerName: fullName }),
+      body: JSON.stringify({ email: emailVal, customerName: fullName, phone: phoneVal }),
     }).catch(() => {});
   };
 

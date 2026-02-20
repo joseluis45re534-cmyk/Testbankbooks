@@ -306,7 +306,9 @@ export class DatabaseStorage implements IStorage {
         ci.session_id,
         MAX(ci.email) as email,
         MAX(ci.customer_name) as customer_name,
+        MAX(ci.phone) as phone,
         array_agg(ci.product_id) as product_ids,
+        array_agg(p.title) as product_titles,
         SUM(
           CASE 
             WHEN p.sale_price IS NOT NULL THEN CAST(p.sale_price AS DECIMAL) * ci.quantity
@@ -330,7 +332,9 @@ export class DatabaseStorage implements IStorage {
           sessionId: row.session_id,
           email: row.email || null,
           customerName: row.customer_name || null,
+          phone: row.phone || null,
           productIds: row.product_ids,
+          productTitles: row.product_titles,
           totalAmount: String(parseFloat(row.total_amount).toFixed(2)),
           recoveryEmailSent: false,
         });

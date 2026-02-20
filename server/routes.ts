@@ -10,7 +10,7 @@ import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 import { db } from "./db";
-import { cartItems, abandonedCarts } from "@shared/schema";
+import { cartItems, abandonedCarts, siteSettings } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 declare module 'express-session' {
@@ -786,6 +786,50 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error sending recovery email:", error);
       res.status(500).json({ error: "Failed to send recovery email" });
+    }
+  });
+
+  app.get("/api/site-settings/custom-html", async (_req, res) => {
+    try {
+      const results = await db.select().from(siteSettings)
+        .where(
+          or(
+            eq(siteSettings.key, "headerHtml"),
+            eq(siteSettings.key, "bodyHtml"),
+            eq(siteSettings.key, "footerHtml")
+          )
+        );
+      const settings: Record<string, string> = {};
+      for (const row of results) {
+        settings[row.key] = row.value || "";
+      }
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching custom HTML settings:", error);
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/admin/site-settings/custom-html", requireAdmin, async (req, res) => {
+    try {
+      const { headerHtml, bodyHtml, footerHtml } = req.body;
+      const entries = [
+        { key: "headerHtml", value: headerHtml || "" },
+        { key: "bodyHtml", value: bodyHtml || "" },
+        { key: "footerHtml", value: footerHtml || "" },
+      ];
+      for (const entry of entries) {
+        await db.insert(siteSettings)
+          .values({ key: entry.key, value: entry.value })
+          .onConflictDoUpdate({
+            target: siteSettings.key,
+            set: { value: entry.value, updatedAt: new Date() },
+          });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving custom HTML settings:", error);
+      res.status(500).json({ error: "Failed to save settings" });
     }
   });
 

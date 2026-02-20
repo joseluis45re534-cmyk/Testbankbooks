@@ -281,6 +281,8 @@ export default function Checkout() {
                           <StripeCheckout
                             amount={subtotal.toFixed(2)}
                             customerEmail={email}
+                            customerName={`${firstName} ${lastName}`.trim()}
+                            phone={phone}
                             onPaymentSuccess={handleStripeSuccess}
                             onPaymentError={handlePaymentError}
                           />
@@ -296,6 +298,8 @@ export default function Checkout() {
                               currency="USD"
                               intent="CAPTURE"
                               customerEmail={email}
+                              customerName={`${firstName} ${lastName}`.trim()}
+                              phone={phone}
                               onPaymentSuccess={handlePayPalSuccess}
                               onPaymentError={handlePaymentError}
                             />

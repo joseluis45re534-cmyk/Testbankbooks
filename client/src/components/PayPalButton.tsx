@@ -21,6 +21,8 @@ interface PayPalButtonProps {
   currency: string;
   intent: string;
   customerEmail?: string;
+  customerName?: string;
+  phone?: string;
   onPaymentSuccess?: (orderId: string, captureData: any) => void;
   onPaymentError?: (error: any) => void;
 }
@@ -30,6 +32,8 @@ export default function PayPalButton({
   currency,
   intent,
   customerEmail,
+  customerName,
+  phone,
   onPaymentSuccess,
   onPaymentError,
 }: PayPalButtonProps) {
@@ -58,7 +62,7 @@ export default function PayPalButton({
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ customerEmail }),
+      body: JSON.stringify({ customerEmail, customerName, phone }),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

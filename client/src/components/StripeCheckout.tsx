@@ -17,6 +17,8 @@ function getStripe() {
 interface StripeCheckoutProps {
   amount: string;
   customerEmail: string;
+  customerName?: string;
+  phone?: string;
   onPaymentSuccess: (paymentIntentId: string, orderData: any) => void;
   onPaymentError: (error: any) => void;
 }
@@ -24,6 +26,8 @@ interface StripeCheckoutProps {
 export default function StripeCheckout({
   amount,
   customerEmail,
+  customerName,
+  phone,
   onPaymentSuccess,
   onPaymentError,
 }: StripeCheckoutProps) {
@@ -142,6 +146,8 @@ export default function StripeCheckout({
           body: JSON.stringify({
             paymentIntentId: paymentIntent.id,
             customerEmail,
+            customerName,
+            phone,
           }),
           credentials: "include",
         });

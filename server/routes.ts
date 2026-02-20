@@ -11,7 +11,7 @@ import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 declare module 'express-session' {
   interface SessionData {

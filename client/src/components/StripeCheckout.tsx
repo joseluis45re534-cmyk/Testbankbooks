@@ -83,7 +83,23 @@ export default function StripeCheckout({
           },
         });
 
-        const paymentElement = elementsInstance.create("payment");
+        const paymentElement = elementsInstance.create("payment", {
+          layout: {
+            type: "tabs",
+            defaultCollapsed: false,
+          },
+          wallets: {
+            applePay: "auto",
+            googlePay: "auto",
+          },
+          defaultValues: {
+            billingDetails: {
+              email: customerEmail,
+              name: customerName || undefined,
+              phone: phone || undefined,
+            },
+          },
+        });
         paymentElement.mount(container);
         elementsRef.current = elementsInstance;
 

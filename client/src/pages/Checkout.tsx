@@ -258,7 +258,7 @@ export default function Checkout() {
                             data-testid="button-select-stripe"
                           >
                             <CreditCard className="w-5 h-5" />
-                            <span className="font-medium text-sm">Card</span>
+                            <span className="font-medium text-sm">Card / Wallet</span>
                           </button>
                           <button
                             type="button"

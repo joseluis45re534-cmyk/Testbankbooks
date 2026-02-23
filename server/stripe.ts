@@ -38,6 +38,11 @@ export async function createStripePaymentIntent(
     automatic_payment_methods: {
       enabled: true,
     },
+    payment_method_options: {
+      link: {
+        persistent_token: undefined,
+      },
+    },
   });
   return paymentIntent;
 }

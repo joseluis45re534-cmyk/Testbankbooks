@@ -152,8 +152,10 @@ export default function AdminChat() {
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <User className="w-4 h-4" />
-                            <span className="font-medium text-sm">
-                              {conv.visitorName || `Visitor ${conv.visitorId.slice(-6)}`}
+                            <span className="font-medium text-sm truncate">
+                              {conv.visitorName && conv.visitorEmail
+                                ? `${conv.visitorName} (${conv.visitorEmail})`
+                                : conv.visitorName || `Visitor ${conv.visitorId.slice(-6)}`}
                             </span>
                           </div>
                           {conv.unreadCount > 0 && selectedConversation !== conv.id && (
@@ -185,7 +187,9 @@ export default function AdminChat() {
                       {activeConversation.visitorName || `Visitor ${activeConversation.visitorId.slice(-6)}`}
                     </CardTitle>
                     {activeConversation.visitorEmail && (
-                      <p className="text-sm text-muted-foreground">{activeConversation.visitorEmail}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {activeConversation.visitorEmail}
+                      </p>
                     )}
                   </div>
                   <Button

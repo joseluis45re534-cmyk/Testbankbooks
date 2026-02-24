@@ -30,6 +30,18 @@ function generateVisitorId(): string {
   return visitorId;
 }
 
+function getSavedChatInfo(): { name: string; email: string } | null {
+  const saved = localStorage.getItem("chat_user_info");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -41,6 +53,11 @@ export function ChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const visitorId = generateVisitorId();
 
+  const savedInfo = getSavedChatInfo();
+  const [chatName, setChatName] = useState(savedInfo?.name || "");
+  const [chatEmail, setChatEmail] = useState(savedInfo?.email || "");
+  const [infoSubmitted, setInfoSubmitted] = useState(!!savedInfo);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -50,13 +67,13 @@ export function ChatWidget() {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && !conversation) {
+    if (isOpen && infoSubmitted && !conversation) {
       initConversation();
     }
     if (isOpen && conversation) {
       markAdminMessagesAsRead();
     }
-  }, [isOpen, conversation]);
+  }, [isOpen, infoSubmitted, conversation]);
 
   const markAdminMessagesAsRead = async () => {
     if (!conversation) return;
@@ -94,12 +111,30 @@ export function ChatWidget() {
     try {
       const response = await apiRequest("POST", "/api/chat/conversation", {
         visitorId,
+        visitorName: chatName,
+        visitorEmail: chatEmail,
       });
       const data = await response.json();
       setConversation(data);
       setMessages(data.messages || []);
     } catch (error) {
       console.error("Error initializing conversation:", error);
+    }
+  };
+
+  const handleInfoSubmit = () => {
+    if (!chatName.trim() || !chatEmail.trim()) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(chatEmail.trim())) return;
+
+    localStorage.setItem("chat_user_info", JSON.stringify({ name: chatName.trim(), email: chatEmail.trim() }));
+    setInfoSubmitted(true);
+  };
+
+  const handleInfoKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleInfoSubmit();
     }
   };
 
@@ -210,53 +245,89 @@ export function ChatWidget() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
-        <ScrollArea className="flex-1 p-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-muted-foreground text-sm py-8">
-              <p>Welcome to live chat!</p>
-              <p className="mt-2">Send us a message and we'll respond as soon as possible.</p>
+        {!infoSubmitted ? (
+          <div className="flex-1 flex flex-col justify-center p-4 space-y-4">
+            <div className="text-center">
+              <p className="font-medium text-sm">Welcome!</p>
+              <p className="text-xs text-muted-foreground mt-1">Please enter your name and email to start chatting.</p>
             </div>
-          ) : (
             <div className="space-y-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.senderType === "visitor" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                      msg.senderType === "visitor"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {msg.message}
-                  </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
+              <Input
+                data-testid="input-chat-name"
+                value={chatName}
+                onChange={(e) => setChatName(e.target.value)}
+                onKeyPress={handleInfoKeyPress}
+                placeholder="Your name *"
+              />
+              <Input
+                data-testid="input-chat-email"
+                type="email"
+                value={chatEmail}
+                onChange={(e) => setChatEmail(e.target.value)}
+                onKeyPress={handleInfoKeyPress}
+                placeholder="Your email *"
+              />
+              <Button
+                data-testid="button-chat-start"
+                className="w-full"
+                onClick={handleInfoSubmit}
+                disabled={!chatName.trim() || !chatEmail.trim()}
+              >
+                Start Chat
+              </Button>
             </div>
-          )}
-        </ScrollArea>
-        <div className="p-3 border-t flex gap-2">
-          <Input
-            data-testid="input-chat-message"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            className="flex-1"
-            disabled={isLoading}
-          />
-          <Button
-            data-testid="button-chat-send"
-            onClick={sendMessage}
-            disabled={!newMessage.trim() || isLoading}
-            size="icon"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+          </div>
+        ) : (
+          <>
+            <ScrollArea className="flex-1 p-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  <p>Welcome, {chatName}!</p>
+                  <p className="mt-2">Send us a message and we'll respond as soon as possible.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex ${msg.senderType === "visitor" ? "justify-end" : "justify-start"}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                          msg.senderType === "visitor"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted"
+                        }`}
+                      >
+                        {msg.message}
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </ScrollArea>
+            <div className="p-3 border-t flex gap-2">
+              <Input
+                data-testid="input-chat-message"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type a message..."
+                className="flex-1"
+                disabled={isLoading}
+              />
+              <Button
+                data-testid="button-chat-send"
+                onClick={sendMessage}
+                disabled={!newMessage.trim() || isLoading}
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

@@ -10,7 +10,7 @@ import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 import { db } from "./db";
-import { cartItems, abandonedCarts, siteSettings } from "@shared/schema";
+import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
 import { eq, or } from "drizzle-orm";
 
 declare module 'express-session' {
@@ -1192,6 +1192,12 @@ Sitemap: ${baseUrl}/sitemap.xml
           visitorEmail: visitorEmail || null,
           status: "active",
         });
+      } else if (visitorName || visitorEmail) {
+        const updates: Record<string, string> = {};
+        if (visitorName) updates.visitorName = visitorName;
+        if (visitorEmail) updates.visitorEmail = visitorEmail;
+        await db.update(chatConversations).set(updates).where(eq(chatConversations.id, conversation.id));
+        conversation = { ...conversation, ...updates };
       }
 
       const messages = await storage.getMessagesByConversationId(conversation.id);

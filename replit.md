@@ -109,8 +109,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Live Chat System (Feb 2026)
 - **Customer chat widget**: Floating chat button on all non-admin pages with real-time messaging
-- **Admin chat interface**: Dedicated `/admin/chat` page to manage customer conversations
-- **Database tables**: chat_conversations and chat_messages for persistent storage
+- **Required name/email capture**: Visitors must enter name and email before sending first message; info saved to localStorage for returning visitors
+- **Admin conversation labels**: Conversations displayed as `Name (email)` in admin chat panel sidebar
+- **Admin chat interface**: Dedicated `/admin/chat` page to manage customer conversations with name/email in header
+- **Database tables**: chat_conversations (visitorName, visitorEmail fields) and chat_messages for persistent storage
 - **Real-time updates**: Polling-based message synchronization every 3 seconds
 - **Unread indicators**: Badge notifications for new messages on both customer and admin sides
 - **Message read tracking**: Separate read status for visitor and admin messages

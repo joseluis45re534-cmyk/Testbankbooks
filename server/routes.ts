@@ -9,6 +9,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
+import { sendOrderConfirmationEmail } from "./email";
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
 import { eq, or } from "drizzle-orm";
@@ -154,6 +155,15 @@ export async function registerRoutes(
 
       await storage.clearCart(sessionId);
 
+      sendOrderConfirmationEmail({
+        customerEmail: order.customerEmail,
+        customerName: order.customerName || null,
+        orderId: order.id,
+        amount: order.amount,
+        paymentMethod: "paypal",
+        productTitles,
+      }).catch(err => console.error("Failed to send order email:", err));
+
       res.json({
         ...captureResult.jsonResponse,
         internalOrder: order,
@@ -276,6 +286,15 @@ export async function registerRoutes(
       });
 
       await storage.clearCart(sessionId);
+
+      sendOrderConfirmationEmail({
+        customerEmail: order.customerEmail,
+        customerName: order.customerName || null,
+        orderId: order.id,
+        amount: order.amount,
+        paymentMethod: "stripe",
+        productTitles,
+      }).catch(err => console.error("Failed to send order email:", err));
 
       res.json({ success: true, order });
     } catch (error) {

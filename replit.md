@@ -80,7 +80,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Stripe + PayPal Dual Payment Integration (Latest - Feb 2026)
+### Automated Order Confirmation Emails (Latest - Feb 2026)
+- **Email service**: Resend (`resend` npm package) for transactional email delivery
+- **Trigger**: Automatically sends after successful PayPal capture or Stripe payment confirmation
+- **Content**: Professional HTML email with order details, product list, and download link to `/thank-you/{orderId}`
+- **Non-blocking**: Email sending is fire-and-forget (doesn't delay the checkout response)
+- **Key files**: `server/email.ts`
+- **Secrets**: `RESEND_API_KEY` stored as Replit secret
+- **From address**: Uses `onboarding@resend.dev` (update to custom domain sender after Resend domain verification)
+
+### Stripe + PayPal Dual Payment Integration (Feb 2026)
 - **Stripe checkout**: `@stripe/stripe-js` for client-side Elements, `stripe` npm for server-side
 - **Server routes**: `/api/stripe/config` (publishable key), `/api/stripe/create-payment-intent` (server-side amount), `/api/stripe/confirm-payment` (verify + create order)
 - **Payment method selector**: Checkout step 2 lets customer choose Card (Stripe) or PayPal
@@ -143,3 +152,4 @@ Preferred communication style: Simple, everyday language.
 - `client/src/components/PayPalButton.tsx` - PayPal checkout button component
 - `client/src/pages/Checkout.tsx` - Two-step checkout flow with PayPal payment
 - `client/src/pages/admin/AdminChat.tsx` - Admin chat management interface
+- `server/email.ts` - Automated order confirmation emails via Resend

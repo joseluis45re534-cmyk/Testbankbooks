@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
-import { sendOrderConfirmationEmail } from "./email";
+import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./email";
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
 import { eq, or } from "drizzle-orm";
@@ -807,11 +807,32 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // Send recovery email (mock)
   app.post("/api/admin/abandoned-carts/:id/send-recovery", requireAdmin, async (req, res) => {
     try {
+      const allCarts = await storage.getAllAbandonedCarts();
+      const cart = allCarts.find(c => c.id === req.params.id);
+      
+      if (!cart) {
+        return res.status(404).json({ error: "Abandoned cart not found" });
+      }
+
+      if (!cart.email) {
+        return res.status(400).json({ error: "No email address available for this cart" });
+      }
+
+      const sent = await sendAbandonedCartRecoveryEmail({
+        customerEmail: cart.email,
+        customerName: cart.customerName || null,
+        productTitles: cart.productTitles || [],
+        totalAmount: cart.totalAmount,
+      });
+
+      if (!sent) {
+        return res.status(500).json({ error: "Failed to send recovery email. Check email service configuration." });
+      }
+
       await storage.markRecoveryEmailSent(req.params.id as string);
-      res.json({ success: true, message: "Recovery email sent (mock)" });
+      res.json({ success: true, message: "Recovery email sent successfully" });
     } catch (error) {
       console.error("Error sending recovery email:", error);
       res.status(500).json({ error: "Failed to send recovery email" });

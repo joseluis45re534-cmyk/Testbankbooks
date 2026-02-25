@@ -132,7 +132,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
 
   try {
     const result = await resend.emails.send({
-      from: "TestBankBooks <onboarding@resend.dev>",
+      from: "TestBankBooks <orders@testbankbooks.com>",
       to: data.customerEmail,
       subject: `Order Confirmed - Your Downloads Are Ready! #${data.orderId.substring(0, 8).toUpperCase()}`,
       html,
@@ -248,7 +248,7 @@ export async function sendAbandonedCartRecoveryEmail(data: AbandonedCartEmailDat
 
   try {
     const result = await resend.emails.send({
-      from: "TestBankBooks <onboarding@resend.dev>",
+      from: "TestBankBooks <orders@testbankbooks.com>",
       to: data.customerEmail,
       subject: "You left items in your cart - Complete your purchase!",
       html,

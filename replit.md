@@ -87,7 +87,7 @@ Preferred communication style: Simple, everyday language.
 - **Non-blocking**: Email sending is fire-and-forget (doesn't delay the checkout response)
 - **Key files**: `server/email.ts`
 - **Secrets**: `RESEND_API_KEY` stored as Replit secret
-- **From address**: Uses `onboarding@resend.dev` (update to custom domain sender after Resend domain verification)
+- **From address**: Uses `orders@testbankbooks.com` (verified domain)
 
 ### Stripe + PayPal Dual Payment Integration (Feb 2026)
 - **Stripe checkout**: `@stripe/stripe-js` for client-side Elements, `stripe` npm for server-side

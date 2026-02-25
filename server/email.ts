@@ -256,13 +256,13 @@ export async function sendAbandonedCartRecoveryEmail(data: AbandonedCartEmailDat
 
     if (result.error) {
       console.error("Failed to send recovery email:", result.error);
-      return false;
+      throw new Error(result.error.message || "Email send failed");
     }
 
     console.log(`Recovery email sent to ${data.customerEmail}, id: ${result.data?.id}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending recovery email:", error);
-    return false;
+    throw error;
   }
 }

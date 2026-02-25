@@ -67,13 +67,20 @@ export default function AdminOrders() {
   });
 
   const sendRecoveryMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("POST", `/api/admin/abandoned-carts/${id}/send-recovery`),
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/admin/abandoned-carts/${id}/send-recovery`);
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/abandoned-carts"] });
       toast({ title: "Recovery email sent", description: "The customer will receive a reminder email." });
     },
-    onError: () => {
-      toast({ title: "Failed to send email", variant: "destructive" });
+    onError: async (error: any) => {
+      let message = "Failed to send email";
+      try {
+        if (error?.message) message = error.message;
+      } catch {}
+      toast({ title: "Email Error", description: message, variant: "destructive" });
     },
   });
 

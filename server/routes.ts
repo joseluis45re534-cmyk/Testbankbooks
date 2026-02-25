@@ -820,22 +820,21 @@ Sitemap: ${baseUrl}/sitemap.xml
         return res.status(400).json({ error: "No email address available for this cart" });
       }
 
-      const sent = await sendAbandonedCartRecoveryEmail({
+      await sendAbandonedCartRecoveryEmail({
         customerEmail: cart.email,
         customerName: cart.customerName || null,
         productTitles: cart.productTitles || [],
         totalAmount: cart.totalAmount,
       });
 
-      if (!sent) {
-        return res.status(500).json({ error: "Failed to send recovery email. Check email service configuration." });
-      }
-
       await storage.markRecoveryEmailSent(req.params.id as string);
       res.json({ success: true, message: "Recovery email sent successfully" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending recovery email:", error);
-      res.status(500).json({ error: "Failed to send recovery email" });
+      const message = error?.message?.includes("verify a domain")
+        ? "You need to verify your domain at resend.com/domains before sending emails to customers. Currently you can only send to your own email."
+        : error?.message || "Failed to send recovery email";
+      res.status(500).json({ error: message });
     }
   });
 

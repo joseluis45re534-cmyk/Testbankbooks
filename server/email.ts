@@ -15,11 +15,7 @@ function getResend(): Resend | null {
 }
 
 function getBaseUrl(): string {
-  if (process.env.REPLIT_DOMAINS) {
-    const domain = process.env.REPLIT_DOMAINS.split(",")[0];
-    return `https://${domain}`;
-  }
-  return `http://localhost:${process.env.PORT || 5000}`;
+  return "https://testbankbooks.com";
 }
 
 interface OrderEmailData {

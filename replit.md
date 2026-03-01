@@ -109,12 +109,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Google Merchant Center Compliance (Feb 2026)
 - **Legal pages**: Privacy Policy, Terms & Conditions, Refund Policy, Shipping Policy, Contact Us - all linked in footer
-- **Google Shopping XML feed**: Available at `/feed/google-shopping.xml` with all required fields (id, title, description, link, image, price, sale_price, availability, condition, brand, google_product_category, product_type, identifier_exists)
+- **Google Shopping XML feed**: REMOVED — Google does not allow digital books/ebooks in Shopping ads
 - **Enhanced structured data**: Product JSON-LD with brand, SKU, condition, priceValidUntil, canonical URLs; Organization and WebSite schemas on homepage
 - **robots.txt**: Proper directives at `/robots.txt` blocking admin/API routes
 - **Sitemap updated**: Includes all legal pages with changefreq attributes
 - **Contact form**: POST `/api/contact` endpoint with Zod validation
 - **Product data cleanup**: Fixed 4 products with insufficient descriptions
+- **Misrepresentation fixes**: Removed fake reviews (4.9★/128 reviews), fake scarcity, fake social proof; replaced placeholder phone numbers with real contact info
 
 ### Live Chat System (Feb 2026)
 - **Customer chat widget**: Floating chat button on all non-admin pages with real-time messaging

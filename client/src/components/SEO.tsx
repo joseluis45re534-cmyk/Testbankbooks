@@ -40,7 +40,7 @@ export function SEO({
     logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "",
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "1-800-TESTBANK",
+      telephone: "+1 (339) 228-4593",
       contactType: "customer service",
       email: "support@testbankbooks.com",
       availableLanguage: "English",

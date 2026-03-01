@@ -59,7 +59,7 @@ export default function LandingPage() {
         <section className="bg-gradient-to-br from-primary/5 via-background to-primary/10 py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-sm font-medium text-primary mb-4" data-testid="text-trust-badge">
-              Trusted by 10,000+ Students
+              Premium Nursing Study Materials
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight" data-testid="text-hero-title">
               Pass Your Nursing<br />Exams with Confidence
@@ -257,9 +257,7 @@ export default function LandingPage() {
                           </p>
                         )}
                         <div className="flex items-center gap-1 mb-2">
-                          <Star className="w-3 h-3 fill-primary text-primary" />
-                          <span className="text-xs">4.9</span>
-                          <span className="text-xs text-muted-foreground">(128)</span>
+                          <Badge variant="outline" className="text-[10px] py-0 px-1">Digital Download</Badge>
                         </div>
                         <div className="flex items-baseline gap-2">
                           <span className="font-bold text-primary">
@@ -326,9 +324,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
                     <Star className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Student Trusted</h3>
+                  <h3 className="text-lg font-semibold mb-2">Quality Content</h3>
                   <p className="text-muted-foreground">
-                    Join thousands of nursing students who improved their exam scores
+                    Comprehensive test banks aligned with your course textbooks
                   </p>
                 </CardContent>
               </Card>

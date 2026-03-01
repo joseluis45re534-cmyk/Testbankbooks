@@ -85,7 +85,7 @@ export default function RefundPolicy() {
                   <li>
                     <strong className="text-foreground">Contact our support team</strong> at{" "}
                     <a href="mailto:support@testbankbooks.com" className="text-primary hover:underline" data-testid="link-refund-email">support@testbankbooks.com</a>{" "}
-                    or call <a href="tel:1-800-TESTBANK" className="text-primary hover:underline" data-testid="link-refund-phone">1-800-TESTBANK</a>
+                    or call <a href="tel:+13392284593" className="text-primary hover:underline" data-testid="link-refund-phone">+1 (339) 228-4593</a>
                   </li>
                   <li>
                     <strong className="text-foreground">Include your order details:</strong> order number, email address used for purchase, and product name
@@ -180,7 +180,7 @@ export default function RefundPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:1-800-TESTBANK" className="hover:underline" data-testid="link-refund-contact-phone">1-800-TESTBANK</a>
+                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-refund-contact-phone">+1 (339) 228-4593</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />

@@ -4,7 +4,7 @@ import { useRoute, Link, useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Zap, Shield, CheckCircle, BookOpen, 
   ChevronLeft, ChevronRight, Download, Clock, HeadphonesIcon, 
-  Star, Eye, ChevronDown, ChevronUp, Lock
+  ChevronDown, ChevronUp, Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -240,7 +240,6 @@ export default function ProductDetail() {
   const seoDescription = `${product.title}. $${displayPrice.toFixed(2)} - Instant Access for Exam Prep. Complete test bank with all chapters included.`.substring(0, 160);
 
   const currentImage = allImages[selectedImageIndex] || null;
-  const viewingCount = Math.floor(Math.random() * 30) + 15;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -355,13 +354,8 @@ export default function ProductDetail() {
               </h1>
 
               <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star key={star} className="w-4 h-4 fill-primary text-primary" />
-                  ))}
-                </div>
-                <span className="text-sm font-medium">4.9</span>
-                <span className="text-sm text-muted-foreground">· 128 reviews</span>
+                <Badge variant="secondary" className="text-xs">Digital Download</Badge>
+                <Badge variant="outline" className="text-xs">Instant Access</Badge>
               </div>
 
               <div className="flex items-baseline gap-3">
@@ -382,10 +376,9 @@ export default function ProductDetail() {
               )}
 
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="text-green-600 font-medium">Only a few left in stock!</span>
-                <span className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
-                  {viewingCount} people viewing now
+                <span className="text-green-600 font-medium flex items-center gap-1">
+                  <CheckCircle className="w-4 h-4" />
+                  Available for Instant Download
                 </span>
               </div>
 
@@ -587,9 +580,7 @@ export default function ProductDetail() {
                               {relatedProduct.title}
                             </h3>
                             <div className="flex items-center gap-1 mb-2">
-                              <Star className="w-3 h-3 fill-primary text-primary" />
-                              <span className="text-xs">4.9</span>
-                              <span className="text-xs text-muted-foreground">(128)</span>
+                              <Badge variant="outline" className="text-[10px] py-0 px-1">Digital Download</Badge>
                             </div>
                             <div className="flex items-baseline gap-2">
                               <span className="font-bold text-primary">

@@ -252,7 +252,7 @@ export default function TermsConditions() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:1-800-TESTBANK" className="hover:underline" data-testid="link-terms-phone">1-800-TESTBANK</a>
+                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-terms-phone">+1 (339) 228-4593</a>
                   </div>
                 </div>
               </CardContent>

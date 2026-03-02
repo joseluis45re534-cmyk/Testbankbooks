@@ -109,7 +109,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Google Merchant Center Compliance (Feb 2026)
 - **Legal pages**: Privacy Policy, Terms & Conditions, Refund Policy, Shipping Policy, Contact Us - all linked in footer
-- **Google Shopping XML feed**: REMOVED — Google does not allow digital books/ebooks in Shopping ads
+- **Google Shopping XML feed**: Available at `/feed/google-shopping.xml` — recategorized from "Books" to "Software > Educational Software" to avoid digital books policy violation
 - **Enhanced structured data**: Product JSON-LD with brand, SKU, condition, priceValidUntil, canonical URLs; Organization and WebSite schemas on homepage
 - **robots.txt**: Proper directives at `/robots.txt` blocking admin/API routes
 - **Sitemap updated**: Includes all legal pages with changefreq attributes

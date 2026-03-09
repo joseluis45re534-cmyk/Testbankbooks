@@ -8,6 +8,52 @@ import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+async function migrateProductNames() {
+  const client = await pool.connect();
+  try {
+    const checkResult = await client.query(
+      "SELECT COUNT(*) FROM products WHERE title ILIKE '%test bank%'"
+    );
+    const count = parseInt(checkResult.rows[0].count);
+    if (count === 0) return 0;
+
+    await client.query(`
+      UPDATE products 
+      SET title = REGEXP_REPLACE(title, '\\s*Test Bank$', ' Educational Software', 'i'),
+          description = REPLACE(REPLACE(REPLACE(description, 'test bank', 'educational software'), 'Test Bank', 'Educational Software'), 'Test bank', 'Educational software')
+      WHERE title ILIKE '%Test Bank'
+    `);
+
+    await client.query(`
+      UPDATE products 
+      SET title = REGEXP_REPLACE(title, '^Test [Bb]ank\\s*[-]?\\s*', '') || ' Educational Software'
+      WHERE title ILIKE 'Test Bank%'
+    `);
+
+    await client.query(`
+      UPDATE products 
+      SET title = REGEXP_REPLACE(title, 'TEST BANK (FOR )?', '', 'i')
+      WHERE title ILIKE 'TEST BANK%'
+    `);
+
+    await client.query(`
+      UPDATE products
+      SET slug = LOWER(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-zA-Z0-9]+', '-', 'g'), '^-|-$', '', 'g')) || '-' || id
+      WHERE title ILIKE '%educational software%'
+    `);
+
+    await client.query(`
+      UPDATE products 
+      SET category = 'Study Materials'
+      WHERE category = 'Test Banks'
+    `);
+
+    return count;
+  } finally {
+    client.release();
+  }
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -133,6 +179,16 @@ app.use((req, res, next) => {
         log(`Product database ready with ${count} products`, "import");
       } catch (error) {
         log(`Warning: Could not import products: ${error}`, "import");
+      }
+
+      // Migrate product names: replace "Test Bank" with "Educational Software"
+      try {
+        const migrated = await migrateProductNames();
+        if (migrated > 0) {
+          log(`Migrated ${migrated} product names from "Test Bank" to "Educational Software"`, "migration");
+        }
+      } catch (error) {
+        log(`Warning: Product name migration failed: ${error}`, "migration");
       }
 
       // Scan for abandoned carts every 30 minutes

@@ -85,7 +85,7 @@ function extractCategory(title: string): string {
     return "Laboratory";
   }
   
-  return "Test Banks";
+  return "Study Materials";
 }
 
 function parseImages(imagesStr: string): { mainImage: string | null; additionalImages: string[] } {

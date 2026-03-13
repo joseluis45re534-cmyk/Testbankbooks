@@ -13,6 +13,7 @@ import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./em
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
 import { eq, or } from "drizzle-orm";
+import { triggerManualRun } from "./scheduler";
 import { generateBlogPostForProduct } from "./blogGenerator";
 
 declare module 'express-session' {
@@ -1462,6 +1463,89 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error generating blog posts:", error);
       res.status(500).json({ error: "Failed to generate blog posts" });
+    }
+  });
+
+  // ─── SEO Automation: Keywords ───────────────────────────────────────────────
+
+  app.get("/api/admin/seo/keywords", requireAdmin, async (req, res) => {
+    try {
+      const { status } = req.query as { status?: string };
+      const keywords = await storage.getSeoKeywords(status);
+      res.json(keywords);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch keywords" });
+    }
+  });
+
+  app.post("/api/admin/seo/keywords", requireAdmin, async (req, res) => {
+    try {
+      const { keywords, category } = req.body as { keywords: string | string[]; category?: string };
+      const raw = Array.isArray(keywords) ? keywords : String(keywords).split(/[\n,]+/);
+      const clean = raw.map(k => k.trim()).filter(k => k.length > 0);
+      if (clean.length === 0) {
+        return res.status(400).json({ error: "No valid keywords provided" });
+      }
+      const created = await storage.addSeoKeywords(clean, category);
+      res.json({ success: true, count: created.length, keywords: created });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add keywords" });
+    }
+  });
+
+  app.patch("/api/admin/seo/keywords/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body as { status: string };
+      const updated = await storage.updateSeoKeywordStatus(id, status);
+      if (!updated) return res.status(404).json({ error: "Keyword not found" });
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update keyword" });
+    }
+  });
+
+  app.delete("/api/admin/seo/keywords/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteSeoKeyword(id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete keyword" });
+    }
+  });
+
+  // ─── SEO Automation: Schedule Config ────────────────────────────────────────
+
+  app.get("/api/admin/seo/schedule", requireAdmin, async (req, res) => {
+    try {
+      const config = await storage.getBlogScheduleConfig();
+      res.json(config || { postsPerDay: 7, enabled: false, lastRunAt: null, nextRunAt: null });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch schedule config" });
+    }
+  });
+
+  app.patch("/api/admin/seo/schedule", requireAdmin, async (req, res) => {
+    try {
+      const { postsPerDay, enabled } = req.body as { postsPerDay?: number; enabled?: boolean };
+      const update: Record<string, unknown> = {};
+      if (postsPerDay !== undefined) update.postsPerDay = Math.min(50, Math.max(1, postsPerDay));
+      if (enabled !== undefined) update.enabled = enabled;
+      const config = await storage.upsertBlogScheduleConfig(update);
+      res.json(config);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update schedule config" });
+    }
+  });
+
+  app.post("/api/admin/seo/schedule/run-now", requireAdmin, async (req, res) => {
+    try {
+      const result = await triggerManualRun();
+      res.json({ success: true, ...result });
+    } catch (error) {
+      console.error("Error running manual schedule:", error);
+      res.status(500).json({ error: "Failed to run blog generation" });
     }
   });
 

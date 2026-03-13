@@ -267,7 +267,6 @@ export default function ProductDetail() {
         category={product.category || "Test Banks"}
         brand={product.brand || "Testbankbooks"}
         sku={product.id}
-        condition={product.condition || "new"}
       />
       <Header cartCount={cartCount} />
 

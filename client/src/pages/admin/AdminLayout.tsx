@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { 
   LayoutDashboard, ShoppingCart, Package, Settings, LogOut, 
-  Menu, X, ChevronRight, Download, MessageCircle, BookOpen
+  Menu, X, ChevronRight, Download, MessageCircle, BookOpen, TrendingUp
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const navItems = [
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/blog", label: "Blog", icon: BookOpen },
+  { href: "/admin/seo", label: "SEO Automation", icon: TrendingUp },
   { href: "/admin/downloads", label: "Downloads", icon: Download },
   { href: "/admin/chat", label: "Live Chat", icon: MessageCircle },
   { href: "/admin/settings", label: "Settings", icon: Settings },

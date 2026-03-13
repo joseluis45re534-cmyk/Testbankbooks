@@ -1,5 +1,155 @@
 import type { Product } from "@shared/schema";
 
+function detectCategoryFromKeyword(keyword: string): string {
+  const kw = keyword.toLowerCase();
+  if (kw.includes("pharmacol") || kw.includes("drug") || kw.includes("medication")) return "Pharmacology";
+  if (kw.includes("pediatric") || kw.includes("child") || kw.includes("infant")) return "Pediatrics";
+  if (kw.includes("maternal") || kw.includes("maternity") || kw.includes("obstet") || kw.includes("newborn") || kw.includes("prenatal")) return "Maternal & Newborn";
+  if (kw.includes("mental health") || kw.includes("psychiatr") || kw.includes("psychology")) return "Psychology & Mental Health";
+  if (kw.includes("anatomy") || kw.includes("physiology") || kw.includes("a&p")) return "Anatomy & Physiology";
+  if (kw.includes("medical-surgical") || kw.includes("med-surg") || kw.includes("medical surgical")) return "Medical-Surgical";
+  if (kw.includes("pathophysiology") || kw.includes("pathology")) return "Pathophysiology";
+  if (kw.includes("fundamentals") || kw.includes("basic nursing")) return "Fundamentals";
+  if (kw.includes("leadership") || kw.includes("management") || kw.includes("delegation")) return "Leadership & Management";
+  if (kw.includes("community") || kw.includes("public health") || kw.includes("population")) return "Public Health";
+  if (kw.includes("radiology") || kw.includes("imaging") || kw.includes("radiolog")) return "Radiology";
+  if (kw.includes("immunology") || kw.includes("immune")) return "Immunology";
+  if (kw.includes("laboratory") || kw.includes("lab test")) return "Laboratory";
+  if (kw.includes("nclex") || kw.includes("test bank") || kw.includes("practice question") || kw.includes("exam prep")) return "Test Banks";
+  return "Nursing";
+}
+
+function getStudyTopicsForKeyword(keyword: string, category: string): string[] {
+  const base = getTopicsForCategory(category);
+  return base;
+}
+
+function generateFAQsForKeyword(keyword: string): { q: string; a: string }[] {
+  return [
+    {
+      q: `What is the best way to study for a ${keyword} exam?`,
+      a: `The most effective approach combines regular practice with exam-style questions, spaced repetition of key concepts, and reviewing detailed answer rationales. Using a comprehensive test bank aligned to your specific course is proven to improve exam scores significantly.`
+    },
+    {
+      q: `How many practice questions should I complete when preparing for ${keyword}?`,
+      a: `Aim for at least 200–500 practice questions covering all major topic areas. Focus on quality over quantity — review every rationale carefully, especially for questions you answered incorrectly. Our test bank provides hundreds of questions with detailed explanations.`
+    },
+    {
+      q: `Are test banks effective for ${keyword} exam preparation?`,
+      a: `Yes — test banks are one of the most evidence-based study tools available. They mirror actual exam formats, expose you to a wide range of question types, and help identify knowledge gaps before the real exam.`
+    },
+    {
+      q: `How quickly will I receive my study materials after purchase?`,
+      a: `Instantly! All our test banks are digital downloads. As soon as your payment is confirmed, you'll receive a download link and confirmation email so you can start studying right away.`
+    }
+  ];
+}
+
+export function generateBlogPostFromKeyword(keyword: string, category?: string): GeneratedBlogPost {
+  const detectedCategory = category || detectCategoryFromKeyword(keyword);
+  const topics = getStudyTopicsForKeyword(keyword, detectedCategory);
+  const faqs = generateFAQsForKeyword(keyword);
+
+  const titleVariants = [
+    `${keyword.charAt(0).toUpperCase() + keyword.slice(1)}: Complete Study Guide & Practice Questions`,
+    `How to Master ${keyword.charAt(0).toUpperCase() + keyword.slice(1)}: Proven Exam Strategies`,
+    `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Study Guide: Everything You Need to Pass`,
+  ];
+  const blogTitle = titleVariants[Math.floor(Math.random() * titleVariants.length)];
+
+  const slug = slugify(keyword) + "-guide-" + Date.now().toString(36);
+  const excerpt = `Everything you need to know about ${keyword}. Discover proven study strategies, essential topics, and high-yield practice questions to help you pass your nursing exam with confidence.`;
+
+  const topicsList = topics
+    .map(t => `<li><strong>${t.charAt(0).toUpperCase() + t.slice(1)}</strong>: A high-yield area that frequently appears on nursing examinations and requires solid foundational understanding.</li>`)
+    .join("\n");
+
+  const faqHtml = faqs.map(f => `
+<h3>${f.q}</h3>
+<p>${f.a}</p>`).join("\n");
+
+  const content = `
+<h2>Introduction to ${keyword.charAt(0).toUpperCase() + keyword.slice(1)}</h2>
+<p>If you're preparing for a ${detectedCategory.toLowerCase()} examination that covers <strong>${keyword}</strong>, you're in the right place. This comprehensive study guide breaks down everything you need to know — from the core concepts you'll be tested on, to the most effective study strategies that top-performing nursing students use.</p>
+<p>Whether you're working toward your NCLEX, a course final, or a specialty certification, understanding ${keyword} deeply is essential for both your exam and your clinical practice. The good news? With the right preparation tools and strategies, this material is absolutely achievable.</p>
+<p>In this guide, we'll walk through the high-yield topics, science-backed study methods, and how a comprehensive test bank can take your preparation to the next level.</p>
+
+<h2>Why ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Is Critical for Nursing Exams</h2>
+<p>${detectedCategory} is one of the most commonly tested areas in nursing education. Questions on ${keyword} test not just your knowledge of facts, but your ability to apply concepts in realistic clinical scenarios — exactly the kind of critical thinking that nursing exams demand.</p>
+<p>Nursing boards and faculty design exams around real patient care situations. That means studying ${keyword} means understanding:</p>
+<ul>
+<li>The underlying <strong>pathophysiology or pharmacology</strong> driving clinical decisions</li>
+<li>How to <strong>prioritize nursing actions</strong> in time-sensitive situations</li>
+<li>Evidence-based <strong>interventions and patient education</strong> strategies</li>
+<li>Common complications, contraindications, and <strong>safety considerations</strong></li>
+</ul>
+
+<h2>High-Yield Topics to Master</h2>
+<p>When studying ${keyword}, focus your energy on these essential areas that are most frequently tested:</p>
+<ul>
+${topicsList}
+</ul>
+<p>Don't try to memorize everything at once. Use active recall — after reviewing each topic, close your notes and try to recall the key points from memory. Then practice applying each concept with exam-style questions.</p>
+
+<h2>Proven Study Strategies for ${detectedCategory} Exams</h2>
+
+<h3>1. Practice with Exam-Style Questions Daily</h3>
+<p>The single most effective thing you can do is practice with questions that mirror the actual exam format. Aim for 30–50 questions per study session. For each question:</p>
+<ul>
+<li>Read <strong>all answer choices</strong> before selecting one</li>
+<li>Eliminate obviously wrong answers first</li>
+<li>Apply the nursing process: Assessment → Diagnosis → Planning → Implementation → Evaluation</li>
+<li>Read the <strong>rationale for every answer</strong>, not just the ones you got wrong</li>
+</ul>
+
+<h3>2. Use Spaced Repetition</h3>
+<p>Spaced repetition is scientifically proven to improve long-term retention. Instead of cramming, spread your study sessions out:</p>
+<ul>
+<li><strong>Daily</strong>: 30–50 practice questions covering mixed topics</li>
+<li><strong>Weekly</strong>: Full chapter reviews and targeted weak-area work</li>
+<li><strong>Pre-exam week</strong>: Full timed practice tests under exam conditions</li>
+</ul>
+
+<h3>3. Build Clinical Connections</h3>
+<p>For every concept related to ${keyword}, ask yourself: "How would this look in a real patient situation?" Connecting textbook knowledge to clinical scenarios helps you answer application-level questions — the most common type on nursing exams.</p>
+
+<h3>4. Identify and Target Weak Areas</h3>
+<p>Track your performance across different topic areas. If you consistently score below 70% in a particular area, dedicate extra study time there before your exam. A quality test bank gives you detailed feedback so you can study smarter, not longer.</p>
+
+<h2>How Our Test Bank Helps You Master ${keyword.charAt(0).toUpperCase() + keyword.slice(1)}</h2>
+<p>Our nursing test banks are designed by experienced educators and clinicians to give you the most realistic exam preparation possible:</p>
+<ul>
+<li>✅ <strong>Hundreds of NCLEX-style questions</strong> covering ${keyword} and related topics</li>
+<li>✅ <strong>Detailed rationale explanations</strong> for every answer choice — not just the correct one</li>
+<li>✅ <strong>Multiple question formats</strong>: multiple choice, select-all-that-apply, ordered response, and case studies</li>
+<li>✅ <strong>Instant digital download</strong> — start studying within minutes of purchase</li>
+<li>✅ <strong>Organized by chapter and topic</strong> so you can study systematically or target specific areas</li>
+<li>✅ <strong>30-day money-back guarantee</strong> — if you're not satisfied, we'll refund you</li>
+</ul>
+
+<h2>Frequently Asked Questions</h2>
+${faqHtml}
+
+<h2>Start Your ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Preparation Today</h2>
+<p>Success in your nursing exam comes down to consistent practice, smart studying, and using the right resources. The more exam-style questions you work through — and the more carefully you review the rationales — the more confident and prepared you'll feel on exam day.</p>
+<p>Browse our complete collection of nursing test banks, study guides, and practice question sets to find the perfect resource for your exam preparation.</p>
+<p><a href="/shop" class="cta-link">Browse All Test Banks & Study Guides →</a></p>
+  `.trim();
+
+  const metaTitle = `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Study Guide | Testbankbooks`;
+  const metaDescription = `Master ${keyword} with our comprehensive study guide and practice questions. Proven exam strategies, high-yield topics, and instant-download test banks for nursing students.`;
+
+  return {
+    slug,
+    title: blogTitle,
+    excerpt,
+    content,
+    metaTitle,
+    metaDescription,
+    category: detectedCategory,
+  };
+}
+
 function getTopicsForCategory(category: string): string[] {
   const topics: Record<string, string[]> = {
     "Nursing": ["nursing process and care planning", "patient assessment and vital signs", "clinical judgment and decision-making", "therapeutic communication", "medication administration"],

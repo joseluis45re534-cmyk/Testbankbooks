@@ -1,15 +1,16 @@
 import { db } from "./db";
 import { 
   products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags, downloadTokens,
-  chatConversations, chatMessages, blogPosts,
+  chatConversations, chatMessages, blogPosts, seoKeywords, blogScheduleConfig,
   type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct,
   type Order, type InsertOrder, type AbandonedCart, type InsertAbandonedCart,
   type AdminUser, type InsertAdminUser, type PaymentSetting, type InsertPaymentSetting,
   type Tag, type InsertTag, type DownloadToken, type InsertDownloadToken,
   type ChatConversation, type InsertChatConversation, type ChatMessage, type InsertChatMessage,
-  type ChatConversationWithMessages, type BlogPost, type InsertBlogPost
+  type ChatConversationWithMessages, type BlogPost, type InsertBlogPost,
+  type SeoKeyword, type InsertSeoKeyword, type BlogScheduleConfig
 } from "@shared/schema";
-import { eq, ilike, or, and, sql, desc, lt, inArray, count, isNotNull } from "drizzle-orm";
+import { eq, ilike, or, and, sql, desc, lt, inArray, count, isNotNull, asc } from "drizzle-orm";
 
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
@@ -86,6 +87,14 @@ export interface IStorage {
   updateBlogPost(id: string, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: string): Promise<void>;
   getBlogCategories(): Promise<{ name: string; count: number }[]>;
+
+  getSeoKeywords(status?: string): Promise<SeoKeyword[]>;
+  getPendingSeoKeywords(limit: number): Promise<SeoKeyword[]>;
+  addSeoKeywords(keywords: string[], category?: string): Promise<SeoKeyword[]>;
+  updateSeoKeywordStatus(id: string, status: string, blogPostSlug?: string): Promise<SeoKeyword | undefined>;
+  deleteSeoKeyword(id: string): Promise<void>;
+  getBlogScheduleConfig(): Promise<BlogScheduleConfig | null>;
+  upsertBlogScheduleConfig(config: Partial<{ postsPerDay: number; enabled: boolean; lastRunAt: Date | null; nextRunAt: Date | null }>): Promise<BlogScheduleConfig>;
 }
 
 function slugify(title: string): string {
@@ -591,6 +600,57 @@ export class DatabaseStorage implements IStorage {
     return result
       .filter((r): r is { name: string; count: number } => r.name !== null)
       .map(r => ({ name: r.name!, count: Number(r.count) }));
+  }
+
+  async getSeoKeywords(status?: string): Promise<SeoKeyword[]> {
+    if (status) {
+      return db.select().from(seoKeywords).where(eq(seoKeywords.status, status)).orderBy(desc(seoKeywords.createdAt));
+    }
+    return db.select().from(seoKeywords).orderBy(desc(seoKeywords.createdAt));
+  }
+
+  async getPendingSeoKeywords(limit: number): Promise<SeoKeyword[]> {
+    return db.select().from(seoKeywords)
+      .where(eq(seoKeywords.status, "pending"))
+      .orderBy(desc(seoKeywords.priority), asc(seoKeywords.createdAt))
+      .limit(limit);
+  }
+
+  async addSeoKeywords(keywords: string[], category?: string): Promise<SeoKeyword[]> {
+    const values = keywords.map(k => ({ keyword: k.trim(), category: category || null, status: "pending" }));
+    const created = await db.insert(seoKeywords).values(values).returning();
+    return created;
+  }
+
+  async updateSeoKeywordStatus(id: string, status: string, blogPostSlug?: string): Promise<SeoKeyword | undefined> {
+    const [updated] = await db.update(seoKeywords)
+      .set({ status, usedAt: status === "used" ? new Date() : null, blogPostSlug: blogPostSlug || null })
+      .where(eq(seoKeywords.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSeoKeyword(id: string): Promise<void> {
+    await db.delete(seoKeywords).where(eq(seoKeywords.id, id));
+  }
+
+  async getBlogScheduleConfig(): Promise<BlogScheduleConfig | null> {
+    const [config] = await db.select().from(blogScheduleConfig).limit(1);
+    return config || null;
+  }
+
+  async upsertBlogScheduleConfig(config: Partial<{ postsPerDay: number; enabled: boolean; lastRunAt: Date | null; nextRunAt: Date | null }>): Promise<BlogScheduleConfig> {
+    const existing = await this.getBlogScheduleConfig();
+    if (existing) {
+      const [updated] = await db.update(blogScheduleConfig)
+        .set({ ...config, updatedAt: new Date() })
+        .where(eq(blogScheduleConfig.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(blogScheduleConfig).values({ ...config }).returning();
+      return created;
+    }
   }
 }
 

@@ -12,7 +12,6 @@ interface SEOProps {
   category?: string;
   brand?: string;
   sku?: string;
-  condition?: string;
   publishedDate?: string;
   authorName?: string;
 }
@@ -29,7 +28,6 @@ export function SEO({
   category,
   brand,
   sku,
-  condition = "new",
   publishedDate,
   authorName,
 }: SEOProps) {
@@ -50,7 +48,6 @@ export function SEO({
       contactType: "customer service",
       email: "support@testbankbooks.com",
       availableLanguage: "English",
-      contactOption: "TollFree",
     },
     sameAs: [],
   };
@@ -94,10 +91,6 @@ export function SEO({
               availability === "in_stock"
                 ? "https://schema.org/InStock"
                 : "https://schema.org/OutOfStock",
-            itemCondition:
-              condition === "new"
-                ? "https://schema.org/NewCondition"
-                : "https://schema.org/UsedCondition",
             seller: {
               "@type": "Organization",
               name: "Testbankbooks",
@@ -166,7 +159,6 @@ export function SEO({
             property="product:availability"
             content={availability === "in_stock" ? "in stock" : "out of stock"}
           />
-          <meta property="product:condition" content={condition || "new"} />
           {category && <meta property="product:category" content={category} />}
           {brand && <meta property="product:brand" content={brand} />}
         </>

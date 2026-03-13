@@ -198,3 +198,29 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const seoKeywords = pgTable("seo_keywords", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  keyword: text("keyword").notNull(),
+  category: varchar("category", { length: 100 }),
+  status: varchar("status", { length: 20 }).default("pending"),
+  priority: integer("priority").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  usedAt: timestamp("used_at"),
+  blogPostSlug: text("blog_post_slug"),
+});
+
+export const insertSeoKeywordSchema = createInsertSchema(seoKeywords).omit({ id: true, createdAt: true });
+export type InsertSeoKeyword = z.infer<typeof insertSeoKeywordSchema>;
+export type SeoKeyword = typeof seoKeywords.$inferSelect;
+
+export const blogScheduleConfig = pgTable("blog_schedule_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  postsPerDay: integer("posts_per_day").default(7),
+  enabled: boolean("enabled").default(true),
+  lastRunAt: timestamp("last_run_at"),
+  nextRunAt: timestamp("next_run_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type BlogScheduleConfig = typeof blogScheduleConfig.$inferSelect;

@@ -93,11 +93,13 @@ Preferred communication style: Simple, everyday language.
 - **Blog content CSS**: `.blog-content` styles in `index.css` for h2/h3/p/ul/ol/li/strong
 - **Key files**: `server/blogGenerator.ts`, `client/src/pages/Blog.tsx`, `client/src/pages/BlogPost.tsx`
 
-### Google Shopping Feed Removed (Mar 2026)
-- **Reason**: Compliance with Google Merchant Center policies — removed to resolve "Digital books/eBooks" policy violation
-- **Change**: Removed `/feed/google-shopping.xml` route from `server/routes.ts` entirely
-- **Impact**: No more Google Shopping feed served; prevents Google from indexing digital product listings
-- **Site**: Fully functional without feed; products remain discoverable via organic search and sitemap
+### Google Merchant Center Misrepresentation Fixes (Mar 2026)
+- **Google Shopping Feed**: Already removed — no `/feed/google-shopping.xml` route served
+- **Structured data cleanup**: Removed `itemCondition` from Product JSON-LD schema (condition is a physical product concept, not applicable to digital goods)
+- **Open Graph cleanup**: Removed `product:condition` meta tag from all product pages
+- **Organization schema**: Removed `contactOption: "TollFree"` (number is not toll-free — was inaccurate)
+- **Files changed**: `client/src/components/SEO.tsx`, `client/src/pages/ProductDetail.tsx`
+- **No fake social proof**: Audited all pages — no fake reviews, ratings, scarcity claims, or misleading copy
 
 ### Automated Order Confirmation Emails (Latest - Feb 2026)
 - **Email service**: Resend (`resend` npm package) for transactional email delivery

@@ -51,7 +51,7 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search test banks, nursing guides, study materials..."
+                placeholder="Search nursing study materials, exam prep, guides..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -111,6 +111,28 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
                       data-testid="link-mobile-home"
                     >
                       All Products
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        setLocation("/about");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="link-mobile-about"
+                    >
+                      About Us
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        setLocation("/contact");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="link-mobile-contact"
+                    >
+                      Contact
                     </Button>
                     <Button
                       variant="ghost"

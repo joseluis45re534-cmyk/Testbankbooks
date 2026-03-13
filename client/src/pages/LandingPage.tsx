@@ -50,8 +50,8 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
-        title="Testbankbooks - Premium Test Banks & Study Guides for Nursing Students"
-        description="Access 263+ test banks and study guides designed specifically for nursing and medical students. Practice with real exam-style questions and boost your scores. Instant download available."
+        title="Testbankbooks - Premium Exam Prep & Study Materials for Nursing Students"
+        description="Access 300+ nursing exam prep materials and study guides designed specifically for nursing and medical students. Practice with real exam-style questions and boost your scores. Instant download available."
       />
       <Header cartCount={cartCount} />
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
               Pass Your Nursing<br />Exams with Confidence
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Access 263+ test banks and study guides designed specifically for nursing and medical students. Practice with real exam-style questions and boost your scores.
+              Access 300+ nursing exam prep materials and study guides designed specifically for nursing and medical students. Practice with real exam-style questions and boost your scores.
             </p>
 
             <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-6">
@@ -74,7 +74,7 @@ export default function LandingPage() {
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="Search test banks, nursing guides, study materials..."
+                    placeholder="Search nursing study materials, exam prep, guides..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-12 h-14 text-lg"
@@ -181,7 +181,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm text-primary font-medium mb-1">Browse by Subject</p>
                 <h2 className="text-2xl md:text-3xl font-bold">Shop by Category</h2>
-                <p className="text-muted-foreground mt-1">Find test banks organized by textbook and subject area</p>
+                <p className="text-muted-foreground mt-1">Find study materials organized by subject area</p>
               </div>
             </div>
 
@@ -206,7 +206,7 @@ export default function LandingPage() {
               <div>
                 <p className="text-sm text-primary font-medium mb-1">New Arrivals</p>
                 <h2 className="text-2xl md:text-3xl font-bold">Latest Products</h2>
-                <p className="text-muted-foreground mt-1">Recently added test banks and study guides</p>
+                <p className="text-muted-foreground mt-1">Recently added exam prep materials and study guides</p>
               </div>
               <Link href="/shop">
                 <Button variant="outline" data-testid="button-browse-all">Browse All</Button>
@@ -326,7 +326,7 @@ export default function LandingPage() {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Quality Content</h3>
                   <p className="text-muted-foreground">
-                    Comprehensive test banks aligned with your course textbooks
+                    Comprehensive exam prep materials aligned with your course textbooks
                   </p>
                 </CardContent>
               </Card>
@@ -338,7 +338,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Start Studying?</h2>
             <p className="text-lg opacity-90 mb-8">
-              Get instant access to the test banks you need. Start practicing today and walk into your exam with confidence.
+              Get instant access to the study materials you need. Start practicing today and walk into your exam with confidence.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/shop">

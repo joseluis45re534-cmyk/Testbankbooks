@@ -23,6 +23,7 @@ import TermsConditions from "@/pages/TermsConditions";
 import RefundPolicy from "@/pages/RefundPolicy";
 import ShippingPolicy from "@/pages/ShippingPolicy";
 import ContactUs from "@/pages/ContactUs";
+import AboutUs from "@/pages/AboutUs";
 import { ChatWidget } from "@/components/ChatWidget";
 import { CustomScripts } from "@/components/CustomScripts";
 
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/refund-policy" component={RefundPolicy} />
       <Route path="/shipping-policy" component={ShippingPolicy} />
       <Route path="/contact" component={ContactUs} />
+      <Route path="/about" component={AboutUs} />
       <Route component={NotFound} />
     </Switch>
   );

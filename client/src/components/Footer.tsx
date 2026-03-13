@@ -14,7 +14,7 @@ export function Footer() {
               <span className="font-bold text-xl">Testbankbooks</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Your trusted source for premium nursing test banks and study guides. Instant digital downloads for exam preparation.
+              Your trusted source for premium nursing exam prep materials and study guides. Instant digital downloads for exam preparation.
             </p>
           </div>
 
@@ -22,6 +22,7 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="/" className="hover:text-foreground transition-colors">All Products</a></li>
+              <li><a href="/about" className="hover:text-foreground transition-colors">About Us</a></li>
               <li><a href="/cart" className="hover:text-foreground transition-colors">Shopping Cart</a></li>
               <li><a href="/contact" className="hover:text-foreground transition-colors">Contact Us</a></li>
               <li><a href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</a></li>

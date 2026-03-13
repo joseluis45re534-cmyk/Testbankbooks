@@ -83,6 +83,9 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} Testbankbooks. All rights reserved.</p>
+          <p className="mt-2">
+            <a href="/admin" className="text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors">Admin</a>
+          </p>
         </div>
       </div>
     </footer>

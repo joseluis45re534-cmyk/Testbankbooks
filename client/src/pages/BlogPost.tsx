@@ -117,9 +117,10 @@ export default function BlogPost() {
       <SEO
         title={post.metaTitle || post.title}
         description={post.metaDescription || post.excerpt || ""}
-        ogTitle={post.title}
-        ogDescription={post.excerpt || ""}
-        ogImage={post.imageUrl || undefined}
+        image={post.imageUrl || undefined}
+        type="blog"
+        category={post.category || undefined}
+        publishedDate={post.createdAt ? new Date(String(post.createdAt)).toISOString().split("T")[0] : undefined}
       />
       <Header cartCount={cartCount} />
 

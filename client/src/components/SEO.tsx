@@ -5,7 +5,7 @@ interface SEOProps {
   description?: string;
   image?: string;
   url?: string;
-  type?: "website" | "product";
+  type?: "website" | "product" | "blog";
   price?: string;
   salePrice?: string;
   availability?: string;
@@ -13,6 +13,8 @@ interface SEOProps {
   brand?: string;
   sku?: string;
   condition?: string;
+  publishedDate?: string;
+  authorName?: string;
 }
 
 export function SEO({
@@ -28,6 +30,8 @@ export function SEO({
   brand,
   sku,
   condition = "new",
+  publishedDate,
+  authorName,
 }: SEOProps) {
   const fullTitle = title.includes("Testbankbooks") ? title : `${title} | Testbankbooks`;
   const displayPrice = salePrice || price;
@@ -105,6 +109,37 @@ export function SEO({
         }
       : null;
 
+  const blogPostingSchema =
+    type === "blog"
+      ? {
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: title,
+          description: description,
+          image: image,
+          url: url || (typeof window !== "undefined" ? window.location.href : ""),
+          datePublished: publishedDate || new Date().toISOString().split("T")[0],
+          dateModified: publishedDate || new Date().toISOString().split("T")[0],
+          author: {
+            "@type": "Organization",
+            name: authorName || "Testbankbooks",
+            url: typeof window !== "undefined" ? window.location.origin : "",
+          },
+          publisher: {
+            "@type": "Organization",
+            name: "Testbankbooks",
+            logo: {
+              "@type": "ImageObject",
+              url: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "",
+            },
+          },
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": url || (typeof window !== "undefined" ? window.location.href : ""),
+          },
+        }
+      : null;
+
   return (
     <Helmet>
       <title>{fullTitle}</title>
@@ -112,7 +147,7 @@ export function SEO({
       <meta name="robots" content="index, follow" />
       <link rel="canonical" href={url || (typeof window !== "undefined" ? window.location.href : "")} />
 
-      <meta property="og:type" content={type === "product" ? "product" : "website"} />
+      <meta property="og:type" content={type === "product" ? "product" : type === "blog" ? "article" : "website"} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       {image && <meta property="og:image" content={image} />}
@@ -134,6 +169,14 @@ export function SEO({
         </>
       )}
 
+      {type === "blog" && publishedDate && (
+        <>
+          <meta property="article:published_time" content={publishedDate} />
+          <meta property="article:author" content={authorName || "Testbankbooks"} />
+          {category && <meta property="article:section" content={category} />}
+        </>
+      )}
+
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
@@ -148,6 +191,10 @@ export function SEO({
 
       {productSchema && (
         <script type="application/ld+json">{JSON.stringify(productSchema)}</script>
+      )}
+
+      {blogPostingSchema && (
+        <script type="application/ld+json">{JSON.stringify(blogPostingSchema)}</script>
       )}
     </Helmet>
   );

@@ -36,6 +36,13 @@ function cleanDescription(text: string): string {
   return cleaned;
 }
 
+function normalizeProductTitle(title: string): string {
+  return title
+    .replace(/Educational Software/gi, "Test Bank")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function extractCategory(title: string): string {
   const titleLower = title.toLowerCase();
   
@@ -122,7 +129,7 @@ export async function parseWooCommerceCsv(csvPath: string): Promise<InsertProduc
 
   for (const row of records) {
     const id = row["ID"] || "";
-    const title = cleanHtmlEntities(row["Name"] || "");
+    const title = normalizeProductTitle(cleanHtmlEntities(row["Name"] || ""));
     const rawDescription = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
     const description = cleanDescription(rawDescription);
     const price = row["Regular price"] || "0";
@@ -187,7 +194,7 @@ export async function parseWooCommerceCsvFromBuffer(buffer: Buffer): Promise<Ins
 
   for (const row of records) {
     const id = row["ID"] || "";
-    const title = cleanHtmlEntities(row["Name"] || "");
+    const title = normalizeProductTitle(cleanHtmlEntities(row["Name"] || ""));
     const rawDescription = cleanHtmlEntities(row["Description"] || row["Short description"] || "");
     const description = cleanDescription(rawDescription);
     const price = row["Regular price"] || "0";

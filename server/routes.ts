@@ -1246,7 +1246,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Get single conversation with messages
   app.get("/api/admin/chat/conversations/:id", requireAdmin, async (req, res) => {
     try {
-      const conversation = await storage.getConversationById(req.params.id);
+      const conversation = await storage.getConversationById(req.params.id as string);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
       }
@@ -1283,7 +1283,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Mark messages as read
   app.post("/api/admin/chat/mark-read/:conversationId", requireAdmin, async (req, res) => {
     try {
-      await storage.markMessagesAsRead(req.params.conversationId, "visitor");
+      await storage.markMessagesAsRead(req.params.conversationId as string, "visitor");
       res.json({ success: true });
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -1294,7 +1294,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Close conversation
   app.post("/api/admin/chat/close/:conversationId", requireAdmin, async (req, res) => {
     try {
-      const updated = await storage.updateConversationStatus(req.params.conversationId, "closed");
+      const updated = await storage.updateConversationStatus(req.params.conversationId as string, "closed");
       res.json(updated);
     } catch (error) {
       console.error("Error closing conversation:", error);
@@ -1379,7 +1379,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Update blog post
   app.patch("/api/admin/blog/:id", requireAdmin, async (req, res) => {
     try {
-      const post = await storage.updateBlogPost(req.params.id, req.body);
+      const post = await storage.updateBlogPost(req.params.id as string, req.body);
       res.json(post);
     } catch (error) {
       console.error("Error updating blog post:", error);
@@ -1390,7 +1390,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Delete blog post
   app.delete("/api/admin/blog/:id", requireAdmin, async (req, res) => {
     try {
-      await storage.deleteBlogPost(req.params.id);
+      await storage.deleteBlogPost(req.params.id as string);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting blog post:", error);
@@ -1401,7 +1401,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Admin: Auto-generate blog post for a single product
   app.post("/api/admin/blog/generate/:productId", requireAdmin, async (req, res) => {
     try {
-      const product = await storage.getProductById(req.params.productId);
+      const product = await storage.getProductById(req.params.productId as string);
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
       }

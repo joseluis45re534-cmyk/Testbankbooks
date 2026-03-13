@@ -15,6 +15,13 @@ function cleanHtmlEntities(text: string): string {
     .trim();
 }
 
+function normalizeProductTitle(title: string): string {
+  return title
+    .replace(/Educational Software/gi, "Test Bank")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function extractCategory(title: string): string {
   const titleLower = title.toLowerCase();
   
@@ -109,7 +116,7 @@ export async function parseXmlFeed(xmlContent: string): Promise<InsertProduct[]>
     const brand = parseXmlValue(itemXml, "brand");
     
     if (id && title) {
-      const cleanTitle = cleanHtmlEntities(title);
+      const cleanTitle = normalizeProductTitle(cleanHtmlEntities(title));
       products.push({
         id,
         title: cleanTitle,

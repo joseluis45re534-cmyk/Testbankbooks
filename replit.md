@@ -80,6 +80,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Google Shopping Feed Removed (Mar 2026)
+- **Reason**: Compliance with Google Merchant Center policies — removed to resolve "Digital books/eBooks" policy violation
+- **Change**: Removed `/feed/google-shopping.xml` route from `server/routes.ts` entirely
+- **Impact**: No more Google Shopping feed served; prevents Google from indexing digital product listings
+- **Site**: Fully functional without feed; products remain discoverable via organic search and sitemap
+
 ### Automated Order Confirmation Emails (Latest - Feb 2026)
 - **Email service**: Resend (`resend` npm package) for transactional email delivery
 - **Trigger**: Automatically sends after successful PayPal capture or Stripe payment confirmation

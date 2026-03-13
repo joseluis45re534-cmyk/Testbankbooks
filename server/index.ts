@@ -8,7 +8,6 @@ import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { generateBlogPostForProduct } from "./blogGenerator";
-import { initScheduler } from "./scheduler";
 
 async function generateMissingBlogPosts(): Promise<{ created: number; errors: number }> {
   const allProducts = await storage.getAllProducts();
@@ -234,9 +233,6 @@ app.use((req, res, next) => {
       } catch (error) {
         log(`Warning: Blog post generation failed: ${error}`, "blog");
       }
-
-      // Initialize SEO blog scheduler
-      initScheduler();
 
       // Scan for abandoned carts every 30 minutes
       setInterval(async () => {

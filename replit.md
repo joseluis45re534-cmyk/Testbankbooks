@@ -93,6 +93,18 @@ Preferred communication style: Simple, everyday language.
 - **Blog content CSS**: `.blog-content` styles in `index.css` for h2/h3/p/ul/ol/li/strong
 - **Key files**: `server/blogGenerator.ts`, `client/src/pages/Blog.tsx`, `client/src/pages/BlogPost.tsx`
 
+### SEO Keyword-Based Blog Automation (Feb 2026)
+- **Manual only**: Auto-scheduler removed; you control when blogs are generated via "Auto-Generate all" button
+- **SEO Keywords table**: `seoKeywords` in `shared/schema.ts` stores keyword/category/status/slug
+- **Blog Schedule config**: `blogScheduleConfig` table stores enable flag, posts-per-day, last/next run times
+- **Admin UI**: `client/src/pages/admin/AdminSEO.tsx` with bulk keyword import, search, filters, category selector, manual "Auto-Generate all" button, "Run Now" trigger
+- **API endpoints**: 
+  - GET/POST/PATCH/DELETE `/api/admin/seo/keywords` (manage keywords)
+  - GET/PATCH `/api/admin/seo/schedule` (view/update schedule config)
+  - POST `/api/admin/seo/schedule/run-now` (manual trigger)
+- **Keyword statuses**: `pending` (queued), `used` (post generated), `paused` (skipped)
+- **Files**: `server/scheduler.ts` (manual-only logic), `server/blogGenerator.ts` (keyword→post generation), `client/src/pages/admin/AdminSEO.tsx` (control UI)
+
 ### Google Merchant Center Misrepresentation Fixes (Mar 2026)
 - **Google Shopping Feed**: Already removed — no `/feed/google-shopping.xml` route served
 - **Structured data cleanup**: Removed `itemCondition` from Product JSON-LD schema (condition is a physical product concept, not applicable to digital goods)

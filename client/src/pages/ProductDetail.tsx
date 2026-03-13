@@ -112,6 +112,17 @@ export default function ProductDetail() {
     queryKey: ["/api/products"],
   });
 
+  const { data: blogPost } = useQuery<{ slug: string; title: string } | null>({
+    queryKey: ["/api/blog/by-product", product?.id],
+    queryFn: async () => {
+      if (!product?.id) return null;
+      const res = await fetch(`/api/blog/by-product/${product.id}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!product?.id,
+  });
+
   const addToCartMutation = useMutation({
     mutationFn: async () => {
       if (!product) return;
@@ -447,6 +458,29 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-16 space-y-16">
+            {blogPost && (
+              <section>
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                    <BookOpen className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">Free Study Guide Available</h3>
+                    <p className="text-muted-foreground text-sm">
+                      We've written a free, in-depth study guide for this test bank — covering key topics, exam tips, and sample question breakdowns.
+                    </p>
+                  </div>
+                  <Link
+                    href={`/blog/${blogPost.slug}`}
+                    className="shrink-0 inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                    data-testid="link-product-study-guide"
+                  >
+                    Read Study Guide
+                  </Link>
+                </div>
+              </section>
+            )}
+
             <section>
               <h2 className="text-2xl font-bold mb-6">Product Introduction</h2>
               <p className="text-muted-foreground leading-relaxed">

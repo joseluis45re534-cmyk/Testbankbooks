@@ -236,8 +236,9 @@ export default function ProductDetail() {
   const displayPrice = hasDiscount ? salePrice : price;
   const discountPercent = hasDiscount ? Math.round((1 - salePrice / price) * 100) : 0;
 
-  const seoTitle = `${product.title} - Instant Download`;
-  const seoDescription = `${product.title}. $${displayPrice.toFixed(2)} - Instant Access for Exam Prep. Complete test bank with all chapters included.`.substring(0, 160);
+  const seoCategory = product.category || "Nursing";
+  const seoTitle = product.seoTitle || `${product.title} | ${seoCategory} Test Bank for Exam Prep`;
+  const seoDescription = (product.seoDescription || `Ace your ${seoCategory.toLowerCase()} exam with the ${product.title}. $${displayPrice.toFixed(2)} — NCLEX-style questions, detailed rationale, instant download. 30-day money-back guarantee.`).substring(0, 160);
 
   const currentImage = allImages[selectedImageIndex] || null;
 

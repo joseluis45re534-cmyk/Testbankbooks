@@ -9,7 +9,7 @@ import {
   type ChatConversation, type InsertChatConversation, type ChatMessage, type InsertChatMessage,
   type ChatConversationWithMessages, type BlogPost, type InsertBlogPost
 } from "@shared/schema";
-import { eq, ilike, or, and, sql, desc, lt, inArray, count } from "drizzle-orm";
+import { eq, ilike, or, and, sql, desc, lt, inArray, count, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
@@ -579,14 +579,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBlogCategories(): Promise<{ name: string; count: number }[]> {
-    const result = await db.execute(sql`
-      SELECT category, COUNT(*) as count
-      FROM blog_posts
-      WHERE published = true AND category IS NOT NULL
-      GROUP BY category
-      ORDER BY count DESC
-    `);
-    return (result.rows as any[]).map(r => ({ name: r.category, count: Number(r.count) }));
+    const result = await db
+      .select({
+        name: blogPosts.category,
+        count: count(),
+      })
+      .from(blogPosts)
+      .where(and(eq(blogPosts.published, true), isNotNull(blogPosts.category)))
+      .groupBy(blogPosts.category)
+      .orderBy(desc(count()));
+    return result
+      .filter((r): r is { name: string; count: number } => r.name !== null)
+      .map(r => ({ name: r.name!, count: Number(r.count) }));
   }
 }
 

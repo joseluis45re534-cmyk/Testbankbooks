@@ -7,6 +7,28 @@ import { fetchAndImportProducts } from "./xmlParser";
 import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { generateBlogPostForProduct } from "./blogGenerator";
+
+async function generateMissingBlogPosts(): Promise<number> {
+  const allProducts = await storage.getAllProducts();
+  let created = 0;
+  for (const product of allProducts) {
+    try {
+      const existing = await storage.getBlogPostByProductId(product.id);
+      if (existing) continue;
+      const generated = generateBlogPostForProduct(product);
+      await storage.createBlogPost({
+        ...generated,
+        productId: product.id,
+        imageUrl: product.imageUrl || null,
+        published: true,
+      });
+      created++;
+    } catch {
+    }
+  }
+  return created;
+}
 
 async function migrateProductNames() {
   const client = await pool.connect();
@@ -186,6 +208,16 @@ app.use((req, res, next) => {
         }
       } catch (error) {
         log(`Warning: Product name migration failed: ${error}`, "migration");
+      }
+
+      // Auto-generate blog posts for any products that don't have one yet
+      try {
+        const newPosts = await generateMissingBlogPosts();
+        if (newPosts > 0) {
+          log(`Generated ${newPosts} missing blog post(s)`, "blog");
+        }
+      } catch (error) {
+        log(`Warning: Blog post generation failed: ${error}`, "blog");
       }
 
       // Scan for abandoned carts every 30 minutes

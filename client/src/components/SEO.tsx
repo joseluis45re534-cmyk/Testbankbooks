@@ -38,16 +38,19 @@ export function SEO({
 
   const organizationSchema = {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "OnlineBusiness",
     name: "Testbankbooks",
     url: typeof window !== "undefined" ? window.location.origin : "",
     logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "",
+    description: "Online retailer of digital nursing exam prep materials and test banks. Instant digital download — no physical products.",
+    areaServed: "Worldwide",
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+1 (339) 228-4593",
+      telephone: "+13392284593",
       contactType: "customer service",
       email: "support@testbankbooks.com",
       availableLanguage: "English",
+      contactOption: "TollFree",
     },
     sameAs: [],
   };
@@ -82,7 +85,7 @@ export function SEO({
           brand: brand
             ? { "@type": "Brand", name: brand }
             : { "@type": "Brand", name: "Testbankbooks" },
-          category: category || "Educational Materials",
+          category: category || "Test Banks",
           offers: {
             "@type": "Offer",
             price: displayPrice,

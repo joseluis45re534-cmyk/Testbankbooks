@@ -117,8 +117,8 @@ export default function ContactUs() {
             <Card>
               <CardContent className="pt-6 text-center">
                 <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
-                <h2 className="font-semibold mb-1">Our Address</h2>
-                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">66 Cliff Rd, Nottingham NG1 1GY, UK</p>
+                <h2 className="font-semibold mb-1">Service Area</h2>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">Online Business &mdash; Worldwide Digital Delivery</p>
               </CardContent>
             </Card>
 
@@ -244,8 +244,8 @@ export default function ContactUs() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold text-sm">Our Address</p>
-                      <p className="text-muted-foreground text-sm">66 Cliff Rd, Nottingham NG1 1GY, UK</p>
+                      <p className="font-semibold text-sm">Service Area</p>
+                      <p className="text-muted-foreground text-sm">Online Business — Worldwide Digital Delivery</p>
                     </div>
                   </div>
                 </CardContent>

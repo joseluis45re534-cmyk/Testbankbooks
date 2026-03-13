@@ -9,9 +9,12 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { generateBlogPostForProduct } from "./blogGenerator";
 
-async function generateMissingBlogPosts(): Promise<number> {
+async function generateMissingBlogPosts(): Promise<{ created: number; errors: number }> {
   const allProducts = await storage.getAllProducts();
   let created = 0;
+  let errors = 0;
+  const failedIds: string[] = [];
+
   for (const product of allProducts) {
     try {
       const existing = await storage.getBlogPostByProductId(product.id);
@@ -24,10 +27,18 @@ async function generateMissingBlogPosts(): Promise<number> {
         published: true,
       });
       created++;
-    } catch {
+    } catch (err) {
+      errors++;
+      failedIds.push(product.id);
+      log(`Blog generation failed for product ${product.id}: ${err}`, "blog");
     }
   }
-  return created;
+
+  if (failedIds.length > 0) {
+    log(`Blog generation completed with ${errors} failure(s). Failed IDs: ${failedIds.join(", ")}`, "blog");
+  }
+
+  return { created, errors };
 }
 
 async function migrateProductNames() {
@@ -212,9 +223,12 @@ app.use((req, res, next) => {
 
       // Auto-generate blog posts for any products that don't have one yet
       try {
-        const newPosts = await generateMissingBlogPosts();
-        if (newPosts > 0) {
-          log(`Generated ${newPosts} missing blog post(s)`, "blog");
+        const { created, errors } = await generateMissingBlogPosts();
+        if (created > 0) {
+          log(`Generated ${created} missing blog post(s)`, "blog");
+        }
+        if (errors > 0) {
+          log(`Blog generation had ${errors} error(s) — check logs above`, "blog");
         }
       } catch (error) {
         log(`Warning: Blog post generation failed: ${error}`, "blog");

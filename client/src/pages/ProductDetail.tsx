@@ -253,7 +253,7 @@ export default function ProductDetail() {
         price={price.toFixed(2)}
         salePrice={hasDiscount ? salePrice.toFixed(2) : undefined}
         availability={product.availability || "in_stock"}
-        category={product.category || "Educational Materials"}
+        category={product.category || "Test Banks"}
         brand={product.brand || "Testbankbooks"}
         sku={product.id}
         condition={product.condition || "new"}

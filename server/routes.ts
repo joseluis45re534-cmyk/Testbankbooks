@@ -1340,6 +1340,20 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // Get blog post by product ID (for linking from product pages)
+  app.get("/api/blog/by-product/:productId", async (req, res) => {
+    try {
+      const post = await storage.getBlogPostByProductId(req.params.productId as string);
+      if (!post || !post.published) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post by product:", error);
+      res.status(500).json({ error: "Failed to fetch blog post" });
+    }
+  });
+
   // Get single blog post by slug
   app.get("/api/blog/:slug", async (req, res) => {
     try {

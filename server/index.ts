@@ -12,40 +12,37 @@ async function migrateProductNames() {
   const client = await pool.connect();
   try {
     const checkResult = await client.query(
-      "SELECT COUNT(*) FROM products WHERE title ILIKE '%test bank%'"
+      "SELECT COUNT(*) FROM products WHERE title ILIKE '%educational software%'"
     );
     const count = parseInt(checkResult.rows[0].count);
     if (count === 0) return 0;
 
+    // Revert: rename "Educational Software" back to "Test Bank"
     await client.query(`
       UPDATE products 
-      SET title = REGEXP_REPLACE(title, '\\s*Test Bank$', ' Educational Software', 'i'),
-          description = REPLACE(REPLACE(REPLACE(description, 'test bank', 'educational software'), 'Test Bank', 'Educational Software'), 'Test bank', 'Educational software')
-      WHERE title ILIKE '%Test Bank'
+      SET title = REGEXP_REPLACE(title, '\\s*Educational Software$', ' Test Bank', 'i')
+      WHERE title ILIKE '%Educational Software'
     `);
 
+    // Fix descriptions
     await client.query(`
       UPDATE products 
-      SET title = REGEXP_REPLACE(title, '^Test [Bb]ank\\s*[-]?\\s*', '') || ' Educational Software'
-      WHERE title ILIKE 'Test Bank%'
+      SET description = REPLACE(REPLACE(REPLACE(description, 'educational software', 'test bank'), 'Educational Software', 'Test Bank'), 'Educational software', 'Test bank')
+      WHERE description ILIKE '%educational software%'
     `);
 
-    await client.query(`
-      UPDATE products 
-      SET title = REGEXP_REPLACE(title, 'TEST BANK (FOR )?', '', 'i')
-      WHERE title ILIKE 'TEST BANK%'
-    `);
-
+    // Regenerate slugs for renamed products
     await client.query(`
       UPDATE products
       SET slug = LOWER(REGEXP_REPLACE(REGEXP_REPLACE(title, '[^a-zA-Z0-9]+', '-', 'g'), '^-|-$', '', 'g')) || '-' || id
-      WHERE title ILIKE '%educational software%'
+      WHERE title ILIKE '%test bank%' AND slug ILIKE '%educational-software%'
     `);
 
+    // Revert category
     await client.query(`
       UPDATE products 
-      SET category = 'Study Materials'
-      WHERE category = 'Test Banks'
+      SET category = 'Test Banks'
+      WHERE category = 'Study Materials'
     `);
 
     return count;
@@ -181,11 +178,11 @@ app.use((req, res, next) => {
         log(`Warning: Could not import products: ${error}`, "import");
       }
 
-      // Migrate product names: replace "Test Bank" with "Educational Software"
+      // Ensure product names use "Test Bank" (revert any prior rename)
       try {
         const migrated = await migrateProductNames();
         if (migrated > 0) {
-          log(`Migrated ${migrated} product names from "Test Bank" to "Educational Software"`, "migration");
+          log(`Restored ${migrated} product names back to "Test Bank"`, "migration");
         }
       } catch (error) {
         log(`Warning: Product name migration failed: ${error}`, "migration");

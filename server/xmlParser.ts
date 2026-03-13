@@ -64,7 +64,7 @@ function extractCategory(title: string): string {
     return "Laboratory";
   }
   
-  return "Study Materials";
+  return "Test Banks";
 }
 
 function parseXmlValue(xml: string, tag: string): string {
@@ -109,19 +109,11 @@ export async function parseXmlFeed(xmlContent: string): Promise<InsertProduct[]>
     const brand = parseXmlValue(itemXml, "brand");
     
     if (id && title) {
-      let cleanTitle = cleanHtmlEntities(title);
-      cleanTitle = cleanTitle.replace(/\s*Test Bank$/i, ' Educational Software');
-      cleanTitle = cleanTitle.replace(/^Test [Bb]ank\s*[-]?\s*/, '');
-      if (!cleanTitle.endsWith('Educational Software')) {
-        cleanTitle = cleanTitle + ' Educational Software';
-      }
-      const cleanDesc = (description || "")
-        .replace(/test bank/gi, 'educational software')
-        .replace(/Test Bank/g, 'Educational Software');
+      const cleanTitle = cleanHtmlEntities(title);
       products.push({
         id,
         title: cleanTitle,
-        description: cleanDesc || null,
+        description: description || null,
         price: parsePrice(price),
         salePrice: salePrice ? parsePrice(salePrice) : null,
         imageUrl: imageLink || null,

@@ -64,6 +64,19 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
             </Button>
           </form>
 
+          <div className="hidden md:flex items-center gap-1">
+            <Link href="/blog">
+              <Button variant="ghost" size="sm" data-testid="link-blog">
+                Study Guides
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button variant="ghost" size="sm" data-testid="link-about">
+                About
+              </Button>
+            </Link>
+          </div>
+
           <div className="flex items-center gap-2">
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative" data-testid="button-cart">
@@ -122,6 +135,17 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
                       data-testid="link-mobile-about"
                     >
                       About Us
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start"
+                      onClick={() => {
+                        setLocation("/blog");
+                        setMobileMenuOpen(false);
+                      }}
+                      data-testid="link-mobile-blog"
+                    >
+                      Study Guides
                     </Button>
                     <Button
                       variant="ghost"

@@ -80,6 +80,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Blog System with 300 Auto-Generated Study Guides (Mar 2026)
+- **Blog index page**: `/blog` with category sidebar, search, responsive card grid
+- **Blog post detail page**: `/blog/:slug` with product sidebar (add to cart CTA), related product info
+- **Blog generator**: `server/blogGenerator.ts` — template engine producing HTML content per product with study tips, topic lists, FAQ
+- **Blog database table**: `blog_posts` in `shared/schema.ts`
+- **Blog API routes**: Public (`/api/blog`, `/api/blog/categories`, `/api/blog/:slug`), Admin (`/api/admin/blog`, generate per-product, generate-all)
+- **Product by ID route**: `/api/products/id/:id` for blog post sidebar to fetch linked product
+- **300 blog posts seeded**: One per product, all published, linked by productId
+- **Sitemap updated**: Now includes 300 blog post URLs (609 URLs total)
+- **Navigation**: "Study Guides" link added to desktop header, mobile menu, and footer
+- **Blog content CSS**: `.blog-content` styles in `index.css` for h2/h3/p/ul/ol/li/strong
+- **Key files**: `server/blogGenerator.ts`, `client/src/pages/Blog.tsx`, `client/src/pages/BlogPost.tsx`
+
 ### Google Shopping Feed Removed (Mar 2026)
 - **Reason**: Compliance with Google Merchant Center policies — removed to resolve "Digital books/eBooks" policy violation
 - **Change**: Removed `/feed/google-shopping.xml` route from `server/routes.ts` entirely

@@ -1,13 +1,13 @@
 import { db } from "./db";
 import { 
   products, cartItems, orders, abandonedCarts, adminUsers, paymentSettings, tags, downloadTokens,
-  chatConversations, chatMessages,
+  chatConversations, chatMessages, blogPosts,
   type Product, type InsertProduct, type CartItem, type InsertCartItem, type CartItemWithProduct,
   type Order, type InsertOrder, type AbandonedCart, type InsertAbandonedCart,
   type AdminUser, type InsertAdminUser, type PaymentSetting, type InsertPaymentSetting,
   type Tag, type InsertTag, type DownloadToken, type InsertDownloadToken,
   type ChatConversation, type InsertChatConversation, type ChatMessage, type InsertChatMessage,
-  type ChatConversationWithMessages
+  type ChatConversationWithMessages, type BlogPost, type InsertBlogPost
 } from "@shared/schema";
 import { eq, ilike, or, and, sql, desc, lt, inArray, count } from "drizzle-orm";
 
@@ -77,6 +77,15 @@ export interface IStorage {
   createMessage(message: InsertChatMessage): Promise<ChatMessage>;
   markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
   getUnreadMessageCount(): Promise<number>;
+
+  getAllBlogPosts(): Promise<BlogPost[]>;
+  getPublishedBlogPosts(category?: string): Promise<BlogPost[]>;
+  getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
+  getBlogPostByProductId(productId: string): Promise<BlogPost | undefined>;
+  createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<void>;
+  getBlogCategories(): Promise<{ name: string; count: number }[]>;
 }
 
 function slugify(title: string): string {
@@ -532,6 +541,52 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({ count: count() }).from(chatMessages)
       .where(and(eq(chatMessages.isRead, false), eq(chatMessages.senderType, 'visitor')));
     return result[0]?.count || 0;
+  }
+
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
+  }
+
+  async getPublishedBlogPosts(category?: string): Promise<BlogPost[]> {
+    if (category) {
+      return db.select().from(blogPosts).where(and(eq(blogPosts.published, true), eq(blogPosts.category, category))).orderBy(desc(blogPosts.createdAt));
+    }
+    return db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.createdAt));
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug));
+    return post;
+  }
+
+  async getBlogPostByProductId(productId: string): Promise<BlogPost | undefined> {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.productId, productId));
+    return post;
+  }
+
+  async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
+    const [created] = await db.insert(blogPosts).values(post).returning();
+    return created;
+  }
+
+  async updateBlogPost(id: string, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const [updated] = await db.update(blogPosts).set({ ...post, updatedAt: new Date() }).where(eq(blogPosts.id, id)).returning();
+    return updated;
+  }
+
+  async deleteBlogPost(id: string): Promise<void> {
+    await db.delete(blogPosts).where(eq(blogPosts.id, id));
+  }
+
+  async getBlogCategories(): Promise<{ name: string; count: number }[]> {
+    const result = await db.execute(sql`
+      SELECT category, COUNT(*) as count
+      FROM blog_posts
+      WHERE published = true AND category IS NOT NULL
+      GROUP BY category
+      ORDER BY count DESC
+    `);
+    return (result.rows as any[]).map(r => ({ name: r.category, count: Number(r.count) }));
   }
 }
 

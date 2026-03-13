@@ -13,6 +13,7 @@ import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./em
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
 import { eq, or } from "drizzle-orm";
+import { generateBlogPostForProduct } from "./blogGenerator";
 
 declare module 'express-session' {
   interface SessionData {
@@ -317,6 +318,20 @@ export async function registerRoutes(
     }
   });
 
+  // Get product by numeric/string ID
+  app.get("/api/products/id/:id", async (req, res) => {
+    try {
+      const product = await storage.getProductById(req.params.id);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      res.json(product);
+    } catch (error) {
+      console.error("Error fetching product by id:", error);
+      res.status(500).json({ error: "Failed to fetch product" });
+    }
+  });
+
   // Get product by slug
   app.get("/api/products/:slug", async (req, res) => {
     try {
@@ -509,6 +524,7 @@ export async function registerRoutes(
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const products = await storage.getAllProducts();
+      const blogPostsList = await storage.getPublishedBlogPosts();
       const baseUrl = `${req.protocol}://${req.get("host")}`;
       
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -516,6 +532,7 @@ export async function registerRoutes(
       
       xml += `  <url>\n    <loc>${baseUrl}/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/shop</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>${baseUrl}/blog</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/about</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/contact</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
       xml += `  <url>\n    <loc>${baseUrl}/privacy-policy</loc>\n    <changefreq>yearly</changefreq>\n    <priority>0.3</priority>\n  </url>\n`;
@@ -525,6 +542,10 @@ export async function registerRoutes(
       
       for (const product of products) {
         xml += `  <url>\n    <loc>${baseUrl}/products/${product.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+      }
+
+      for (const post of blogPostsList) {
+        xml += `  <url>\n    <loc>${baseUrl}/blog/${post.slug}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
       }
       
       xml += '</urlset>';
@@ -1289,6 +1310,144 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error getting unread count:", error);
       res.status(500).json({ error: "Failed to get unread count" });
+    }
+  });
+
+  // =====================
+  // BLOG ROUTES
+  // =====================
+
+  // Get all published blog posts (with optional category filter)
+  app.get("/api/blog", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const posts = await storage.getPublishedBlogPosts(category);
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+
+  // Get blog categories
+  app.get("/api/blog/categories", async (req, res) => {
+    try {
+      const categories = await storage.getBlogCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching blog categories:", error);
+      res.status(500).json({ error: "Failed to fetch categories" });
+    }
+  });
+
+  // Get single blog post by slug
+  app.get("/api/blog/:slug", async (req, res) => {
+    try {
+      const post = await storage.getBlogPostBySlug(req.params.slug);
+      if (!post || !post.published) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ error: "Failed to fetch blog post" });
+    }
+  });
+
+  // Admin: Get all blog posts (including unpublished)
+  app.get("/api/admin/blog", requireAdmin, async (req, res) => {
+    try {
+      const posts = await storage.getAllBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+
+  // Admin: Create blog post
+  app.post("/api/admin/blog", requireAdmin, async (req, res) => {
+    try {
+      const post = await storage.createBlogPost(req.body);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ error: "Failed to create blog post" });
+    }
+  });
+
+  // Admin: Update blog post
+  app.patch("/api/admin/blog/:id", requireAdmin, async (req, res) => {
+    try {
+      const post = await storage.updateBlogPost(req.params.id, req.body);
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ error: "Failed to update blog post" });
+    }
+  });
+
+  // Admin: Delete blog post
+  app.delete("/api/admin/blog/:id", requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteBlogPost(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ error: "Failed to delete blog post" });
+    }
+  });
+
+  // Admin: Auto-generate blog post for a single product
+  app.post("/api/admin/blog/generate/:productId", requireAdmin, async (req, res) => {
+    try {
+      const product = await storage.getProductById(req.params.productId);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      const existing = await storage.getBlogPostByProductId(product.id);
+      if (existing) {
+        return res.json({ success: true, post: existing, alreadyExists: true });
+      }
+      const generated = generateBlogPostForProduct(product);
+      const post = await storage.createBlogPost({
+        ...generated,
+        productId: product.id,
+        imageUrl: product.imageUrl || null,
+        published: true,
+      });
+      res.json({ success: true, post });
+    } catch (error) {
+      console.error("Error generating blog post:", error);
+      res.status(500).json({ error: "Failed to generate blog post" });
+    }
+  });
+
+  // Admin: Auto-generate blog posts for all products (that don't have one yet)
+  app.post("/api/admin/blog/generate-all", requireAdmin, async (req, res) => {
+    try {
+      const allProducts = await storage.getAllProducts();
+      let created = 0;
+      let skipped = 0;
+      for (const product of allProducts) {
+        const existing = await storage.getBlogPostByProductId(product.id);
+        if (existing) {
+          skipped++;
+          continue;
+        }
+        const generated = generateBlogPostForProduct(product);
+        await storage.createBlogPost({
+          ...generated,
+          productId: product.id,
+          imageUrl: product.imageUrl || null,
+          published: true,
+        });
+        created++;
+      }
+      res.json({ success: true, created, skipped, total: allProducts.length });
+    } catch (error) {
+      console.error("Error generating blog posts:", error);
+      res.status(500).json({ error: "Failed to generate blog posts" });
     }
   });
 

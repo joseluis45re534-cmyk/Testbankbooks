@@ -24,6 +24,8 @@ import RefundPolicy from "@/pages/RefundPolicy";
 import ShippingPolicy from "@/pages/ShippingPolicy";
 import ContactUs from "@/pages/ContactUs";
 import AboutUs from "@/pages/AboutUs";
+import Blog from "@/pages/Blog";
+import BlogPost from "@/pages/BlogPost";
 import { ChatWidget } from "@/components/ChatWidget";
 import { CustomScripts } from "@/components/CustomScripts";
 
@@ -57,6 +59,8 @@ function Router() {
       <Route path="/shipping-policy" component={ShippingPolicy} />
       <Route path="/contact" component={ContactUs} />
       <Route path="/about" component={AboutUs} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/blog/:slug" component={BlogPost} />
       <Route component={NotFound} />
     </Switch>
   );

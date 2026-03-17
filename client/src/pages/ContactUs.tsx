@@ -117,8 +117,8 @@ export default function ContactUs() {
             <Card>
               <CardContent className="pt-6 text-center">
                 <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
-                <h2 className="font-semibold mb-1">Service Area</h2>
-                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">Online Business &mdash; Worldwide Digital Delivery</p>
+                <h2 className="font-semibold mb-1">Location</h2>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">5 Alvingham Ave<br />Castle Douglas DG7 1JF<br />United Kingdom</p>
               </CardContent>
             </Card>
 

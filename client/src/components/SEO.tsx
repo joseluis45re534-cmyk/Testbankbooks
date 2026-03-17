@@ -42,6 +42,13 @@ export function SEO({
     logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.ico` : "",
     description: "Online retailer of digital nursing exam prep materials and test banks. Instant digital download — no physical products.",
     areaServed: "Worldwide",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "5 Alvingham Ave",
+      addressLocality: "Castle Douglas",
+      postalCode: "DG7 1JF",
+      addressCountry: "GB",
+    },
     contactPoint: {
       "@type": "ContactPoint",
       telephone: "+13392284593",

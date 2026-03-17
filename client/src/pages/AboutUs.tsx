@@ -143,6 +143,7 @@ export default function AboutUs() {
                   <li><span className="font-medium text-foreground">Type:</span> Online Digital Retailer</li>
                   <li><span className="font-medium text-foreground">Products:</span> Digital Exam Prep Materials</li>
                   <li><span className="font-medium text-foreground">Delivery:</span> Instant Digital Download</li>
+                  <li><span className="font-medium text-foreground">Location:</span> Castle Douglas, United Kingdom</li>
                 </ul>
               </div>
               <div>

@@ -1,6 +1,14 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
+function parseHtmlString(htmlString: string): Element[] {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div>${htmlString}</div>`, "text/html");
+  return Array.from(doc.body.firstChild?.childNodes || []).filter(
+    (node) => node.nodeType === 1
+  ) as Element[];
+}
+
 export function CustomScripts() {
   const { data } = useQuery<Record<string, string>>({
     queryKey: ["/api/site-settings/custom-html"],
@@ -10,64 +18,68 @@ export function CustomScripts() {
   useEffect(() => {
     if (!data) return;
 
+    // Clean up previous injections
+    document.querySelectorAll("[data-custom-script]").forEach((el) => el.remove());
+
     if (data.headerHtml) {
-      const existing = document.getElementById("custom-header-html");
-      if (existing) existing.remove();
-      const container = document.createElement("div");
-      container.id = "custom-header-html";
-      container.innerHTML = data.headerHtml;
-      const scripts = container.querySelectorAll("script");
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement("script");
-        Array.from(oldScript.attributes).forEach((attr) =>
-          newScript.setAttribute(attr.name, attr.value)
-        );
-        newScript.textContent = oldScript.textContent;
-        oldScript.replaceWith(newScript);
+      const elements = parseHtmlString(data.headerHtml);
+      elements.forEach((element) => {
+        element.setAttribute("data-custom-script", "header");
+        if (element.tagName === "SCRIPT") {
+          const newScript = document.createElement("script");
+          Array.from(element.attributes).forEach((attr) => {
+            if (attr.name !== "data-custom-script") {
+              newScript.setAttribute(attr.name, attr.value);
+            }
+          });
+          newScript.textContent = element.textContent;
+          document.head.appendChild(newScript);
+        } else {
+          document.head.appendChild(element);
+        }
       });
-      document.head.appendChild(container);
     }
 
     if (data.bodyHtml) {
-      const existing = document.getElementById("custom-body-html");
-      if (existing) existing.remove();
-      const container = document.createElement("div");
-      container.id = "custom-body-html";
-      container.innerHTML = data.bodyHtml;
-      const scripts = container.querySelectorAll("script");
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement("script");
-        Array.from(oldScript.attributes).forEach((attr) =>
-          newScript.setAttribute(attr.name, attr.value)
-        );
-        newScript.textContent = oldScript.textContent;
-        oldScript.replaceWith(newScript);
+      const elements = parseHtmlString(data.bodyHtml);
+      elements.forEach((element) => {
+        element.setAttribute("data-custom-script", "body");
+        if (element.tagName === "SCRIPT") {
+          const newScript = document.createElement("script");
+          Array.from(element.attributes).forEach((attr) => {
+            if (attr.name !== "data-custom-script") {
+              newScript.setAttribute(attr.name, attr.value);
+            }
+          });
+          newScript.textContent = element.textContent;
+          document.body.insertBefore(newScript, document.body.firstChild);
+        } else {
+          document.body.insertBefore(element, document.body.firstChild);
+        }
       });
-      document.body.insertBefore(container, document.body.firstChild);
     }
 
     if (data.footerHtml) {
-      const existing = document.getElementById("custom-footer-html");
-      if (existing) existing.remove();
-      const container = document.createElement("div");
-      container.id = "custom-footer-html";
-      container.innerHTML = data.footerHtml;
-      const scripts = container.querySelectorAll("script");
-      scripts.forEach((oldScript) => {
-        const newScript = document.createElement("script");
-        Array.from(oldScript.attributes).forEach((attr) =>
-          newScript.setAttribute(attr.name, attr.value)
-        );
-        newScript.textContent = oldScript.textContent;
-        oldScript.replaceWith(newScript);
+      const elements = parseHtmlString(data.footerHtml);
+      elements.forEach((element) => {
+        element.setAttribute("data-custom-script", "footer");
+        if (element.tagName === "SCRIPT") {
+          const newScript = document.createElement("script");
+          Array.from(element.attributes).forEach((attr) => {
+            if (attr.name !== "data-custom-script") {
+              newScript.setAttribute(attr.name, attr.value);
+            }
+          });
+          newScript.textContent = element.textContent;
+          document.body.appendChild(newScript);
+        } else {
+          document.body.appendChild(element);
+        }
       });
-      document.body.appendChild(container);
     }
 
     return () => {
-      document.getElementById("custom-header-html")?.remove();
-      document.getElementById("custom-body-html")?.remove();
-      document.getElementById("custom-footer-html")?.remove();
+      document.querySelectorAll("[data-custom-script]").forEach((el) => el.remove());
     };
   }, [data]);
 

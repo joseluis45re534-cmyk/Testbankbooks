@@ -84,6 +84,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Self-Hosted Media Storage (Mar 2026)
+- **Local image storage**: `/uploads/images/{productId}/` — main image + numbered additional images
+- **Local download storage**: `/uploads/downloads/` — ZIP/PDF test bank files
+- **Static file serving**: `/uploads/*` served via Express static middleware (before routes)
+- **Bulk image download**: `POST /api/admin/media/download-images` — downloads all external product images to local storage in background
+- **Bulk file download**: `POST /api/admin/media/download-files` — downloads all ZIP/PDF test bank files from external URLs (e.g. studiazone.com) to local storage in background
+- **Progress tracking**: `GET /api/admin/media/download-images/progress` and `GET /api/admin/media/download-files/progress` — returns status/total/completed/failed/current/errors
+- **Per-product image upload**: `POST /api/admin/products/:id/upload-image` — multer file upload, saves locally, updates DB
+- **Per-product download upload**: `POST /api/admin/products/:id/upload-download` — multer file upload, saves locally, updates DB
+- **Admin UI**: `/admin/media` — stats cards, two bulk download sections with progress bars, per-product list with upload buttons and local/external badges
+- **Key files**: `server/mediaDownloader.ts`, `client/src/pages/admin/AdminMedia.tsx`
+
 ### Blog System with 300 Auto-Generated Study Guides (Mar 2026)
 - **Blog index page**: `/blog` with category sidebar, search, responsive card grid
 - **Blog post detail page**: `/blog/:slug` with product sidebar (add to cart CTA), related product info

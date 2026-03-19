@@ -15,7 +15,7 @@ import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@sha
 import { eq, or } from "drizzle-orm";
 import { triggerManualRun } from "./scheduler";
 import { generateBlogPostForProduct } from "./blogGenerator";
-import { startBulkImageDownload, getDownloadProgress, saveUploadedImage, saveUploadedDownload } from "./mediaDownloader";
+import { startBulkImageDownload, getDownloadProgress, startBulkFileDownload, getFileDownloadProgress, saveUploadedImage, saveUploadedDownload } from "./mediaDownloader";
 
 declare module 'express-session' {
   interface SessionData {
@@ -1564,6 +1564,21 @@ Sitemap: ${baseUrl}/sitemap.xml
     try {
       startBulkImageDownload();
       res.json({ success: true, message: "Bulk image download started" });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET progress of bulk file download
+  app.get("/api/admin/media/download-files/progress", requireAdmin, (_req, res) => {
+    res.json(getFileDownloadProgress());
+  });
+
+  // POST start bulk file download from external URLs
+  app.post("/api/admin/media/download-files", requireAdmin, async (_req, res) => {
+    try {
+      startBulkFileDownload();
+      res.json({ success: true, message: "Bulk file download started" });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

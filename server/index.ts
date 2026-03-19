@@ -8,6 +8,8 @@ import { pool } from "./db";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { generateBlogPostForProduct } from "./blogGenerator";
+import path from "path";
+import fs from "fs";
 
 async function generateMissingBlogPosts(): Promise<{ created: number; errors: number }> {
   const allProducts = await storage.getAllProducts();
@@ -125,6 +127,11 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Serve locally uploaded product images and download files
+const uploadsDir = path.resolve(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use("/uploads", express.static(uploadsDir));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

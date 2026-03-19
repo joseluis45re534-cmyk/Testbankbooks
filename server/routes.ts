@@ -15,6 +15,7 @@ import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@sha
 import { eq, or } from "drizzle-orm";
 import { triggerManualRun } from "./scheduler";
 import { generateBlogPostForProduct } from "./blogGenerator";
+import { startBulkImageDownload, getDownloadProgress, saveUploadedImage, saveUploadedDownload } from "./mediaDownloader";
 
 declare module 'express-session' {
   interface SessionData {
@@ -1546,6 +1547,57 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error running manual schedule:", error);
       res.status(500).json({ error: "Failed to run blog generation" });
+    }
+  });
+
+  // ─── Media: Self-hosted Images & Downloads ──────────────────────────────────
+
+  const mediaUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200 * 1024 * 1024 } });
+
+  // GET progress of bulk image download
+  app.get("/api/admin/media/download-images/progress", requireAdmin, (_req, res) => {
+    res.json(getDownloadProgress());
+  });
+
+  // POST start bulk image download from external URLs
+  app.post("/api/admin/media/download-images", requireAdmin, async (_req, res) => {
+    try {
+      startBulkImageDownload();
+      res.json({ success: true, message: "Bulk image download started" });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST upload a single product image
+  app.post("/api/admin/products/:id/upload-image", requireAdmin, mediaUpload.single("image"), async (req: any, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No image file provided" });
+      const { id } = req.params;
+      const product = await storage.getProductById(id);
+      if (!product) return res.status(404).json({ error: "Product not found" });
+      const localUrl = saveUploadedImage(id, req.file.buffer, req.file.originalname);
+      await storage.updateProduct(id, { imageUrl: localUrl });
+      res.json({ success: true, imageUrl: localUrl });
+    } catch (err: any) {
+      console.error("Image upload error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST upload a download file for a product
+  app.post("/api/admin/products/:id/upload-download", requireAdmin, mediaUpload.single("file"), async (req: any, res) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: "No file provided" });
+      const { id } = req.params;
+      const product = await storage.getProductById(id);
+      if (!product) return res.status(404).json({ error: "Product not found" });
+      const localPath = saveUploadedDownload(id, req.file.buffer, req.file.originalname);
+      await storage.updateProduct(id, { downloadPath: localPath });
+      res.json({ success: true, downloadPath: localPath });
+    } catch (err: any) {
+      console.error("Download upload error:", err);
+      res.status(500).json({ error: err.message });
     }
   });
 

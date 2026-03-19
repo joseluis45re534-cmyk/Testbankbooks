@@ -19,6 +19,7 @@ import AdminDownloads from "@/pages/admin/AdminDownloads";
 import AdminChat from "@/pages/admin/AdminChat";
 import AdminBlog from "@/pages/admin/AdminBlog";
 import AdminSEO from "@/pages/admin/AdminSEO";
+import AdminMedia from "@/pages/admin/AdminMedia";
 import ThankYou from "@/pages/ThankYou";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/admin/blog" component={AdminBlog} />
       <Route path="/admin/seo" component={AdminSEO} />
       <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/media" component={AdminMedia} />
       <Route path="/admin/downloads" component={AdminDownloads} />
       <Route path="/admin/chat" component={AdminChat} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

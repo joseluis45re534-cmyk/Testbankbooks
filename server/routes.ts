@@ -522,6 +522,16 @@ export async function registerRoutes(
     }
   });
 
+  // NOTE: Google Shopping Feed removed — digital test banks violate Google's
+  // "Digital books and eBooks" Shopping policy. Route intentionally not served.
+  // Google Merchant Center appeal path: fix misrepresentation issues, then click
+  // "I fixed the issue" in GMC for both violations.
+
+  // Product XML feed — full catalog export (non-Shopping, internal/backup use)
+  app.get("/feed/google-shopping.xml", (req, res) => {
+    res.status(410).send("Gone — this feed has been removed.");
+  });
+
   // Product XML feed — full catalog export
   app.get("/feed/products.xml", async (req, res) => {
     try {

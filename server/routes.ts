@@ -522,14 +522,78 @@ export async function registerRoutes(
     }
   });
 
-  // NOTE: Google Shopping Feed removed — digital test banks violate Google's
-  // "Digital books and eBooks" Shopping policy. Route intentionally not served.
-  // Google Merchant Center appeal path: fix misrepresentation issues, then click
-  // "I fixed the issue" in GMC for both violations.
+  // Google Merchant Center Shopping Feed (RSS 2.0 with g: namespace)
+  app.get("/feed/google-shopping.xml", async (req, res) => {
+    try {
+      const allProducts = await storage.getAllProducts();
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
 
-  // Product XML feed — full catalog export (non-Shopping, internal/backup use)
-  app.get("/feed/google-shopping.xml", (req, res) => {
-    res.status(410).send("Gone — this feed has been removed.");
+      function esc(str: string | null | undefined): string {
+        if (!str) return "";
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function absUrl(url: string | null | undefined): string {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${baseUrl}${url}`;
+      }
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n';
+      xml += "  <channel>\n";
+      xml += `    <title>Testbankbooks - Nursing Test Banks &amp; Study Guides</title>\n`;
+      xml += `    <link>${baseUrl}</link>\n`;
+      xml += `    <description>Premium nursing test banks and study guides for exam preparation. Instant digital download.</description>\n`;
+
+      for (const p of allProducts) {
+        if (!p.imageUrl) continue;
+        const price = parseFloat(p.price);
+        const salePrice = p.salePrice ? parseFloat(p.salePrice) : null;
+        const imageUrl = absUrl(p.imageUrl);
+        const productUrl = `${baseUrl}/products/${p.slug}`;
+        const availability = p.availability === "in_stock" ? "in stock" : "out of stock";
+
+        xml += "    <item>\n";
+        xml += `      <g:id>${esc(p.id)}</g:id>\n`;
+        xml += `      <g:title>${esc(p.title)}</g:title>\n`;
+        xml += `      <g:description>${esc((p.seoDescription || p.description || p.title).substring(0, 5000))}</g:description>\n`;
+        xml += `      <g:link>${esc(productUrl)}</g:link>\n`;
+        xml += `      <g:image_link>${esc(imageUrl)}</g:image_link>\n`;
+        xml += `      <g:availability>${availability}</g:availability>\n`;
+        xml += `      <g:price>${price.toFixed(2)} USD</g:price>\n`;
+        if (salePrice && salePrice < price) {
+          xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
+        }
+        xml += `      <g:brand>${esc(p.brand || "Testbankbooks")}</g:brand>\n`;
+        xml += `      <g:google_product_category>783</g:google_product_category>\n`;
+        xml += `      <g:product_type>${esc(p.category || "Test Banks")}</g:product_type>\n`;
+        xml += `      <g:condition>new</g:condition>\n`;
+        xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
+        xml += `      <g:shipping>\n`;
+        xml += `        <g:price>0.00 USD</g:price>\n`;
+        xml += `      </g:shipping>\n`;
+        const additional = (p.additionalImages || []).slice(0, 9);
+        for (const img of additional) {
+          const imgAbs = absUrl(img);
+          if (imgAbs) xml += `      <g:additional_image_link>${esc(imgAbs)}</g:additional_image_link>\n`;
+        }
+        xml += "    </item>\n";
+      }
+
+      xml += "  </channel>\n";
+      xml += "</rss>\n";
+
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating Google Shopping feed:", error);
+      res.status(500).send("Error generating feed");
+    }
   });
 
   // Product XML feed — full catalog export

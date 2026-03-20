@@ -522,6 +522,78 @@ export async function registerRoutes(
     }
   });
 
+  // Product XML feed — full catalog export
+  app.get("/feed/products.xml", async (req, res) => {
+    try {
+      const allProducts = await storage.getAllProducts();
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+      function escXml(str: string | null | undefined): string {
+        if (!str) return "";
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+      }
+
+      function absUrl(url: string | null | undefined): string {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${baseUrl}${url}`;
+      }
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += `<products total="${allProducts.length}" generated="${new Date().toISOString()}">\n`;
+
+      for (const p of allProducts) {
+        const displayPrice = p.salePrice || p.price;
+        const additionalImages = (p.additionalImages || []).map(absUrl).filter(Boolean);
+
+        xml += "  <product>\n";
+        xml += `    <id>${escXml(p.id)}</id>\n`;
+        xml += `    <title>${escXml(p.title)}</title>\n`;
+        xml += `    <description>${escXml(p.description || "")}</description>\n`;
+        xml += `    <price>${escXml(p.price)}</price>\n`;
+        xml += `    <sale_price>${escXml(p.salePrice || "")}</sale_price>\n`;
+        xml += `    <display_price>${escXml(String(displayPrice))}</display_price>\n`;
+        xml += `    <category>${escXml(p.category || "")}</category>\n`;
+        xml += `    <brand>${escXml(p.brand || "Testbankbooks")}</brand>\n`;
+        xml += `    <availability>${escXml(p.availability || "in_stock")}</availability>\n`;
+        xml += `    <slug>${escXml(p.slug || "")}</slug>\n`;
+        xml += `    <url>${escXml(`${baseUrl}/products/${p.slug}`)}</url>\n`;
+        xml += `    <image>${escXml(absUrl(p.imageUrl))}</image>\n`;
+        if (additionalImages.length > 0) {
+          xml += "    <additional_images>\n";
+          for (const img of additionalImages) {
+            xml += `      <image>${escXml(img)}</image>\n`;
+          }
+          xml += "    </additional_images>\n";
+        }
+        xml += `    <seo_title>${escXml(p.seoTitle || "")}</seo_title>\n`;
+        xml += `    <seo_description>${escXml(p.seoDescription || "")}</seo_description>\n`;
+        if (p.tags && p.tags.length > 0) {
+          xml += "    <tags>\n";
+          for (const tag of p.tags) {
+            xml += `      <tag>${escXml(tag)}</tag>\n`;
+          }
+          xml += "    </tags>\n";
+        }
+        xml += "  </product>\n";
+      }
+
+      xml += "</products>\n";
+
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.set("Content-Disposition", `attachment; filename="products-${new Date().toISOString().split("T")[0]}.xml"`);
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating product XML:", error);
+      res.status(500).send("Error generating product XML");
+    }
+  });
+
   // Sitemap.xml for SEO
   app.get("/sitemap.xml", async (req, res) => {
     try {

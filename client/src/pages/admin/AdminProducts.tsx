@@ -200,6 +200,12 @@ export default function AdminProducts() {
             <p className="text-muted-foreground">Edit products, manage tags, and update pricing.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <a href="/feed/products.xml" download data-testid="button-export-xml">
+              <Button variant="outline" type="button">
+                <FileUp className="w-4 h-4 mr-2" />
+                Export XML
+              </Button>
+            </a>
             <Button variant="outline" onClick={() => { setShowImportDialog(true); setImportFile(null); setImportResult(null); }} data-testid="button-import-csv">
               <Upload className="w-4 h-4 mr-2" />
               Import WooCommerce CSV

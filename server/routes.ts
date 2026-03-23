@@ -575,6 +575,7 @@ export async function registerRoutes(
         xml += `      <g:condition>new</g:condition>\n`;
         xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
         xml += `      <g:shipping>\n`;
+        xml += `        <g:country>US</g:country>\n`;
         xml += `        <g:price>0.00 USD</g:price>\n`;
         xml += `      </g:shipping>\n`;
         const additional = (p.additionalImages || []).slice(0, 9);

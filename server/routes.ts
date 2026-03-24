@@ -5,6 +5,7 @@ import { importFromCsv, importFromCsvBuffer } from "./csvParser";
 import { generateSecureToken, generateSignedUrl, verifySignedUrl, createWooCommerceAPI } from "./woocommerce";
 import { z } from "zod";
 import path from "path";
+import fs from "fs";
 import bcrypt from "bcryptjs";
 import multer from "multer";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
@@ -1823,6 +1824,59 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (err: any) {
       console.error("Download upload error:", err);
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // SEO fix: server-side render initial product data into /shop HTML so
+  // Google's crawler sees real content instead of an empty React shell.
+  // In production this intercepts before the SPA catch-all in static.ts.
+  // In development Vite handles it normally (no-op via next()).
+  app.get("/shop", async (req, res, next) => {
+    if (process.env.NODE_ENV !== "production") return next();
+    try {
+      const allProducts = await storage.getAllProducts();
+      const distPath = path.resolve(path.dirname(__filename), "public");
+      const indexPath = path.join(distPath, "index.html");
+      if (!fs.existsSync(indexPath)) return next();
+
+      let html = fs.readFileSync(indexPath, "utf-8");
+
+      // Inject initial products so React hydrates immediately with real data
+      const safeJson = JSON.stringify(allProducts)
+        .replace(/</g, "\\u003c")
+        .replace(/>/g, "\\u003e")
+        .replace(/&/g, "\\u0026");
+      html = html.replace(
+        "</head>",
+        `<script>window.__SHOP_PRODUCTS__=${safeJson};</script></head>`
+      );
+
+      // Inject a crawlable static product list visible to all crawlers
+      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const productListHtml = allProducts
+        .map(
+          (p) =>
+            `<li><a href="${baseUrl}/products/${p.slug}">${p.title.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</a> — $${p.salePrice || p.price}</li>`
+        )
+        .join("\n          ");
+      const staticBlock = `
+  <noscript>
+    <main style="font-family:sans-serif;max-width:1100px;margin:0 auto;padding:24px">
+      <h1>Nursing Test Banks &amp; Study Guides — 300+ Titles</h1>
+      <p>Browse our complete collection of nursing test banks. Instant digital download after purchase.</p>
+      <ul style="columns:2;list-style:disc;padding-left:20px;line-height:2">
+          ${productListHtml}
+      </ul>
+    </main>
+  </noscript>`;
+      html = html.replace("<body>", `<body>${staticBlock}`);
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=60");
+      res.send(html);
+    } catch (err) {
+      console.error("SSR /shop error:", err);
+      next();
     }
   });
 

@@ -35,8 +35,16 @@ export default function Shop() {
     setSelectedCategory(urlCategory);
   }, [urlCategory]);
 
+  // Use server-injected initial product data (set by Express SSR route)
+  // so Googlebot and first-paint see real products immediately.
+  const serverProducts: Product[] | undefined =
+    !activeSearch && !selectedCategory
+      ? (typeof window !== "undefined" ? (window as any).__SHOP_PRODUCTS__ : undefined)
+      : undefined;
+
   const { data: products = [], isLoading } = useQuery<Product[]>({
     queryKey: ["/api/products", activeSearch, selectedCategory],
+    initialData: serverProducts,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (activeSearch) params.set("search", activeSearch);
@@ -98,16 +106,16 @@ export default function Shop() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const pageTitle = selectedCategory 
-    ? `${selectedCategory} Test Banks - Testbankbooks`
+    ? `${selectedCategory} Test Banks & Study Guides | Testbankbooks`
     : activeSearch 
-      ? `Search: ${activeSearch} - Testbankbooks`
-      : "Testbankbooks - Premium Test Banks & Study Guides";
+      ? `Search: ${activeSearch} - Nursing Test Banks | Testbankbooks`
+      : "Browse 300+ Nursing Test Banks & Study Guides | Testbankbooks";
   
   const pageDescription = selectedCategory
-    ? `Browse our collection of ${selectedCategory.toLowerCase()} test banks and study guides. Instant access and digital download available.`
+    ? `Browse our collection of ${selectedCategory.toLowerCase()} test banks and study guides. Expertly crafted exam prep materials with instant digital download after purchase.`
     : activeSearch
-      ? `Search results for "${activeSearch}". Find the best test banks and study materials for your exam preparation.`
-      : "Get instant access to premium nursing test banks and study guides. Professional exam prep materials with instant digital download. Over 260+ titles available.";
+      ? `Search results for "${activeSearch}". Find nursing test banks and study materials for your exam preparation. Instant digital download.`
+      : "Shop 300+ premium nursing test banks and study guides. Real exam-style questions with detailed answer explanations. Instant digital download after purchase — no waiting, no shipping.";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -123,10 +131,16 @@ export default function Shop() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold" data-testid="text-page-title">
-                {selectedCategory || (activeSearch ? `Results for "${activeSearch}"` : "All Products")}
+                {selectedCategory
+                  ? `${selectedCategory} Test Banks`
+                  : activeSearch
+                  ? `Results for "${activeSearch}"`
+                  : "Nursing Test Banks & Study Guides"}
               </h1>
               <p className="text-muted-foreground mt-1">
-                {products.length} {products.length === 1 ? "product" : "products"} available
+                {isLoading && products.length === 0
+                  ? "300+ products available"
+                  : `${products.length} ${products.length === 1 ? "product" : "products"} available`}
               </p>
             </div>
 

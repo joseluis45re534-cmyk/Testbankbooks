@@ -610,14 +610,12 @@ export async function registerRoutes(
         xml += `      <g:google_product_category>Software &gt; Educational Software</g:google_product_category>\n`;
         xml += `      <g:product_type>Exam Preparation &gt; ${esc(cat)}</g:product_type>\n`;
 
-        // Shipping — free digital delivery for all supported countries
-        for (const country of ["US", "GB", "CA", "AU"]) {
-          xml += `      <g:shipping>\n`;
-          xml += `        <g:country>${country}</g:country>\n`;
-          xml += `        <g:service>Digital Delivery</g:service>\n`;
-          xml += `        <g:price>0.00 USD</g:price>\n`;
-          xml += `      </g:shipping>\n`;
-        }
+        // Shipping — USA only
+        xml += `      <g:shipping>\n`;
+        xml += `        <g:country>US</g:country>\n`;
+        xml += `        <g:service>Digital Delivery</g:service>\n`;
+        xml += `        <g:price>0.00 USD</g:price>\n`;
+        xml += `      </g:shipping>\n`;
 
         // Campaign labels
         xml += `      <g:custom_label_0>${esc(cat)}</g:custom_label_0>\n`;

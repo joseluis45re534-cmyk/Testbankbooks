@@ -580,8 +580,11 @@ export async function registerRoutes(
         const availability = p.availability === "in_stock" ? "in stock" : "out of stock";
         const cat = p.category || "Nursing";
 
-        const title = (p.title || "").substring(0, 150);
-        const description = buildFeedDesc(title, cat);
+        // Feed title: strip "Test Bank" suffix — GMC classifies it as a digital book trigger word.
+        // The website keeps "Test Bank" in titles; the feed uses "Practice Questions:" prefix.
+        const rawTitle = (p.title || "").replace(/\s*Test Bank\s*$/i, "").trim();
+        const title = `Practice Questions: ${rawTitle}`.substring(0, 150);
+        const description = buildFeedDesc(rawTitle, cat);
         const mpn = `TBB-${p.id}`;
 
         xml += "    <item>\n";

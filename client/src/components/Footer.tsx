@@ -1,4 +1,4 @@
-import { BookOpen, Shield, CreditCard, Zap, Mail, Phone, MapPin } from "lucide-react";
+import { Shield, CreditCard, Zap, Mail, Phone, MapPin } from "lucide-react";
 import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
 
 export function Footer() {
@@ -7,11 +7,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-xl">Testbankbooks</span>
+            <div className="flex items-center">
+              <img src="/logo.png" alt="Testbankbooks - Your Key to Exam Success" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
               Your trusted source for premium nursing exam prep materials and study guides. Instant digital downloads for exam preparation.

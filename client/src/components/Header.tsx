@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Search, Menu, BookOpen } from "lucide-react";
+import { ShoppingCart, Search, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -39,11 +39,8 @@ export function Header({ cartCount, searchQuery: externalSearchQuery, onSearchCh
     <header className="sticky top-0 z-50 bg-background border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="w-10 h-10 bg-primary rounded-md flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="font-bold text-xl hidden sm:block" data-testid="text-logo">Testbankbooks</span>
+          <Link href="/" className="flex items-center shrink-0" data-testid="link-home">
+            <img src="/logo.png" alt="Testbankbooks - Your Key to Exam Success" className="h-10 w-auto" />
           </Link>
 
           <form onSubmit={handleSearchSubmit} className="flex-1 max-w-2xl hidden md:flex">

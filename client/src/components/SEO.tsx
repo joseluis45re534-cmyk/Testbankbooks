@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { useLocation } from "wouter";
 
 interface SEOProps {
   title?: string;
@@ -33,6 +34,12 @@ export function SEO({
 }: SEOProps) {
   const fullTitle = title.includes("Testbankbooks") ? title : `${title} | Testbankbooks`;
   const displayPrice = salePrice || price;
+
+  // Build canonical URL from route path (strips ?query params so search/filter pages
+  // canonicalize to the clean base URL, fixing "Duplicate without user-selected canonical").
+  const [routePath] = useLocation();
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://testbankbooks.com";
+  const canonicalUrl = url || `${origin}${routePath}`;
 
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -102,7 +109,7 @@ export function SEO({
               "@type": "Organization",
               name: "Testbankbooks",
             },
-            url: url || (typeof window !== "undefined" ? window.location.href : ""),
+            url: canonicalUrl,
             priceValidUntil: new Date(
               new Date().setFullYear(new Date().getFullYear() + 1)
             )
@@ -120,7 +127,7 @@ export function SEO({
           headline: title,
           description: description,
           image: image,
-          url: url || (typeof window !== "undefined" ? window.location.href : ""),
+          url: canonicalUrl,
           datePublished: publishedDate || new Date().toISOString().split("T")[0],
           dateModified: publishedDate || new Date().toISOString().split("T")[0],
           author: {
@@ -148,13 +155,13 @@ export function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="robots" content="index, follow" />
-      <link rel="canonical" href={url || (typeof window !== "undefined" ? window.location.href : "")} />
+      <link rel="canonical" href={canonicalUrl} />
 
       <meta property="og:type" content={type === "product" ? "product" : type === "blog" ? "article" : "website"} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       {image && <meta property="og:image" content={image} />}
-      {url && <meta property="og:url" content={url} />}
+      <meta property="og:url" content={canonicalUrl} />
       <meta property="og:site_name" content="Testbankbooks" />
       <meta property="og:locale" content="en_US" />
 

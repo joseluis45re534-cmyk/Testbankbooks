@@ -522,130 +522,10 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to send message" });
     }
   });
-  // Google Merchant Center Shopping Feed (RSS 2.0 with g: namespace)
-  // Descriptions are framed as exam-prep SOFTWARE to avoid GMC "digital books" policy.
-  app.get("/feed/google-shopping.xml", async (req, res) => {
-    try {
-      const allProducts = await storage.getAllProducts();
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
-
-      function esc(str: string | null | undefined): string {
-        if (!str) return "";
-        return str
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function absUrl(url: string | null | undefined): string {
-        if (!url) return "";
-        if (url.startsWith("http")) return url;
-        return `${baseUrl}${url}`;
-      }
-
-      // Descriptions are intentionally written as exam-prep SOFTWARE, NOT book companions.
-      // Avoid: "textbook", "accompany", "aligned with edition", "study guide", "eBook".
-      // Use: "practice tool", "question bank software", "exam prep", "interactive".
-      function buildFeedDesc(title: string, cat: string): string {
-        const base = title
-          .replace(/\s*Test Bank\s*$/i, "")
-          .replace(/\s+/g, " ")
-          .trim();
-        const subject = cat || "Nursing";
-        return (
-          `Exam practice software: ${base}. ` +
-          `This interactive question bank includes hundreds of multiple-choice and scenario-based ` +
-          `practice questions covering key ${subject} topics. ` +
-          `Identify knowledge gaps, build exam confidence, and review detailed answer explanations ` +
-          `at your own pace. Delivered as an instant digital download — available 24/7 after purchase. ` +
-          `Designed for nursing and healthcare students preparing for course assessments and licensing exams.`
-        );
-      }
-
-      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-      xml += '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n';
-      xml += "  <channel>\n";
-      xml += `    <title>Testbankbooks - Nursing Exam Practice Software</title>\n`;
-      xml += `    <link>${esc(baseUrl)}</link>\n`;
-      xml += `    <description>Interactive exam practice question banks for nursing and healthcare students. Instant digital download. 300+ titles available.</description>\n`;
-
-      for (const p of allProducts) {
-        if (!p.imageUrl) continue;
-
-        const price = parseFloat(p.price);
-        const salePrice = p.salePrice ? parseFloat(p.salePrice) : null;
-        const imageUrl = absUrl(p.imageUrl);
-        const productUrl = `${baseUrl}/products/${p.slug}`;
-        const availability = p.availability === "in_stock" ? "in stock" : "out of stock";
-        const cat = p.category || "Nursing";
-
-        // Feed title: strip "Test Bank" suffix — GMC classifies it as a digital book trigger word.
-        // The website keeps "Test Bank" in titles; the feed uses "Practice Questions:" prefix.
-        const rawTitle = (p.title || "").replace(/\s*Test Bank\s*$/i, "").trim();
-        const title = `Practice Questions: ${rawTitle}`.substring(0, 150);
-        const description = buildFeedDesc(rawTitle, cat);
-        const mpn = `TBB-${p.id}`;
-
-        xml += "    <item>\n";
-
-        // Required fields
-        xml += `      <g:id>${esc(p.id)}</g:id>\n`;
-        xml += `      <g:title>${esc(title)}</g:title>\n`;
-        xml += `      <g:description>${esc(description)}</g:description>\n`;
-        xml += `      <g:link>${esc(productUrl)}</g:link>\n`;
-        xml += `      <g:image_link>${esc(imageUrl)}</g:image_link>\n`;
-        xml += `      <g:availability>${availability}</g:availability>\n`;
-        xml += `      <g:price>${price.toFixed(2)} USD</g:price>\n`;
-        xml += `      <g:condition>new</g:condition>\n`;
-
-        // Pricing
-        if (salePrice !== null && salePrice < price) {
-          xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
-        }
-
-        // Identity
-        xml += `      <g:brand>${esc(p.brand || "Testbankbooks")}</g:brand>\n`;
-        xml += `      <g:mpn>${esc(mpn)}</g:mpn>\n`;
-        xml += `      <g:identifier_exists>no</g:identifier_exists>\n`;
-
-        // Category — use text form of "Software > Educational Software" (unambiguous to GMC)
-        xml += `      <g:google_product_category>Software &gt; Educational Software</g:google_product_category>\n`;
-        xml += `      <g:product_type>Exam Preparation &gt; ${esc(cat)}</g:product_type>\n`;
-
-        // Shipping — USA only
-        xml += `      <g:shipping>\n`;
-        xml += `        <g:country>US</g:country>\n`;
-        xml += `        <g:service>Digital Delivery</g:service>\n`;
-        xml += `        <g:price>0.00 USD</g:price>\n`;
-        xml += `      </g:shipping>\n`;
-
-        // Campaign labels
-        xml += `      <g:custom_label_0>${esc(cat)}</g:custom_label_0>\n`;
-        if (salePrice !== null && salePrice < price) {
-          xml += `      <g:custom_label_1>on-sale</g:custom_label_1>\n`;
-        }
-
-        // Additional images (up to 9)
-        const additional = (p.additionalImages || []).slice(0, 9);
-        for (const img of additional) {
-          const imgAbs = absUrl(img);
-          if (imgAbs) xml += `      <g:additional_image_link>${esc(imgAbs)}</g:additional_image_link>\n`;
-        }
-
-        xml += "    </item>\n";
-      }
-
-      xml += "  </channel>\n";
-      xml += "</rss>\n";
-
-      res.set("Content-Type", "application/xml; charset=utf-8");
-      res.set("Cache-Control", "public, max-age=3600");
-      res.send(xml);
-    } catch (error) {
-      console.error("Error generating Google Shopping feed:", error);
-      res.status(500).send("Error generating feed");
-    }
+  // Google Shopping feed removed — digital test banks violate Google's "digital books" policy.
+  // 410 Gone tells crawlers to stop visiting and remove from index.
+  app.get("/feed/google-shopping.xml", (_req, res) => {
+    res.status(410).send("Gone");
   });
 
   // Product XML feed — full catalog export
@@ -725,7 +605,9 @@ export async function registerRoutes(
     try {
       const products = await storage.getAllProducts();
       const blogPostsList = await storage.getPublishedBlogPosts();
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const baseUrl = process.env.NODE_ENV === "production"
+        ? "https://testbankbooks.com"
+        : `${req.protocol}://${req.get("host")}`;
       
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
@@ -761,7 +643,9 @@ export async function registerRoutes(
 
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const baseUrl = process.env.NODE_ENV === "production"
+      ? "https://testbankbooks.com"
+      : `${req.protocol}://${req.get("host")}`;
     const robotsTxt = `User-agent: Googlebot
 Allow: /
 Disallow: /admin
@@ -1839,7 +1723,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       );
 
       // Inject a crawlable static product list visible to all crawlers
-      const baseUrl = `${req.protocol}://${req.get("host")}`;
+      const baseUrl = "https://testbankbooks.com";
       const productListHtml = allProducts
         .map(
           (p) =>

@@ -49,6 +49,10 @@ export function CustomScripts() {
 
   useEffect(() => {
     if (!data) return;
+    // In production, the server already injects these tags into the HTML
+    // before the page is sent to the browser. Client-side injection is only
+    // needed in development where the SSR injection doesn't run.
+    if (import.meta.env.PROD) return;
 
     document.querySelectorAll("[data-custom-script]").forEach((el) => el.remove());
 

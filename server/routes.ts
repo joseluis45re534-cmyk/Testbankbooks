@@ -13,6 +13,7 @@ import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey }
 import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./email";
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
+import { invalidateCustomHtmlCache, injectCustomHtml, getCustomHtmlTagsForSsr } from "./static";
 import { eq, or } from "drizzle-orm";
 import { triggerManualRun } from "./scheduler";
 import { generateBlogPostForProduct } from "./blogGenerator";
@@ -939,6 +940,7 @@ Sitemap: ${baseUrl}/sitemap.xml
             set: { value: entry.value, updatedAt: new Date() },
           });
       }
+      invalidateCustomHtmlCache();
       res.json({ success: true });
     } catch (error) {
       console.error("Error saving custom HTML settings:", error);
@@ -1751,6 +1753,10 @@ Sitemap: ${baseUrl}/sitemap.xml
       if (!fs.existsSync(indexPath)) return next();
 
       let html = fs.readFileSync(indexPath, "utf-8");
+
+      // Inject custom HTML tags (header/body/footer) server-side so crawlers see them
+      const customTags = await getCustomHtmlTagsForSsr();
+      html = injectCustomHtml(html, customTags);
 
       // Inject initial products so React hydrates immediately with real data
       const safeJson = JSON.stringify(allProducts)

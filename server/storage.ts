@@ -44,7 +44,9 @@ export interface IStorage {
   detectAndRecordAbandonedCarts(thresholdMinutes?: number): Promise<number>;
   
   getAdminByUsername(username: string): Promise<AdminUser | undefined>;
+  getAdminById(id: number): Promise<AdminUser | undefined>;
   createAdminUser(admin: InsertAdminUser): Promise<AdminUser>;
+  updateAdminUser(id: number, updates: { username?: string; password?: string }): Promise<AdminUser>;
   
   getAllPaymentSettings(): Promise<PaymentSetting[]>;
   getPaymentSetting(provider: string): Promise<PaymentSetting | undefined>;
@@ -370,9 +372,19 @@ export class DatabaseStorage implements IStorage {
     return admin;
   }
 
+  async getAdminById(id: number): Promise<AdminUser | undefined> {
+    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.id, id));
+    return admin;
+  }
+
   async createAdminUser(admin: InsertAdminUser): Promise<AdminUser> {
     const [created] = await db.insert(adminUsers).values(admin).returning();
     return created;
+  }
+
+  async updateAdminUser(id: number, updates: { username?: string; password?: string }): Promise<AdminUser> {
+    const [updated] = await db.update(adminUsers).set(updates).where(eq(adminUsers.id, id)).returning();
+    return updated;
   }
 
   async getAllPaymentSettings(): Promise<PaymentSetting[]> {

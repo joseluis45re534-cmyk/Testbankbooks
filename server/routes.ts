@@ -732,6 +732,46 @@ Sitemap: ${baseUrl}/sitemap.xml
     res.json({ success: true });
   });
 
+  // Change admin credentials
+  app.post("/api/admin/change-credentials", requireAdmin, async (req, res) => {
+    try {
+      const { currentPassword, newUsername, newPassword } = req.body;
+
+      if (!currentPassword) {
+        return res.status(400).json({ error: "Current password is required" });
+      }
+      if (!newUsername && !newPassword) {
+        return res.status(400).json({ error: "Provide a new username or new password" });
+      }
+
+      const admin = await storage.getAdminById(req.session.adminId!);
+      if (!admin) return res.status(404).json({ error: "Admin not found" });
+
+      const isValid = await bcrypt.compare(currentPassword, admin.password);
+      if (!isValid) return res.status(401).json({ error: "Current password is incorrect" });
+
+      const updates: { username?: string; password?: string } = {};
+      if (newUsername && newUsername !== admin.username) {
+        const existing = await storage.getAdminByUsername(newUsername);
+        if (existing) return res.status(409).json({ error: "Username already taken" });
+        updates.username = newUsername;
+      }
+      if (newPassword) {
+        updates.password = await bcrypt.hash(newPassword, 10);
+      }
+
+      const updated = await storage.updateAdminUser(admin.id, updates);
+      req.session.adminUsername = updated.username;
+
+      req.session.save(() => {
+        res.json({ success: true, username: updated.username });
+      });
+    } catch (error) {
+      console.error("Change credentials error:", error);
+      res.status(500).json({ error: "Failed to update credentials" });
+    }
+  });
+
   // Dashboard stats
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {
     try {

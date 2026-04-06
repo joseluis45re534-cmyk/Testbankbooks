@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Save, Loader2, CreditCard, DollarSign, Eye, EyeOff, Code } from "lucide-react";
+import { Save, Loader2, CreditCard, DollarSign, Eye, EyeOff, Code, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,6 +62,7 @@ export default function AdminSettings() {
   const [paypalConfig, setPaypalConfig] = useState({ clientId: "", clientSecret: "", enabled: false });
   const [stripeConfig, setStripeConfig] = useState({ publishableKey: "", secretKey: "", enabled: false });
   const [htmlTags, setHtmlTags] = useState({ headerHtml: "", bodyHtml: "", footerHtml: "" });
+  const [credentials, setCredentials] = useState({ currentPassword: "", newUsername: "", newPassword: "", confirmPassword: "" });
 
   const { data: settings, isLoading } = useQuery<PaymentSetting[]>({
     queryKey: ["/api/admin/payment-settings"],
@@ -129,8 +130,42 @@ export default function AdminSettings() {
     },
   });
 
+  const changeCredentialsMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newUsername?: string; newPassword?: string }) =>
+      apiRequest("POST", "/api/admin/change-credentials", data),
+    onSuccess: () => {
+      toast({ title: "Credentials updated successfully" });
+      setCredentials({ currentPassword: "", newUsername: "", newPassword: "", confirmPassword: "" });
+    },
+    onError: (error: any) => {
+      const msg = error?.message || "";
+      const match = msg.match(/^\d+: (.+)$/s);
+      let detail = "Failed to update credentials";
+      if (match) {
+        try { detail = JSON.parse(match[1])?.error || detail; } catch {}
+      }
+      toast({ title: detail, variant: "destructive" });
+    },
+  });
+
   const handleSaveHtml = () => {
     saveHtmlMutation.mutate(htmlTags);
+  };
+
+  const handleSaveCredentials = () => {
+    if (credentials.newPassword && credentials.newPassword !== credentials.confirmPassword) {
+      toast({ title: "New passwords do not match", variant: "destructive" });
+      return;
+    }
+    if (credentials.newPassword && credentials.newPassword.length < 8) {
+      toast({ title: "New password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    changeCredentialsMutation.mutate({
+      currentPassword: credentials.currentPassword,
+      newUsername: credentials.newUsername || undefined,
+      newPassword: credentials.newPassword || undefined,
+    });
   };
 
   const handleSaveStripe = () => {
@@ -380,6 +415,76 @@ export default function AdminSettings() {
               Save HTML Tags
             </Button>
           </div>
+        </div>
+
+        {/* Change Admin Credentials */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Admin Login</h2>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-purple-100 dark:bg-purple-900/30">
+                  <KeyRound className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <CardTitle>Change Credentials</CardTitle>
+                  <CardDescription>Update your admin username or password. Current password is required to make any changes.</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Current Password</label>
+                <MaskedInput
+                  value={credentials.currentPassword}
+                  onChange={(val) => setCredentials({ ...credentials, currentPassword: val })}
+                  placeholder="Enter current password"
+                  testId="input-current-password"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">New Username <span className="text-muted-foreground font-normal">(leave blank to keep current)</span></label>
+                <Input
+                  type="text"
+                  placeholder="New username"
+                  value={credentials.newUsername}
+                  onChange={(e) => setCredentials({ ...credentials, newUsername: e.target.value })}
+                  data-testid="input-new-username"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">New Password <span className="text-muted-foreground font-normal">(leave blank to keep current, min 8 chars)</span></label>
+                <MaskedInput
+                  value={credentials.newPassword}
+                  onChange={(val) => setCredentials({ ...credentials, newPassword: val })}
+                  placeholder="New password"
+                  testId="input-new-password"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Confirm New Password</label>
+                <MaskedInput
+                  value={credentials.confirmPassword}
+                  onChange={(val) => setCredentials({ ...credentials, confirmPassword: val })}
+                  placeholder="Confirm new password"
+                  testId="input-confirm-password"
+                />
+              </div>
+              <Button
+                onClick={handleSaveCredentials}
+                disabled={changeCredentialsMutation.isPending || !credentials.currentPassword}
+                className="w-fit"
+                data-testid="button-save-credentials"
+              >
+                {changeCredentialsMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Update Credentials
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </AdminLayout>

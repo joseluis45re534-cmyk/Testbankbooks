@@ -246,6 +246,7 @@ export default function PrivacyPolicy() {
                 <p className="mt-4">
                   <strong className="text-foreground">Testbankbooks</strong><br />
                   Data Protection Officer<br />
+                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom<br />
                   Email: support@testbankbooks.com
                 </p>
               </CardContent>

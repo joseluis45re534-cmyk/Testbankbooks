@@ -523,8 +523,6 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to send message" });
     }
   });
-  // Google Shopping feed removed — digital test banks violate Google's "digital books" policy.
-  // 410 Gone tells crawlers to stop visiting and remove from index.
   app.get("/feed/google-shopping.xml", (_req, res) => {
     res.status(410).send("Gone");
   });

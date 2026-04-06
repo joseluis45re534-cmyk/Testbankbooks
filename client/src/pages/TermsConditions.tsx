@@ -255,6 +255,10 @@ export default function TermsConditions() {
                     <a href="tel:+13392284593" className="hover:underline" data-testid="link-terms-phone">+1 (339) 228-4593</a>
                   </div>
                 </div>
+                <p className="mt-4 text-muted-foreground">
+                  <strong className="text-foreground">Testbankbooks</strong><br />
+                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom
+                </p>
               </CardContent>
             </Card>
           </div>

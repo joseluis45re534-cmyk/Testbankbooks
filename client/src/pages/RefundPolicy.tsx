@@ -187,6 +187,10 @@ export default function RefundPolicy() {
                     <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM EST</span>
                   </div>
                 </div>
+                <p className="mt-4 text-muted-foreground">
+                  <strong className="text-foreground">Testbankbooks</strong><br />
+                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom
+                </p>
                 <p className="mt-4">Our customer support team is dedicated to ensuring your satisfaction and will work with you to resolve any issues promptly.</p>
               </CardContent>
             </Card>

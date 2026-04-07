@@ -523,8 +523,75 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to send message" });
     }
   });
-  app.get("/feed/google-shopping.xml", (_req, res) => {
-    res.status(410).send("Gone");
+  app.get("/feed/google-shopping.xml", async (req, res) => {
+    try {
+      const allProducts = await storage.getAllProducts();
+      const baseUrl = process.env.NODE_ENV === "production"
+        ? "https://testbankbooks.com"
+        : `${req.protocol}://${req.get("host")}`;
+
+      function escXml(str: string | null | undefined): string {
+        if (!str) return "";
+        return str
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&apos;");
+      }
+
+      function absUrl(url: string | null | undefined): string {
+        if (!url) return "";
+        if (url.startsWith("http")) return url;
+        return `${baseUrl}${url}`;
+      }
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n';
+      xml += "  <channel>\n";
+      xml += `    <title>Testbankbooks - Google Shopping Feed</title>\n`;
+      xml += `    <link>${escXml(baseUrl)}</link>\n`;
+      xml += `    <description>Digital exam prep products for nursing students.</description>\n`;
+
+      for (const p of allProducts) {
+        if (!p.imageUrl) continue;
+
+        const price = parseFloat(p.price);
+        const salePrice = p.salePrice ? parseFloat(p.salePrice) : null;
+        const imageUrl = absUrl(p.imageUrl);
+        const productUrl = `${baseUrl}/products/${p.slug}`;
+        const availability = p.availability === "in_stock" ? "in_stock" : "out_of_stock";
+
+        xml += "    <item>\n";
+        xml += `      <g:id>${escXml(String(p.id))}</g:id>\n`;
+        xml += `      <g:title>${escXml(p.title)}</g:title>\n`;
+        xml += `      <g:description>${escXml(p.description || "")}</g:description>\n`;
+        xml += `      <g:link>${escXml(productUrl)}</g:link>\n`;
+        xml += `      <g:image_link>${escXml(imageUrl)}</g:image_link>\n`;
+        xml += `      <g:availability>${availability}</g:availability>\n`;
+        xml += `      <g:price>${price.toFixed(2)} USD</g:price>\n`;
+        xml += `      <g:condition>new</g:condition>\n`;
+
+        if (salePrice !== null && salePrice < price) {
+          xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
+        }
+
+        xml += `      <g:brand>${escXml(p.brand || "Testbankbooks")}</g:brand>\n`;
+        xml += `      <g:identifier_exists>false</g:identifier_exists>\n`;
+        xml += `      <g:google_product_category>5388</g:google_product_category>\n`;
+        xml += `      <g:product_type>${escXml(p.category || "Digital Products")}</g:product_type>\n`;
+        xml += "    </item>\n";
+      }
+
+      xml += "  </channel>\n";
+      xml += "</rss>\n";
+
+      res.set("Content-Type", "application/xml; charset=utf-8");
+      res.send(xml);
+    } catch (error) {
+      console.error("Error generating Google Shopping feed:", error);
+      res.status(500).send("Error generating feed");
+    }
   });
 
   // Product XML feed — full catalog export

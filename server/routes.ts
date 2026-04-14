@@ -1272,20 +1272,21 @@ Sitemap: ${baseUrl}/sitemap.xml
           if (upstream.status >= 300 && upstream.status < 400) {
             const location = upstream.headers.get("location");
             if (location) {
+              let resolvedUrl: URL;
               try {
-                const redirectHost = new URL(location, fileUrl).hostname;
-                if (!ALLOWED_HOSTS.includes(redirectHost)) {
-                  clearTimeout(timeout);
-                  console.error(`Blocked redirect to untrusted host: ${redirectHost}`);
-                  return res.status(403).send("Download source not allowed. Please contact support@testbankbooks.com.");
-                }
+                resolvedUrl = new URL(location, fileUrl);
               } catch {
                 clearTimeout(timeout);
                 return res.status(400).send("Invalid redirect URL. Please contact support@testbankbooks.com.");
               }
-              upstream = await fetch(location, {
+              if (!ALLOWED_HOSTS.includes(resolvedUrl.hostname)) {
+                clearTimeout(timeout);
+                console.error(`Blocked redirect to untrusted host: ${resolvedUrl.hostname}`);
+                return res.status(403).send("Download source not allowed. Please contact support@testbankbooks.com.");
+              }
+              upstream = await fetch(resolvedUrl.toString(), {
                 signal: controller.signal,
-                redirect: "follow",
+                redirect: "error",
               });
             }
           }

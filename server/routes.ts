@@ -1265,10 +1265,30 @@ Sitemap: ${baseUrl}/sitemap.xml
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 30000);
-          const upstream = await fetch(fileUrl, {
+          let upstream = await fetch(fileUrl, {
             signal: controller.signal,
-            redirect: "follow",
+            redirect: "manual",
           });
+          if (upstream.status >= 300 && upstream.status < 400) {
+            const location = upstream.headers.get("location");
+            if (location) {
+              try {
+                const redirectHost = new URL(location, fileUrl).hostname;
+                if (!ALLOWED_HOSTS.includes(redirectHost)) {
+                  clearTimeout(timeout);
+                  console.error(`Blocked redirect to untrusted host: ${redirectHost}`);
+                  return res.status(403).send("Download source not allowed. Please contact support@testbankbooks.com.");
+                }
+              } catch {
+                clearTimeout(timeout);
+                return res.status(400).send("Invalid redirect URL. Please contact support@testbankbooks.com.");
+              }
+              upstream = await fetch(location, {
+                signal: controller.signal,
+                redirect: "follow",
+              });
+            }
+          }
           clearTimeout(timeout);
 
           if (!upstream.ok) {

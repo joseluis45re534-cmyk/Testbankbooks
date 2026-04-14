@@ -30,7 +30,8 @@ Preferred communication style: Simple, everyday language.
 - **Validation**: Zod schemas generated from Drizzle.
 
 ### Data Import & Media Management
-- **Product Import**: `server/xmlParser.ts` fetches and imports products from an external Google Shopping XML feed, automatically extracting categories and cleaning data.
+- **Product Import**: `server/xmlParser.ts` fetches and imports products from an external XML feed, automatically extracting categories and cleaning data.
+- **Google Shopping Feed**: Permanently removed (returns 410 Gone at `/feed/google-shopping.xml`) due to Google Merchant Center "digital books" policy violation.
 - **Self-Hosted Media**: Supports local storage of product images and downloadable files (ZIP/PDF) in `/uploads/`. Includes admin functionalities for bulk downloading external media and per-product uploads.
 
 ### Blog System

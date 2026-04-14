@@ -1250,6 +1250,18 @@ Sitemap: ${baseUrl}/sitemap.xml
         .substring(0, 80);
 
       if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+        const ALLOWED_HOSTS = ["studiazone.com", "www.studiazone.com", "testbankbooks.com", "www.testbankbooks.com"];
+        let parsedUrl: URL;
+        try {
+          parsedUrl = new URL(fileUrl);
+        } catch {
+          return res.status(400).send("Invalid download URL. Please contact support@testbankbooks.com.");
+        }
+        if (!ALLOWED_HOSTS.includes(parsedUrl.hostname)) {
+          console.error(`Blocked download from untrusted host: ${parsedUrl.hostname}`);
+          return res.status(403).send("Download source not allowed. Please contact support@testbankbooks.com.");
+        }
+
         try {
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 30000);
@@ -1273,8 +1285,7 @@ Sitemap: ${baseUrl}/sitemap.xml
           if (contentType.includes("pdf")) ext = ".pdf";
           else if (contentType.includes("zip") || contentType.includes("octet-stream")) ext = ".zip";
 
-          const urlPath = new URL(fileUrl).pathname;
-          const urlExt = urlPath.match(/\.(zip|pdf|rar|7z)$/i);
+          const urlExt = parsedUrl.pathname.match(/\.(zip|pdf|rar|7z)$/i);
           if (urlExt) ext = urlExt[0].toLowerCase();
 
           res.set("Content-Type", contentType);
@@ -1283,8 +1294,22 @@ Sitemap: ${baseUrl}/sitemap.xml
           if (cl) res.set("Content-Length", cl);
           res.set("Cache-Control", "no-store");
 
-          const buf = Buffer.from(await upstream.arrayBuffer());
-          res.send(buf);
+          if (upstream.body) {
+            const { Readable } = await import("stream");
+            const nodeStream = Readable.fromWeb(upstream.body as import("stream/web").ReadableStream);
+            nodeStream.on("error", (err) => {
+              console.error("Upstream stream error:", err);
+              if (!res.headersSent) {
+                res.status(502).send("Download interrupted. Please try again.");
+              } else {
+                res.end();
+              }
+            });
+            nodeStream.pipe(res);
+          } else {
+            const buf = Buffer.from(await upstream.arrayBuffer());
+            res.send(buf);
+          }
         } catch (proxyErr: unknown) {
           console.error("Download proxy error:", proxyErr);
           if (!res.headersSent) {
@@ -1310,6 +1335,14 @@ Sitemap: ${baseUrl}/sitemap.xml
         res.set("Content-Disposition", `attachment; filename="${safeTitle}${ext}"`);
         res.set("Cache-Control", "no-store");
         const stream = fs.createReadStream(localPath);
+        stream.on("error", (err) => {
+          console.error("Local file stream error:", err);
+          if (!res.headersSent) {
+            res.status(500).send("Error reading download file. Please contact support@testbankbooks.com.");
+          } else {
+            res.end();
+          }
+        });
         stream.pipe(res);
       }
     } catch (error) {

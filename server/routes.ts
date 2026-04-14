@@ -1244,8 +1244,6 @@ Sitemap: ${baseUrl}/sitemap.xml
         return res.status(404).send("Download file not configured for this product. Please contact support@testbankbooks.com.");
       }
 
-      await storage.incrementDownloadCount(token);
-
       const safeTitle = (product.title || "download")
         .replace(/[^a-zA-Z0-9 _-]/g, "")
         .replace(/\s+/g, "_")
@@ -1268,6 +1266,8 @@ Sitemap: ${baseUrl}/sitemap.xml
             );
           }
 
+          await storage.incrementDownloadCount(token);
+
           const contentType = upstream.headers.get("content-type") || "application/octet-stream";
           let ext = ".zip";
           if (contentType.includes("pdf")) ext = ".pdf";
@@ -1283,22 +1283,9 @@ Sitemap: ${baseUrl}/sitemap.xml
           if (cl) res.set("Content-Length", cl);
           res.set("Cache-Control", "no-store");
 
-          if (upstream.body) {
-            const reader = (upstream.body as any).getReader();
-            const pump = async () => {
-              while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                res.write(value);
-              }
-              res.end();
-            };
-            await pump();
-          } else {
-            const buf = Buffer.from(await upstream.arrayBuffer());
-            res.send(buf);
-          }
-        } catch (proxyErr: any) {
+          const buf = Buffer.from(await upstream.arrayBuffer());
+          res.send(buf);
+        } catch (proxyErr: unknown) {
           console.error("Download proxy error:", proxyErr);
           if (!res.headersSent) {
             return res.status(502).send(
@@ -1307,12 +1294,16 @@ Sitemap: ${baseUrl}/sitemap.xml
           }
         }
       } else {
+        const uploadsBase = path.resolve(process.cwd(), "uploads", "downloads");
         const localPath = path.resolve(process.cwd(), fileUrl.replace(/^\//, ""));
-        if (!fs.existsSync(localPath)) {
+        if (!localPath.startsWith(uploadsBase) || !fs.existsSync(localPath)) {
           return res.status(404).send(
             "Download file not found on server. Please contact support@testbankbooks.com."
           );
         }
+
+        await storage.incrementDownloadCount(token);
+
         const ext = path.extname(localPath).toLowerCase();
         const mime = ext === ".pdf" ? "application/pdf" : "application/octet-stream";
         res.set("Content-Type", mime);

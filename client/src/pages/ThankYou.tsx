@@ -76,19 +76,8 @@ export default function ThankYou() {
     return () => document.removeEventListener("contextmenu", handleContextMenu);
   }, []);
 
-  const handleDownload = async (token: DownloadToken) => {
-    try {
-      const response = await fetch(token.downloadUrl);
-      const data = await response.json();
-      
-      if (data.success && data.downloadUrl) {
-        window.open(data.downloadUrl, "_blank");
-      } else {
-        alert(data.error || "Download failed. Please contact support.");
-      }
-    } catch (error) {
-      alert("Download failed. Please try again or contact support.");
-    }
+  const handleDownload = (token: DownloadToken) => {
+    window.location.href = token.downloadUrl;
   };
 
   if (isLoading) {

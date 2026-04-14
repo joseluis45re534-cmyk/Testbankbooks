@@ -1199,67 +1199,133 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
-  // Secure download endpoint
   app.get("/api/download/:signedToken", async (req, res) => {
     try {
       const { signedToken } = req.params;
       const { valid, token } = verifySignedUrl(signedToken as string);
 
       if (!valid) {
-        return res.status(403).json({ error: "Download link expired or invalid" });
+        return res.status(403).send("Download link expired or invalid. Please return to your order page to get a new link.");
       }
 
       const downloadToken = await storage.getDownloadToken(token);
       if (!downloadToken) {
-        return res.status(404).json({ error: "Download token not found" });
+        return res.status(404).send("Download token not found. Please return to your order page.");
       }
 
       if (new Date() > downloadToken.expiresAt) {
-        return res.status(403).json({ error: "Download link has expired" });
+        return res.status(403).send("Download link has expired. Please return to your order page to request a new link.");
       }
 
       if ((downloadToken.downloadCount ?? 0) >= (downloadToken.maxDownloads ?? 5)) {
-        return res.status(403).json({ error: "Maximum downloads exceeded" });
+        return res.status(403).send("Maximum downloads exceeded. Please contact support@testbankbooks.com for assistance.");
       }
 
       const product = await storage.getProductById(downloadToken.productId);
       if (!product) {
-        return res.status(404).json({ error: "Product not found" });
+        return res.status(404).send("Product not found.");
       }
 
-      // Check for download path (local file)
+      let fileUrl: string | null = null;
+
       if (product.downloadPath) {
-        await storage.incrementDownloadCount(token);
-        // Redirect to the file or return the path for client-side handling
-        res.json({
-          success: true,
-          downloadUrl: product.downloadPath,
-          productTitle: product.title,
-          remainingDownloads: (downloadToken.maxDownloads ?? 5) - (downloadToken.downloadCount ?? 0) - 1,
-        });
-        return;
-      }
-
-      // If no local path, try WooCommerce API
-      const wooApi = createWooCommerceAPI();
-      if (wooApi && product.wooProductId) {
-        const files = await wooApi.getDownloadableFiles(product.wooProductId);
-        if (files.length > 0) {
-          await storage.incrementDownloadCount(token);
-          res.json({
-            success: true,
-            downloadUrl: files[0].file,
-            productTitle: product.title,
-            remainingDownloads: (downloadToken.maxDownloads ?? 5) - (downloadToken.downloadCount ?? 0) - 1,
-          });
-          return;
+        fileUrl = product.downloadPath;
+      } else {
+        const wooApi = createWooCommerceAPI();
+        if (wooApi && product.wooProductId) {
+          const files = await wooApi.getDownloadableFiles(product.wooProductId);
+          if (files.length > 0) {
+            fileUrl = files[0].file;
+          }
         }
       }
 
-      res.status(404).json({ error: "Download file not configured for this product" });
+      if (!fileUrl) {
+        return res.status(404).send("Download file not configured for this product. Please contact support@testbankbooks.com.");
+      }
+
+      await storage.incrementDownloadCount(token);
+
+      const safeTitle = (product.title || "download")
+        .replace(/[^a-zA-Z0-9 _-]/g, "")
+        .replace(/\s+/g, "_")
+        .substring(0, 80);
+
+      if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 30000);
+          const upstream = await fetch(fileUrl, {
+            signal: controller.signal,
+            redirect: "follow",
+          });
+          clearTimeout(timeout);
+
+          if (!upstream.ok) {
+            console.error(`External download failed: ${upstream.status} for ${fileUrl}`);
+            return res.status(502).send(
+              "The download file is temporarily unavailable. Please try again later or contact support@testbankbooks.com."
+            );
+          }
+
+          const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+          let ext = ".zip";
+          if (contentType.includes("pdf")) ext = ".pdf";
+          else if (contentType.includes("zip") || contentType.includes("octet-stream")) ext = ".zip";
+
+          const urlPath = new URL(fileUrl).pathname;
+          const urlExt = urlPath.match(/\.(zip|pdf|rar|7z)$/i);
+          if (urlExt) ext = urlExt[0].toLowerCase();
+
+          res.set("Content-Type", contentType);
+          res.set("Content-Disposition", `attachment; filename="${safeTitle}${ext}"`);
+          const cl = upstream.headers.get("content-length");
+          if (cl) res.set("Content-Length", cl);
+          res.set("Cache-Control", "no-store");
+
+          if (upstream.body) {
+            const reader = (upstream.body as any).getReader();
+            const pump = async () => {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                res.write(value);
+              }
+              res.end();
+            };
+            await pump();
+          } else {
+            const buf = Buffer.from(await upstream.arrayBuffer());
+            res.send(buf);
+          }
+        } catch (proxyErr: any) {
+          console.error("Download proxy error:", proxyErr);
+          if (!res.headersSent) {
+            return res.status(502).send(
+              "The download file is temporarily unavailable. Please try again later or contact support@testbankbooks.com."
+            );
+          }
+        }
+      } else {
+        const localPath = path.resolve(process.cwd(), fileUrl.replace(/^\//, ""));
+        if (!fs.existsSync(localPath)) {
+          return res.status(404).send(
+            "Download file not found on server. Please contact support@testbankbooks.com."
+          );
+        }
+        const ext = path.extname(localPath).toLowerCase();
+        const mime = ext === ".pdf" ? "application/pdf" : "application/octet-stream";
+        res.set("Content-Type", mime);
+        res.set("Content-Disposition", `attachment; filename="${safeTitle}${ext}"`);
+        res.set("Cache-Control", "no-store");
+        const stream = fs.createReadStream(localPath);
+        stream.pipe(res);
+      }
     } catch (error) {
       console.error("Error processing download:", error);
-      res.status(500).json({ error: "Failed to process download" });
+      if (!res.headersSent) {
+        res.status(500).send("Failed to process download. Please contact support@testbankbooks.com.");
+      }
     }
   });
 

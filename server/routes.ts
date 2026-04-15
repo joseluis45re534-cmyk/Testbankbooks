@@ -161,6 +161,13 @@ export async function registerRoutes(
 
       await storage.clearCart(sessionId);
 
+      const downloadLinks: { title: string; url: string }[] = [];
+      for (const item of cartItemsList) {
+        if (item.product?.downloadPath) {
+          downloadLinks.push({ title: item.product.title, url: item.product.downloadPath });
+        }
+      }
+
       sendOrderConfirmationEmail({
         customerEmail: order.customerEmail,
         customerName: order.customerName || null,
@@ -168,6 +175,7 @@ export async function registerRoutes(
         amount: order.amount,
         paymentMethod: "paypal",
         productTitles,
+        downloadLinks: downloadLinks.length > 0 ? downloadLinks : undefined,
       }).catch(err => console.error("Failed to send order email:", err));
 
       res.json({
@@ -293,6 +301,13 @@ export async function registerRoutes(
 
       await storage.clearCart(sessionId);
 
+      const stripeDownloadLinks: { title: string; url: string }[] = [];
+      for (const item of cartItemsList) {
+        if (item.product?.downloadPath) {
+          stripeDownloadLinks.push({ title: item.product.title, url: item.product.downloadPath });
+        }
+      }
+
       sendOrderConfirmationEmail({
         customerEmail: order.customerEmail,
         customerName: order.customerName || null,
@@ -300,6 +315,7 @@ export async function registerRoutes(
         amount: order.amount,
         paymentMethod: "stripe",
         productTitles,
+        downloadLinks: stripeDownloadLinks.length > 0 ? stripeDownloadLinks : undefined,
       }).catch(err => console.error("Failed to send order email:", err));
 
       res.json({ success: true, order });

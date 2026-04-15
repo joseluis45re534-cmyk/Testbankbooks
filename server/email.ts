@@ -25,6 +25,7 @@ interface OrderEmailData {
   amount: string;
   paymentMethod: string;
   productTitles: string[];
+  downloadLinks?: { title: string; url: string }[];
 }
 
 export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<boolean> {
@@ -37,6 +38,18 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
 
   const productListHtml = data.productTitles
     .map((title) => `<li style="padding: 8px 0; border-bottom: 1px solid #eee;">${title}</li>`)
+    .join("");
+
+  const downloadLinksHtml = (data.downloadLinks || [])
+    .map((dl) => `
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
+          <p style="margin: 0 0 8px; font-weight: 500;">${dl.title}</p>
+          <a href="${dl.url}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+            Download File
+          </a>
+        </td>
+      </tr>`)
     .join("");
 
   const html = `
@@ -93,15 +106,22 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
                 ${productListHtml}
               </ul>
 
+              ${downloadLinksHtml ? `
+              <h3 style="color: #1a1a2e; margin: 25px 0 10px; font-size: 16px;">Your Downloads</h3>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${downloadLinksHtml}
+              </table>
+              ` : `
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${downloadLink}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                   Download Your Files
                 </a>
               </div>
+              `}
 
               <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; margin-top: 20px;">
                 <p style="margin: 0; font-size: 14px; color: #1e40af;">
-                  <strong>Important:</strong> Your download links are valid for 24 hours with up to 5 download attempts. 
+                  <strong>Instant Access:</strong> Click the download buttons above to get your files. 
                   Please save your files after downloading.
                 </p>
               </div>

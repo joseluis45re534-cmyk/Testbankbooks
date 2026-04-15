@@ -97,6 +97,8 @@ export function SEO({
             ? { "@type": "Brand", name: brand }
             : { "@type": "Brand", name: "Testbankbooks" },
           category: category || "Test Banks",
+          additionalType: "https://schema.org/DigitalDocument",
+          isAccessibleForFree: false,
           offers: {
             "@type": "Offer",
             price: displayPrice,
@@ -115,6 +117,7 @@ export function SEO({
             )
               .toISOString()
               .split("T")[0],
+            itemCondition: "https://schema.org/NewCondition",
           },
         }
       : null;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CheckCircle, Download, Mail, HelpCircle, Clock, Shield, Loader2 } from "lucide-react";
+import { CheckCircle, Download, Mail, HelpCircle, Shield, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -34,7 +34,6 @@ interface DownloadToken {
   productId: string;
   productTitle: string;
   downloadUrl: string;
-  expiresAt: string;
 }
 
 export default function ThankYou() {
@@ -224,33 +223,31 @@ export default function ThankYou() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium line-clamp-1">{token.productTitle}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            Expires: {new Date(token.expiresAt).toLocaleString()}
-                          </span>
-                        </div>
                       </div>
-                      <Button
-                        size="lg"
-                        className="bg-green-600 hover:bg-green-700 text-white font-semibold"
-                        onClick={() => handleDownload(token)}
-                        data-testid={`button-download-${token.productId}`}
-                      >
-                        <Download className="w-5 h-5 mr-2" />
-                        Download Your Test Bank
-                      </Button>
+                      {token.downloadUrl ? (
+                        <a href={token.downloadUrl} target="_blank" rel="noopener noreferrer">
+                          <Button
+                            size="lg"
+                            className="bg-green-600 hover:bg-green-700 text-white font-semibold"
+                            data-testid={`button-download-${token.productId}`}
+                          >
+                            <Download className="w-5 h-5 mr-2" />
+                            Download Your Test Bank
+                          </Button>
+                        </a>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Download not available</span>
+                      )}
                     </div>
                   ))}
                   <div className="flex items-start gap-2 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-sm">
                     <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-blue-800 dark:text-blue-300">
-                        Secure Download
+                        Instant Access
                       </p>
                       <p className="text-blue-700 dark:text-blue-400">
-                        Your download links are valid for 24 hours with up to 5 download attempts.
-                        A copy of your receipt has been sent to your email.
+                        Click the download button to get your file. A copy of your receipt has been sent to your email.
                       </p>
                     </div>
                   </div>

@@ -92,6 +92,7 @@ export default function StripeCheckout({
             applePay: "auto",
             googlePay: "auto",
           },
+          paymentMethodOrder: ["card", "apple_pay", "google_pay", "link"],
           defaultValues: {
             billingDetails: {
               email: customerEmail,

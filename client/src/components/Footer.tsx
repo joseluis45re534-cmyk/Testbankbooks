@@ -1,5 +1,5 @@
 import { Shield, CreditCard, Zap, Mail, Phone, MapPin } from "lucide-react";
-import { SiVisa, SiMastercard, SiPaypal } from "react-icons/si";
+import { SiVisa, SiMastercard, SiPaypal, SiApplepay, SiGooglepay } from "react-icons/si";
 
 export function Footer() {
   return (
@@ -73,6 +73,15 @@ export function Footer() {
               </div>
               <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
                 <SiPaypal className="w-8 h-5 text-[#00457C]" />
+              </div>
+              <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
+                <SiApplepay className="w-8 h-5 text-foreground" />
+              </div>
+              <div className="w-12 h-8 bg-background rounded border flex items-center justify-center">
+                <SiGooglepay className="w-8 h-5 text-foreground" />
+              </div>
+              <div className="w-12 h-8 bg-background rounded border flex items-center justify-center text-xs font-semibold text-[#00D66F]">
+                Link
               </div>
             </div>
             <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">

@@ -1,6 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, Edit2, Save, X, Plus, Trash2, Tag, Upload, FileUp, AlertTriangle, CheckCircle2, Loader2, Link2, ExternalLink, Copy } from "lucide-react";
+import { Search, Edit2, Save, X, Plus, Trash2, Tag, Upload, FileUp, AlertTriangle, CheckCircle2, Loader2, Link2, ExternalLink, Copy, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +43,8 @@ export default function AdminProducts() {
     seoDescription: "",
     downloadPath: "",
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 25;
   const [newTag, setNewTag] = useState("");
   const [bulkPrice, setBulkPrice] = useState("");
   const [bulkCategory, setBulkCategory] = useState("");
@@ -62,6 +64,14 @@ export default function AdminProducts() {
       return res.json();
     },
   });
+
+  const totalProducts = products?.length || 0;
+  const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
+  const paginatedProducts = useMemo(() => {
+    if (!products) return [];
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return products.slice(start, start + ITEMS_PER_PAGE);
+  }, [products, currentPage]);
 
   const { data: tags } = useQuery<TagType[]>({
     queryKey: ["/api/admin/tags"],
@@ -191,11 +201,12 @@ export default function AdminProducts() {
   };
 
   const toggleSelectAll = () => {
-    if (!products) return;
-    if (selectedIds.length === products.length) {
-      setSelectedIds([]);
+    const pageIds = paginatedProducts.map(p => p.id);
+    const allPageSelected = pageIds.every(id => selectedIds.includes(id));
+    if (allPageSelected) {
+      setSelectedIds(prev => prev.filter(id => !pageIds.includes(id)));
     } else {
-      setSelectedIds(products.map((p) => p.id));
+      setSelectedIds(prev => [...new Set([...prev, ...pageIds])]);
     }
   };
 
@@ -238,7 +249,7 @@ export default function AdminProducts() {
                     <Input
                       placeholder="Search products..."
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                       className="pl-10"
                       data-testid="input-search-products"
                     />
@@ -259,7 +270,7 @@ export default function AdminProducts() {
                         <TableRow>
                           <TableHead className="w-12">
                             <Checkbox
-                              checked={products?.length === selectedIds.length && products.length > 0}
+                              checked={paginatedProducts.length > 0 && paginatedProducts.every(p => selectedIds.includes(p.id))}
                               onCheckedChange={toggleSelectAll}
                               data-testid="checkbox-select-all"
                             />
@@ -272,7 +283,7 @@ export default function AdminProducts() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {products?.slice(0, 50).map((product) => (
+                        {paginatedProducts.map((product) => (
                           <TableRow key={product.id} data-testid={`row-product-${product.id}`}>
                             <TableCell>
                               <Checkbox
@@ -346,10 +357,57 @@ export default function AdminProducts() {
                         ))}
                       </TableBody>
                     </Table>
-                    {products && products.length > 50 && (
-                      <p className="text-sm text-muted-foreground mt-4 text-center">
-                        Showing 50 of {products.length} products. Use search to find specific items.
-                      </p>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4 px-2">
+                        <p className="text-sm text-muted-foreground">
+                          Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} of {totalProducts} products
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(1)}
+                            disabled={currentPage === 1}
+                            data-testid="button-page-first"
+                          >
+                            <ChevronsLeft className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            data-testid="button-page-prev"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <span className="text-sm px-3 font-medium">
+                            Page {currentPage} of {totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            data-testid="button-page-next"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setCurrentPage(totalPages)}
+                            disabled={currentPage === totalPages}
+                            data-testid="button-page-last"
+                          >
+                            <ChevronsRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}

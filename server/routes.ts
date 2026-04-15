@@ -50,6 +50,7 @@ const updateProductSchema = z.object({
   tags: z.array(z.string()).optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
+  downloadPath: z.string().nullable().optional(),
 });
 
 const bulkUpdateSchema = z.object({

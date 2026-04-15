@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Search, Edit2, Save, X, Plus, Trash2, Tag, Upload, FileUp, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { Search, Edit2, Save, X, Plus, Trash2, Tag, Upload, FileUp, AlertTriangle, CheckCircle2, Loader2, Link2, ExternalLink, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,7 @@ export default function AdminProducts() {
     category: "",
     seoTitle: "",
     seoDescription: "",
+    downloadPath: "",
   });
   const [newTag, setNewTag] = useState("");
   const [bulkPrice, setBulkPrice] = useState("");
@@ -154,6 +155,7 @@ export default function AdminProducts() {
       category: product.category || "",
       seoTitle: product.seoTitle || "",
       seoDescription: product.seoDescription || "",
+      downloadPath: product.downloadPath || "",
     });
   };
 
@@ -164,8 +166,14 @@ export default function AdminProducts() {
       data: {
         ...editForm,
         salePrice: editForm.salePrice || null,
+        downloadPath: editForm.downloadPath || null,
       },
     });
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Download link copied" });
   };
 
   const handleBulkUpdate = () => {
@@ -259,6 +267,7 @@ export default function AdminProducts() {
                           <TableHead>Product</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Price</TableHead>
+                          <TableHead>Download Link</TableHead>
                           <TableHead className="w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -295,6 +304,33 @@ export default function AdminProducts() {
                                   </span>
                                 )}
                               </div>
+                            </TableCell>
+                            <TableCell>
+                              {product.downloadPath ? (
+                                <div className="flex items-center gap-1 max-w-[200px]">
+                                  <a
+                                    href={product.downloadPath}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 dark:text-blue-400 truncate hover:underline"
+                                    title={product.downloadPath}
+                                    data-testid={`link-download-${product.id}`}
+                                  >
+                                    {product.downloadPath.split("/").pop()?.substring(0, 30) || "Link"}
+                                  </a>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 shrink-0"
+                                    onClick={() => copyToClipboard(product.downloadPath!)}
+                                    data-testid={`button-copy-download-${product.id}`}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">No link</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               <Button
@@ -434,6 +470,30 @@ export default function AdminProducts() {
                   rows={2}
                   data-testid="input-edit-seo-description"
                 />
+              </div>
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="w-4 h-4" />
+                  Download Link
+                </label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={editForm.downloadPath}
+                    onChange={(e) => setEditForm({ ...editForm, downloadPath: e.target.value })}
+                    placeholder="https://example.com/file.zip"
+                    data-testid="input-edit-download-path"
+                  />
+                  {editForm.downloadPath && (
+                    <a href={editForm.downloadPath} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" size="icon" type="button" data-testid="button-open-download">
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                    </a>
+                  )}
+                </div>
+                {editForm.downloadPath && (
+                  <p className="text-xs text-muted-foreground mt-1 break-all">{editForm.downloadPath}</p>
+                )}
               </div>
             </div>
             <DialogFooter>

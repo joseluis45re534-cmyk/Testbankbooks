@@ -3,6 +3,7 @@ import { ShoppingCart, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { analytics } from "@/lib/analytics";
 import type { Product } from "@shared/schema";
 
 interface ProductCardProps {
@@ -75,7 +76,10 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
       <CardFooter className="p-4 pt-0">
         <Button
           className="w-full"
-          onClick={() => onAddToCart(product.id)}
+          onClick={() => {
+            analytics.addToCart(product, 1);
+            onAddToCart(product.id);
+          }}
           disabled={isAdding}
           data-testid={`button-add-cart-${product.id}`}
         >

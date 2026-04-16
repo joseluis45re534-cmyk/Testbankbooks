@@ -13,6 +13,7 @@ import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { queryClient } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 import type { CartItemWithProduct } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
 import StripeCheckout from "@/components/StripeCheckout";
@@ -52,6 +53,15 @@ export default function Checkout() {
 
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
 
+      analytics.purchase({
+        transactionId: captureData.internalOrder.id,
+        value: subtotal,
+        items: cartItems
+          .filter((i) => !!i.product)
+          .map((i) => ({ product: i.product!, quantity: i.quantity })),
+        paymentMethod: "paypal",
+      });
+
       toast({
         title: "Payment Successful",
         description: "Your order has been placed successfully!",
@@ -80,6 +90,15 @@ export default function Checkout() {
       }
 
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+
+      analytics.purchase({
+        transactionId: orderData.order.id,
+        value: subtotal,
+        items: cartItems
+          .filter((i) => !!i.product)
+          .map((i) => ({ product: i.product!, quantity: i.quantity })),
+        paymentMethod: "stripe",
+      });
 
       toast({
         title: "Payment Successful",

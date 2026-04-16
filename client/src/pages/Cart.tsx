@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 import type { CartItemWithProduct } from "@shared/schema";
 
 export default function Cart() {
@@ -231,7 +232,19 @@ export default function Cart() {
                     </div>
 
                     <Link href="/checkout">
-                      <Button className="w-full" size="lg" data-testid="button-checkout">
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        data-testid="button-checkout"
+                        onClick={() => {
+                          analytics.beginCheckout(
+                            cartItems
+                              .filter((i) => !!i.product)
+                              .map((i) => ({ product: i.product!, quantity: i.quantity })),
+                            subtotal
+                          );
+                        }}
+                      >
                         Proceed to Checkout
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>

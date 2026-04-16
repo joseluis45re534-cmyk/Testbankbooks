@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { analytics } from "@/lib/analytics";
 import { useRoute, Link, useLocation } from "wouter";
 import { 
   ArrowLeft, ShoppingCart, Zap, Shield, CheckCircle, BookOpen, 
@@ -130,6 +131,7 @@ export default function ProductDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      if (product) analytics.addToCart(product, 1);
       toast({
         title: "Added to cart",
         description: "Item has been added to your cart",
@@ -151,6 +153,13 @@ export default function ProductDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      if (product) {
+        analytics.addToCart(product, 1);
+        analytics.beginCheckout(
+          [{ product, quantity: 1 }],
+          product.salePrice ? parseFloat(product.salePrice) : parseFloat(product.price)
+        );
+      }
       setLocation("/checkout");
     },
     onError: () => {
@@ -163,6 +172,10 @@ export default function ProductDetail() {
   });
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    if (product) analytics.viewItem(product);
+  }, [product?.id]);
 
   const allImages = useMemo(() => {
     if (!product) return [];

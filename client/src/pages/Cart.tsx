@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,22 +18,6 @@ export default function Cart() {
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
-  });
-
-  const updateQuantityMutation = useMutation({
-    mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      return apiRequest("PATCH", `/api/cart/${itemId}`, { quantity });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update quantity",
-        variant: "destructive",
-      });
-    },
   });
 
   const removeItemMutation = useMutation({
@@ -155,39 +139,7 @@ export default function Cart() {
                               ${price.toFixed(2)}
                             </p>
 
-                            <div className="flex items-center justify-between mt-3">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => updateQuantityMutation.mutate({
-                                    itemId: item.id,
-                                    quantity: Math.max(1, item.quantity - 1)
-                                  })}
-                                  disabled={item.quantity <= 1 || updateQuantityMutation.isPending}
-                                  data-testid={`button-decrease-${item.id}`}
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </Button>
-                                <span className="w-8 text-center font-medium" data-testid={`text-quantity-${item.id}`}>
-                                  {item.quantity}
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => updateQuantityMutation.mutate({
-                                    itemId: item.id,
-                                    quantity: item.quantity + 1
-                                  })}
-                                  disabled={updateQuantityMutation.isPending}
-                                  data-testid={`button-increase-${item.id}`}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </Button>
-                              </div>
-
+                            <div className="flex items-center justify-end mt-3">
                               <Button
                                 variant="ghost"
                                 size="sm"

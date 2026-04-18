@@ -228,17 +228,25 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
+    // Digital products: only one copy per product per cart.
+    // If already in cart, return the existing item without incrementing.
     if (existingItems.length > 0) {
       const existing = existingItems[0];
-      const [updated] = await db
-        .update(cartItems)
-        .set({ quantity: existing.quantity + (item.quantity || 1) })
-        .where(eq(cartItems.id, existing.id))
-        .returning();
-      return updated;
+      if (existing.quantity !== 1) {
+        const [updated] = await db
+          .update(cartItems)
+          .set({ quantity: 1 })
+          .where(eq(cartItems.id, existing.id))
+          .returning();
+        return updated;
+      }
+      return existing;
     }
 
-    const [inserted] = await db.insert(cartItems).values(item).returning();
+    const [inserted] = await db
+      .insert(cartItems)
+      .values({ ...item, quantity: 1 })
+      .returning();
     return inserted;
   }
 

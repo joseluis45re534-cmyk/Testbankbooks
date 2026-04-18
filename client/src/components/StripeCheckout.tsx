@@ -21,6 +21,7 @@ interface StripeCheckoutProps {
   phone?: string;
   onPaymentSuccess: (paymentIntentId: string, orderData: any) => void;
   onPaymentError: (error: any) => void;
+  onServerAmount?: (serverAmount: string) => void;
 }
 
 export default function StripeCheckout({
@@ -30,12 +31,14 @@ export default function StripeCheckout({
   phone,
   onPaymentSuccess,
   onPaymentError,
+  onServerAmount,
 }: StripeCheckoutProps) {
   const [stripe, setStripe] = useState<Stripe | null>(null);
   const [elements, setElements] = useState<StripeElements | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [cardError, setCardError] = useState<string | null>(null);
+  const [serverAmount, setServerAmount] = useState<string | null>(null);
   const mountedRef = useRef(false);
   const stripeContainerRef = useRef<HTMLDivElement | null>(null);
   const elementsRef = useRef<StripeElements | null>(null);
@@ -67,7 +70,12 @@ export default function StripeCheckout({
         throw new Error(err.error || "Failed to create payment intent");
       }
 
-      const { clientSecret: secret } = await intentRes.json();
+      const intentData = await intentRes.json();
+      const { clientSecret: secret, amount: srvAmount } = intentData;
+      if (srvAmount) {
+        setServerAmount(srvAmount);
+        onServerAmount?.(srvAmount);
+      }
 
       if (stripeInstance && secret) {
         setStripe(stripeInstance);
@@ -216,7 +224,7 @@ export default function StripeCheckout({
         ) : (
           <>
             <CreditCard className="w-4 h-4 mr-2" />
-            Pay ${amount}
+            Pay ${serverAmount || amount}
           </>
         )}
       </Button>

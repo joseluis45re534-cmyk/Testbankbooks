@@ -29,9 +29,12 @@ export default function Checkout() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
+  const [serverAmount, setServerAmount] = useState<string | null>(null);
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -304,6 +307,7 @@ export default function Checkout() {
                             phone={phone}
                             onPaymentSuccess={handleStripeSuccess}
                             onPaymentError={handlePaymentError}
+                            onServerAmount={setServerAmount}
                           />
                         </div>
                       ) : (

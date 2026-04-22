@@ -315,29 +315,6 @@ export default function ProductDetail() {
                 <Badge variant="secondary" className="absolute top-4 right-4">
                   Digital
                 </Badge>
-                
-                {allImages.length > 1 && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
-                      onClick={handlePrevImage}
-                      data-testid="button-prev-image"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 backdrop-blur-sm"
-                      onClick={handleNextImage}
-                      data-testid="button-next-image"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </Button>
-                  </>
-                )}
               </div>
 
               {allImages.length > 1 && (

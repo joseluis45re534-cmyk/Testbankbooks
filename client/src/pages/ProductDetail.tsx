@@ -341,16 +341,20 @@ export default function ProductDetail() {
               </div>
 
               {allImages.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2" data-testid="gallery-thumbnails">
+                <div
+                  className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2"
+                  data-testid="gallery-thumbnails"
+                >
                   {allImages.map((img, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImageIndex(index)}
-                      className={`shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                      className={`relative aspect-square rounded-md overflow-hidden border-2 bg-muted transition-all ${
                         index === selectedImageIndex
-                          ? "border-primary"
-                          : "border-transparent hover:border-muted-foreground/50"
+                          ? "border-primary ring-2 ring-primary/30 scale-[1.02]"
+                          : "border-border hover:border-primary/60"
                       }`}
+                      aria-label={`View image ${index + 1} of ${allImages.length}`}
                       data-testid={`button-thumbnail-${index}`}
                     >
                       <img

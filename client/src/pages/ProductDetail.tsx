@@ -293,17 +293,17 @@ export default function ProductDetail() {
           </Link>
 
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            <div className="space-y-4">
-              <div className="relative aspect-square bg-muted rounded-lg overflow-hidden">
+            <div className="space-y-4 min-w-0">
+              <div className="relative w-full max-w-full bg-muted rounded-lg overflow-hidden">
                 {currentImage ? (
                   <img
                     src={currentImage}
                     alt={`${product.title} - Image ${selectedImageIndex + 1}`}
-                    className="w-full h-full object-cover"
+                    className="block w-full h-auto max-w-full"
                     data-testid="img-product-main"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="w-full aspect-[3/4] flex items-center justify-center">
                     <BookOpen className="w-24 h-24 text-muted-foreground" />
                   </div>
                 )}

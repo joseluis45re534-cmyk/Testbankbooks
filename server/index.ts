@@ -269,6 +269,41 @@ app.use((req, res, next) => {
         log(`Warning: Legacy admin cleanup failed: ${error}`, "security");
       }
 
+      // SECURITY: One-time forced sign-out of every existing session.
+      // Wipes the session store so any cookies issued before this deploy
+      // (including ones obtained via the old admin/admin123 login) are
+      // invalidated. The marker row prevents this from running again.
+      try {
+        const client = await pool.connect();
+        try {
+          await client.query(`
+            CREATE TABLE IF NOT EXISTS security_migrations (
+              key TEXT PRIMARY KEY,
+              applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+          `);
+          const marker = await client.query(
+            "SELECT 1 FROM security_migrations WHERE key = $1",
+            ["force_logout_2026_04_23"],
+          );
+          if (marker.rowCount === 0) {
+            const wiped = await client.query("DELETE FROM session");
+            await client.query(
+              "INSERT INTO security_migrations (key) VALUES ($1)",
+              ["force_logout_2026_04_23"],
+            );
+            log(
+              `Force-logout: invalidated ${wiped.rowCount ?? 0} active session(s)`,
+              "security",
+            );
+          }
+        } finally {
+          client.release();
+        }
+      } catch (error) {
+        log(`Warning: Force-logout migration failed: ${error}`, "security");
+      }
+
       // Auto-generate blog posts for any products that don't have one yet
       try {
         const { created, errors } = await generateMissingBlogPosts();

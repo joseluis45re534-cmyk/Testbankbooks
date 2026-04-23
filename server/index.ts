@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -91,10 +92,26 @@ const httpServer = createServer(app);
 
 app.set("trust proxy", 1);
 
+// Security headers (helmet) — relaxed CSP because admin allows custom HTML
+// injection (GA tag, verification scripts) and we serve images from external CDNs.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }),
+);
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
   }
+}
+
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET environment variable is required in production",
+  );
 }
 
 const PostgresSessionStore = connectPg(session);
@@ -106,9 +123,11 @@ app.use(
       tableName: "session",
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "testbankbooks-secret-key",
+    name: "tbb.sid",
+    secret: process.env.SESSION_SECRET || "testbankbooks-dev-only-secret",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    rolling: true,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       secure: process.env.NODE_ENV === "production",

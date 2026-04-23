@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
 import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./email";
@@ -37,8 +38,29 @@ const updateCartSchema = z.object({
 });
 
 const adminLoginSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1),
+  username: z.string().min(1).max(100),
+  password: z.string().min(1).max(200),
+});
+
+const changeCredentialsSchema = z.object({
+  currentPassword: z.string().min(1).max(200),
+  newUsername: z.string().min(3).max(100).optional(),
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(200)
+    .optional(),
+});
+
+// Brute-force protection on the admin login endpoint.
+// 8 attempts per 15 minutes per IP — generous enough for typos but
+// stops password-spray and credential-stuffing attacks cold.
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many login attempts. Try again in 15 minutes." },
 });
 
 const updateProductSchema = z.object({
@@ -755,8 +777,8 @@ Sitemap: ${baseUrl}/sitemap.xml
   // ADMIN ROUTES
   // =====================
 
-  // Admin login
-  app.post("/api/admin/login", async (req, res) => {
+  // Admin login (rate-limited against brute force)
+  app.post("/api/admin/login", adminLoginLimiter, async (req, res) => {
     try {
       const validation = adminLoginSchema.safeParse(req.body);
       if (!validation.success) {
@@ -768,24 +790,32 @@ Sitemap: ${baseUrl}/sitemap.xml
       // Check if admin exists
       const admin = await storage.getAdminByUsername(username);
 
-      if (!admin) {
+      // Constant-time check whether or not the user exists, to avoid
+      // username-enumeration via response timing.
+      const dummyHash = "$2b$10$CwTycUXWue0Thq9StjUM0uJ8ZoP9P9P9P9P9P9P9P9P9P9P9P9P9P";
+      const isValid = admin
+        ? await bcrypt.compare(password, admin.password)
+        : (await bcrypt.compare(password, dummyHash), false);
+
+      if (!admin || !isValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      const isValid = await bcrypt.compare(password, admin.password);
-      if (!isValid) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      req.session.adminId = admin.id;
-      req.session.adminUsername = admin.username;
-      
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          return res.status(500).json({ error: "Session save failed" });
+      // Regenerate session ID on login to prevent session fixation
+      req.session.regenerate((regenErr) => {
+        if (regenErr) {
+          console.error("Session regenerate error:", regenErr);
+          return res.status(500).json({ error: "Login failed" });
         }
-        res.json({ success: true, username: admin!.username });
+        req.session.adminId = admin.id;
+        req.session.adminUsername = admin.username;
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return res.status(500).json({ error: "Session save failed" });
+          }
+          res.json({ success: true, username: admin.username });
+        });
       });
     } catch (error) {
       console.error("Admin login error:", error);
@@ -812,11 +842,14 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Change admin credentials
   app.post("/api/admin/change-credentials", requireAdmin, async (req, res) => {
     try {
-      const { currentPassword, newUsername, newPassword } = req.body;
-
-      if (!currentPassword) {
-        return res.status(400).json({ error: "Current password is required" });
+      const validation = changeCredentialsSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({
+          error: validation.error.errors[0]?.message || "Invalid input",
+        });
       }
+      const { currentPassword, newUsername, newPassword } = validation.data;
+
       if (!newUsername && !newPassword) {
         return res.status(400).json({ error: "Provide a new username or new password" });
       }

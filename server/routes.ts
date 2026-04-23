@@ -766,13 +766,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       const { username, password } = validation.data;
 
       // Check if admin exists
-      let admin = await storage.getAdminByUsername(username);
-      
-      // Create default admin if none exists
-      if (!admin && username === "admin") {
-        const hashedPassword = await bcrypt.hash("admin123", 10);
-        admin = await storage.createAdminUser({ username: "admin", password: hashedPassword });
-      }
+      const admin = await storage.getAdminByUsername(username);
 
       if (!admin) {
         return res.status(401).json({ error: "Invalid credentials" });

@@ -87,9 +87,6 @@ export default function AdminLogin() {
               )}
             </Button>
           </form>
-          <p className="text-sm text-muted-foreground text-center mt-4">
-            Default: admin / admin123
-          </p>
         </CardContent>
       </Card>
     </div>

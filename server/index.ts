@@ -247,6 +247,28 @@ app.use((req, res, next) => {
         log(`Warning: Product name migration failed: ${error}`, "migration");
       }
 
+      // SECURITY: Remove the legacy default "admin" account if it still
+      // exists. This account was previously seeded with a publicly known
+      // password and must not remain in any environment.
+      try {
+        const client = await pool.connect();
+        try {
+          const result = await client.query(
+            "DELETE FROM admin_users WHERE username = 'admin' RETURNING id",
+          );
+          if (result.rowCount && result.rowCount > 0) {
+            log(
+              `Removed legacy default admin account (${result.rowCount} row)`,
+              "security",
+            );
+          }
+        } finally {
+          client.release();
+        }
+      } catch (error) {
+        log(`Warning: Legacy admin cleanup failed: ${error}`, "security");
+      }
+
       // Auto-generate blog posts for any products that don't have one yet
       try {
         const { created, errors } = await generateMissingBlogPosts();

@@ -269,6 +269,52 @@ app.use((req, res, next) => {
         log(`Warning: Legacy admin cleanup failed: ${error}`, "security");
       }
 
+      // SECURITY: One-time admin credential rotation. Replaces the
+      // previous "Soufiane77" account with a fresh "soufiane66" account
+      // whose bcrypt-hashed password is provided out-of-band by the
+      // owner. Tracked by a marker so it only runs once.
+      try {
+        const client = await pool.connect();
+        try {
+          await client.query(`
+            CREATE TABLE IF NOT EXISTS security_migrations (
+              key TEXT PRIMARY KEY,
+              applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+          `);
+          const marker = await client.query(
+            "SELECT 1 FROM security_migrations WHERE key = $1",
+            ["rotate_owner_to_soufiane66_2026_04_23"],
+          );
+          if (marker.rowCount === 0) {
+            await client.query(
+              "DELETE FROM admin_users WHERE username = 'Soufiane77'",
+            );
+            await client.query(
+              `INSERT INTO admin_users (username, password)
+               VALUES ($1, $2)
+               ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password`,
+              [
+                "soufiane66",
+                "$2b$10$9G.cu3m6XrR6DBltMjTaSuumnQq6jTE3iC4VSBSkuYJb0D1go0bEa",
+              ],
+            );
+            await client.query(
+              "INSERT INTO security_migrations (key) VALUES ($1)",
+              ["rotate_owner_to_soufiane66_2026_04_23"],
+            );
+            log(
+              "Rotated owner credentials: removed Soufiane77, installed soufiane66",
+              "security",
+            );
+          }
+        } finally {
+          client.release();
+        }
+      } catch (error) {
+        log(`Warning: Owner credential rotation failed: ${error}`, "security");
+      }
+
       // SECURITY: One-time forced sign-out of every existing session.
       // Wipes the session store so any cookies issued before this deploy
       // (including ones obtained via the old admin/admin123 login) are

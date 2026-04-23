@@ -21,7 +21,7 @@ export default function AdminLogin() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/admin/me"] });
       toast({ title: "Login successful", description: "Welcome to the admin dashboard" });
-      setLocation("/admin/dashboard");
+      setLocation("/owner/dashboard");
     },
     onError: () => {
       toast({ title: "Login failed", description: "Invalid username or password", variant: "destructive" });

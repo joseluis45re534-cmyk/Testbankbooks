@@ -34,7 +34,7 @@ import { CustomScripts } from "@/components/CustomScripts";
 
 function ChatWidgetWrapper() {
   const [location] = useLocation();
-  const isAdminRoute = location.startsWith("/admin");
+  const isAdminRoute = location.startsWith("/owner");
   
   if (isAdminRoute) return null;
   return <ChatWidget />;
@@ -49,16 +49,16 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/thank-you/:orderId" component={ThankYou} />
-      <Route path="/admin" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/orders" component={AdminOrders} />
-      <Route path="/admin/products" component={AdminProducts} />
-      <Route path="/admin/blog" component={AdminBlog} />
-      <Route path="/admin/seo" component={AdminSEO} />
-      <Route path="/admin/settings" component={AdminSettings} />
-      <Route path="/admin/media" component={AdminMedia} />
-      <Route path="/admin/downloads" component={AdminDownloads} />
-      <Route path="/admin/chat" component={AdminChat} />
+      <Route path="/owner" component={AdminLogin} />
+      <Route path="/owner/dashboard" component={AdminDashboard} />
+      <Route path="/owner/orders" component={AdminOrders} />
+      <Route path="/owner/products" component={AdminProducts} />
+      <Route path="/owner/blog" component={AdminBlog} />
+      <Route path="/owner/seo" component={AdminSEO} />
+      <Route path="/owner/settings" component={AdminSettings} />
+      <Route path="/owner/media" component={AdminMedia} />
+      <Route path="/owner/downloads" component={AdminDownloads} />
+      <Route path="/owner/chat" component={AdminChat} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-conditions" component={TermsConditions} />
       <Route path="/refund-policy" component={RefundPolicy} />

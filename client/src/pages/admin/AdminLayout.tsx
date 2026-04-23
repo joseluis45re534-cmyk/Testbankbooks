@@ -14,15 +14,15 @@ interface AdminLayoutProps {
 }
 
 const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/blog", label: "Blog", icon: BookOpen },
-  { href: "/admin/seo", label: "SEO Automation", icon: TrendingUp },
-  { href: "/admin/media", label: "Media", icon: HardDrive },
-  { href: "/admin/downloads", label: "Downloads", icon: Download },
-  { href: "/admin/chat", label: "Live Chat", icon: MessageCircle },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/owner/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/owner/orders", label: "Orders", icon: ShoppingCart },
+  { href: "/owner/products", label: "Products", icon: Package },
+  { href: "/owner/blog", label: "Blog", icon: BookOpen },
+  { href: "/owner/seo", label: "SEO Automation", icon: TrendingUp },
+  { href: "/owner/media", label: "Media", icon: HardDrive },
+  { href: "/owner/downloads", label: "Downloads", icon: Download },
+  { href: "/owner/chat", label: "Live Chat", icon: MessageCircle },
+  { href: "/owner/settings", label: "Settings", icon: Settings },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -37,13 +37,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     mutationFn: () => apiRequest("POST", "/api/admin/logout"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/me"] });
-      setLocation("/admin");
+      setLocation("/owner");
     },
   });
 
   useEffect(() => {
     if (!isLoading && !authData?.authenticated) {
-      setLocation("/admin");
+      setLocation("/owner");
     }
   }, [authData, isLoading, setLocation]);
 

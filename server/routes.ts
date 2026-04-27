@@ -19,6 +19,7 @@ import { eq, or } from "drizzle-orm";
 import { triggerManualRun } from "./scheduler";
 import { generateBlogPostForProduct } from "./blogGenerator";
 import { startBulkImageDownload, getDownloadProgress, startBulkFileDownload, getFileDownloadProgress, saveUploadedImage, saveUploadedDownload } from "./mediaDownloader";
+import { generateBotReply, shouldBotReply, BOT_WELCOME } from "./chatbot";
 
 declare module 'express-session' {
   interface SessionData {
@@ -1414,7 +1415,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       }
 
       let conversation = await storage.getConversationByVisitorId(visitorId);
-      
+
       if (!conversation) {
         conversation = await storage.createConversation({
           visitorId,
@@ -1422,6 +1423,18 @@ Sitemap: ${baseUrl}/sitemap.xml
           visitorEmail: visitorEmail || null,
           status: "active",
         });
+
+        // Auto-send a welcome message from the bot
+        try {
+          await storage.createMessage({
+            conversationId: conversation.id,
+            message: BOT_WELCOME(visitorName || null),
+            senderType: "bot",
+            isRead: false,
+          });
+        } catch (e) {
+          console.error("Failed to send welcome bot message:", e);
+        }
       } else if (visitorName || visitorEmail) {
         const updates: Record<string, string> = {};
         if (visitorName) updates.visitorName = visitorName;
@@ -1453,6 +1466,29 @@ Sitemap: ${baseUrl}/sitemap.xml
         senderType: senderType || "visitor",
         isRead: false,
       });
+
+      // Auto-respond with the chatbot if the visitor sent a message
+      // and a human admin hasn't already taken over the conversation.
+      if ((senderType || "visitor") === "visitor") {
+        try {
+          const recent = await storage.getMessagesByConversationId(conversationId);
+          if (shouldBotReply(recent)) {
+            const conversation = recent.length > 0
+              ? await storage.getConversationById(conversationId)
+              : null;
+            const visitorEmail = conversation?.visitorEmail || null;
+            const reply = await generateBotReply(message, visitorEmail);
+            await storage.createMessage({
+              conversationId,
+              message: reply,
+              senderType: "bot",
+              isRead: false,
+            });
+          }
+        } catch (e) {
+          console.error("Bot reply failed:", e);
+        }
+      }
 
       res.json(newMessage);
     } catch (error) {

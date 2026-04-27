@@ -14,7 +14,7 @@ interface Message {
   id: string;
   conversationId: string;
   message: string;
-  senderType: "visitor" | "admin";
+  senderType: "visitor" | "admin" | "bot";
   isRead: boolean;
   createdAt: string;
 }
@@ -205,25 +205,36 @@ export default function AdminChat() {
                 <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
                   <ScrollArea className="flex-1 p-4">
                     <div className="space-y-3">
-                      {activeConversation.messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.senderType === "admin" ? "justify-end" : "justify-start"}`}
-                        >
+                      {activeConversation.messages.map((msg) => {
+                        const isAdmin = msg.senderType === "admin";
+                        const isBot = msg.senderType === "bot";
+                        return (
                           <div
-                            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                              msg.senderType === "admin"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
+                            key={msg.id}
+                            className={`flex flex-col ${isAdmin ? "items-end" : "items-start"}`}
                           >
-                            <p>{msg.message}</p>
-                            <p className="text-xs opacity-70 mt-1">
-                              {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                            </p>
+                            {isBot && (
+                              <span className="text-[10px] text-muted-foreground mb-0.5 px-1">
+                                Bot auto-reply
+                              </span>
+                            )}
+                            <div
+                              className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                                isAdmin
+                                  ? "bg-primary text-primary-foreground"
+                                  : isBot
+                                  ? "bg-muted border border-dashed"
+                                  : "bg-muted"
+                              }`}
+                            >
+                              <p>{msg.message}</p>
+                              <p className="text-xs opacity-70 mt-1">
+                                {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>

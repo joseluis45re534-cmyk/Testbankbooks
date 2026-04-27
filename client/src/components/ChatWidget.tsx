@@ -10,7 +10,7 @@ interface Message {
   id: string;
   conversationId: string;
   message: string;
-  senderType: "visitor" | "admin";
+  senderType: "visitor" | "admin" | "bot";
   isRead: boolean;
   createdAt: string;
 }
@@ -94,8 +94,8 @@ export function ChatWidget() {
           const newMessages = await response.json();
           setMessages(newMessages);
           
-          const adminMessages = newMessages.filter((m: Message) => m.senderType === "admin" && !m.isRead);
-          if (adminMessages.length > 0 && !isOpen) {
+          const supportMessages = newMessages.filter((m: Message) => (m.senderType === "admin" || m.senderType === "bot") && !m.isRead);
+          if (supportMessages.length > 0 && !isOpen) {
             setHasUnread(true);
           }
         }
@@ -290,10 +290,16 @@ export function ChatWidget() {
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.senderType === "visitor" ? "justify-end" : "justify-start"}`}
+                      className={`flex flex-col ${msg.senderType === "visitor" ? "items-end" : "items-start"}`}
                     >
+                      {msg.senderType === "bot" && (
+                        <span className="text-[10px] text-muted-foreground mb-0.5 px-1">
+                          Auto-reply
+                        </span>
+                      )}
                       <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                        data-testid={`text-chat-message-${msg.senderType}`}
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                           msg.senderType === "visitor"
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted"

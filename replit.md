@@ -41,7 +41,7 @@ Preferred communication style: Simple, everyday language.
 ### E-commerce Features
 - **Payment Gateways**: Integrated Stripe and PayPal for secure checkout.
 - **Order Confirmation**: Automated email confirmations via Resend after successful payments.
-- **Live Chat**: Customer-facing chat widget with real-time messaging and an admin interface for managing conversations.
+- **Live Chat with Auto-Responder**: Customer-facing chat widget with real-time messaging and an admin interface for managing conversations. A built-in chatbot (`server/chatbot.ts`) sends a welcome message and auto-responds to common questions (delivery, downloads, payments, refunds, pricing). When asked about a specific download, it looks up the visitor's orders by email. The bot stays silent for 12 hours once a real admin replies, and visitors can type "agent" anytime to request a human. Bot messages use `senderType: "bot"` (vs. `"admin"` for human replies and `"visitor"` for customers).
 
 ### SEO & Compliance
 - **Meta Tags**: Per-page meta tags with `react-helmet-async`.

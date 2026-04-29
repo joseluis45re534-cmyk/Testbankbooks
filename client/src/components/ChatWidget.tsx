@@ -21,6 +21,29 @@ interface Conversation {
   messages: Message[];
 }
 
+const URL_REGEX = /(https?:\/\/[^\s)]+)/g;
+
+function renderMessageWithLinks(text: string): React.ReactNode {
+  const parts = text.split(URL_REGEX);
+  return parts.map((part, i) => {
+    if (URL_REGEX.test(part)) {
+      URL_REGEX.lastIndex = 0;
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-blue-600 dark:text-blue-400 break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 function generateVisitorId(): string {
   let visitorId = localStorage.getItem("chat_visitor_id");
   if (!visitorId) {
@@ -299,13 +322,13 @@ export function ChatWidget() {
                       )}
                       <div
                         data-testid={`text-chat-message-${msg.senderType}`}
-                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+                        className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${
                           msg.senderType === "visitor"
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted"
                         }`}
                       >
-                        {msg.message}
+                        {renderMessageWithLinks(msg.message)}
                       </div>
                     </div>
                   ))}

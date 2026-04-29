@@ -103,24 +103,34 @@ function detectIntent(text: string): string {
   return "fallback";
 }
 
-async function buildDownloadReply(visitorEmail?: string | null): Promise<string> {
-  const baseInstructions = [
-    "Your test banks are 100% digital — there's no shipping. After payment you receive your download in two ways:",
-    "",
-    "1. **Email** — A confirmation email is sent right after checkout to the address you used. It contains a secure download link for each item.",
-    "2. **Thank-you page** — Right after payment, the order confirmation page also shows direct download buttons.",
-    "",
-    "If you can't find your email:",
-    "• Check your spam / promotions folder",
-    "• Make sure you're checking the same inbox you used at checkout",
-    "• Whitelist `support@testbankbooks.com`",
-  ];
+function buildLinkLine(title: string, url: string | null | undefined): string {
+  if (!url) return `• ${title} — (no link on file, our team will resend)`;
+  // External http(s) links are sent verbatim; local /uploads/* paths are
+  // expanded to fully-qualified URLs so the visitor can click them.
+  const fullUrl = /^https?:\/\//i.test(url)
+    ? url
+    : `https://testbankbooks.com${url.startsWith("/") ? "" : "/"}${url}`;
+  return `• ${title}\n  ${fullUrl}`;
+}
 
+const GENERIC_DOWNLOAD_INFO = [
+  "Your test banks are 100% digital — there's no shipping. After payment you receive your download in two ways:",
+  "",
+  "1. **Email** — A confirmation email is sent right after checkout to the address you used. It contains a download link for each item.",
+  "2. **Thank-you page** — Right after payment, the order confirmation page also shows direct download buttons.",
+  "",
+  "If you can't find your email:",
+  "• Check your spam / promotions folder",
+  "• Make sure you're checking the same inbox you used at checkout",
+  "• Whitelist `support@testbankbooks.com`",
+];
+
+async function buildDownloadReply(visitorEmail?: string | null): Promise<string> {
   if (!visitorEmail) {
     return [
-      ...baseInstructions,
+      ...GENERIC_DOWNLOAD_INFO,
       "",
-      "Reply with the email address you used at checkout and I'll look up your order.",
+      "Reply with the email address you used at checkout and I'll look up your order and resend your download links right here in chat.",
       "",
       BOT_HANDOFF_HINT,
     ].join("\n");
@@ -132,9 +142,11 @@ async function buildDownloadReply(visitorEmail?: string | null): Promise<string>
 
     if (paid.length === 0) {
       return [
-        ...baseInstructions,
+        `I checked our records for **${visitorEmail}** and couldn't find a completed order yet.`,
         "",
-        `I checked our records for **${visitorEmail}** and couldn't find a completed order. If you used a different email at checkout, please share it and I'll check again.`,
+        "If you used a different email at checkout, share it here and I'll check again.",
+        "",
+        ...GENERIC_DOWNLOAD_INFO,
         "",
         BOT_HANDOFF_HINT,
       ].join("\n");
@@ -146,25 +158,36 @@ async function buildDownloadReply(visitorEmail?: string | null): Promise<string>
         new Date(a.createdAt || 0).getTime(),
     )[0];
 
-    const titles = (latest.productTitles || []).slice(0, 5);
-    const titleList = titles.length
-      ? titles.map((t) => `• ${t}`).join("\n")
-      : "• (item titles not recorded)";
+    const productIds = latest.productIds || [];
+    const productTitles = latest.productTitles || [];
 
-    return [
-      `Good news — I found your most recent paid order under **${visitorEmail}**:`,
-      "",
-      titleList,
-      "",
-      "Your download links were sent to that email right after checkout. If they didn't arrive:",
-      "• Check spam / promotions",
-      "• Search your inbox for **support@testbankbooks.com**",
-      "",
-      `If you still can't find them, type "agent" and our team will resend them manually.`,
-    ].join("\n");
+    // Resolve each product to its current download URL.
+    const lines: string[] = [];
+    let missing = 0;
+    for (let i = 0; i < productIds.length; i++) {
+      const pid = productIds[i];
+      const fallbackTitle = productTitles[i] || "Your test bank";
+      try {
+        const product = await storage.getProductById(pid);
+        const title = product?.title || fallbackTitle;
+        const url = product?.downloadPath || null;
+        if (!url) missing++;
+        lines.push(buildLinkLine(title, url));
+      } catch {
+        missing++;
+        lines.push(buildLinkLine(fallbackTitle, null));
+      }
+    }
+
+    const intro = `Good news — I found your most recent paid order under **${visitorEmail}**. Here are your direct download links:`;
+    const footer = missing > 0
+      ? `\n\nA few items don't have a working link in our system right now — type "agent" and our team will resend those manually.`
+      : `\n\nClick each link to download. For your security, please don't share these links with anyone else. If a link doesn't work, type "agent" and we'll resend it.`;
+
+    return [intro, "", ...lines].join("\n") + footer;
   } catch {
     return [
-      ...baseInstructions,
+      ...GENERIC_DOWNLOAD_INFO,
       "",
       BOT_HANDOFF_HINT,
     ].join("\n");

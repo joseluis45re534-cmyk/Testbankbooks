@@ -49,18 +49,14 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
     .map((title) => `<li style="padding: 8px 0; border-bottom: 1px solid #eee;">${title}</li>`)
     .join("");
 
-  const downloadLinksHtml = (data.downloadLinks || [])
+  // Individual direct links (used as secondary list only, not as primary buttons)
+  const directLinksListHtml = (data.downloadLinks || [])
+    .filter((dl) => !!dl.url)
     .map((dl) => {
       const fullUrl = normalizeDownloadUrl(dl.url);
-      return `
-      <tr>
-        <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
-          <p style="margin: 0 0 8px; font-weight: 500;">${dl.title}</p>
-          <a href="${fullUrl}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;">
-            Download File
-          </a>
-        </td>
-      </tr>`;
+      return `<li style="padding: 4px 0; font-size: 13px;">
+        <a href="${fullUrl}" style="color: #2563eb; word-break: break-all;">${dl.title}</a>
+      </li>`;
     })
     .join("");
 
@@ -118,23 +114,35 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
                 ${productListHtml}
               </ul>
 
-              ${downloadLinksHtml ? `
-              <h3 style="color: #1a1a2e; margin: 25px 0 10px; font-size: 16px;">Your Downloads</h3>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                ${downloadLinksHtml}
-              </table>
-              ` : `
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${downloadLink}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-                  Download Your Files
-                </a>
-              </div>
-              `}
+              <!-- Download page CTA — always shown, always works -->
+              <h3 style="color: #1a1a2e; margin: 25px 0 15px; font-size: 16px;">Your Downloads Are Ready</h3>
 
-              <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; margin-top: 20px;">
+              <div style="background-color: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 10px; padding: 24px; text-align: center; margin-bottom: 20px;">
+                <p style="margin: 0 0 6px; font-size: 15px; color: #166534; font-weight: 600;">Click below to access all your purchased files</p>
+                <p style="margin: 0 0 20px; font-size: 13px; color: #4b7a5e;">This link is unique to your order — bookmark it for future access.</p>
+                <a href="${downloadLink}"
+                   style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-weight: 700; font-size: 17px; letter-spacing: 0.3px;">
+                  &#8594;&nbsp; Access My Downloads
+                </a>
+                <p style="margin: 16px 0 0; font-size: 12px; color: #6b7280; word-break: break-all;">
+                  ${downloadLink}
+                </p>
+              </div>
+
+              ${directLinksListHtml ? `
+              <details style="margin-bottom: 16px;">
+                <summary style="cursor: pointer; font-size: 13px; color: #6b7280; user-select: none;">
+                  Also available: direct file links (expand)
+                </summary>
+                <ul style="list-style: none; padding: 12px 0 0; margin: 0;">
+                  ${directLinksListHtml}
+                </ul>
+              </details>
+              ` : ""}
+
+              <div style="background-color: #eff6ff; border-radius: 8px; padding: 16px; margin-top: 4px;">
                 <p style="margin: 0; font-size: 14px; color: #1e40af;">
-                  <strong>Instant Access:</strong> Click the download buttons above to get your files. 
-                  Please save your files after downloading.
+                  <strong>Tip:</strong> Save your files right after downloading. If the link ever stops working, contact us and we'll resend it immediately.
                 </p>
               </div>
             </td>

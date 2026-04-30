@@ -18,6 +18,15 @@ function getBaseUrl(): string {
   return "https://testbankbooks.com";
 }
 
+function normalizeDownloadUrl(url: string): string {
+  if (!url) return url;
+  // Already a full URL — leave it alone
+  if (/^https?:\/\//i.test(url)) return url;
+  // Local path (e.g. /uploads/downloads/file.zip) — expand to full URL
+  const path = url.startsWith("/") ? url : `/${url}`;
+  return `${getBaseUrl()}${path}`;
+}
+
 interface OrderEmailData {
   customerEmail: string;
   customerName: string | null;
@@ -41,15 +50,18 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
     .join("");
 
   const downloadLinksHtml = (data.downloadLinks || [])
-    .map((dl) => `
+    .map((dl) => {
+      const fullUrl = normalizeDownloadUrl(dl.url);
+      return `
       <tr>
         <td style="padding: 12px 0; border-bottom: 1px solid #eee;">
           <p style="margin: 0 0 8px; font-weight: 500;">${dl.title}</p>
-          <a href="${dl.url}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+          <a href="${fullUrl}" style="display: inline-block; background-color: #059669; color: #ffffff; text-decoration: none; padding: 8px 20px; border-radius: 6px; font-weight: 600; font-size: 14px;">
             Download File
           </a>
         </td>
-      </tr>`)
+      </tr>`;
+    })
     .join("");
 
   const html = `

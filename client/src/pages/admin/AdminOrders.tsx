@@ -66,6 +66,26 @@ export default function AdminOrders() {
     queryKey: ["/api/admin/abandoned-carts"],
   });
 
+  const [resendingOrderId, setResendingOrderId] = useState<string | null>(null);
+
+  const resendEmailMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      setResendingOrderId(orderId);
+      const res = await apiRequest("POST", `/api/admin/orders/${orderId}/resend-email`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: "Email resent", description: data.message });
+      setResendingOrderId(null);
+    },
+    onError: async (error: any) => {
+      let message = "Failed to resend email";
+      try { if (error?.message) message = error.message; } catch {}
+      toast({ title: "Email Error", description: message, variant: "destructive" });
+      setResendingOrderId(null);
+    },
+  });
+
   const sendRecoveryMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("POST", `/api/admin/abandoned-carts/${id}/send-recovery`);
@@ -288,8 +308,27 @@ export default function AdminOrders() {
                                           </ul>
                                         </div>
                                       </div>
-                                      <div className="text-xs text-muted-foreground pt-2 border-t">
-                                        Full ID: {order.id}
+                                      <div className="flex items-center justify-between pt-2 border-t gap-4">
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          Full ID: {order.id}
+                                        </span>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={resendingOrderId === order.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            resendEmailMutation.mutate(order.id);
+                                          }}
+                                          data-testid={`button-resend-email-${order.id}`}
+                                        >
+                                          {resendingOrderId === order.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                          ) : (
+                                            <Mail className="w-4 h-4 mr-2" />
+                                          )}
+                                          Resend Email
+                                        </Button>
                                       </div>
                                     </div>
                                   </TableCell>

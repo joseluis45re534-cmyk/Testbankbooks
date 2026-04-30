@@ -934,6 +934,44 @@ Sitemap: ${baseUrl}/sitemap.xml
     }
   });
 
+  // Resend order confirmation email
+  app.post("/api/admin/orders/:id/resend-email", requireAdmin, async (req, res) => {
+    try {
+      const order = await storage.getOrderById(req.params.id as string);
+      if (!order) {
+        return res.status(404).json({ error: "Order not found" });
+      }
+
+      const productIds = order.productIds || [];
+      const downloadLinks: { title: string; url: string }[] = [];
+      for (const pid of productIds) {
+        const product = await storage.getProductById(pid);
+        if (product?.downloadPath) {
+          downloadLinks.push({ title: product.title, url: product.downloadPath });
+        }
+      }
+
+      const sent = await sendOrderConfirmationEmail({
+        customerEmail: order.customerEmail,
+        customerName: order.customerName || null,
+        orderId: order.id,
+        amount: order.amount,
+        paymentMethod: order.paymentMethod || "stripe",
+        productTitles: order.productTitles || [],
+        downloadLinks: downloadLinks.length > 0 ? downloadLinks : undefined,
+      });
+
+      if (!sent) {
+        return res.status(500).json({ error: "Failed to send email — check RESEND_API_KEY configuration" });
+      }
+
+      res.json({ success: true, message: `Confirmation email resent to ${order.customerEmail}` });
+    } catch (error) {
+      console.error("Error resending order email:", error);
+      res.status(500).json({ error: "Failed to resend email" });
+    }
+  });
+
   // Update order status
   app.patch("/api/admin/orders/:id", requireAdmin, async (req, res) => {
     try {

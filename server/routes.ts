@@ -243,11 +243,17 @@ export async function registerRoutes(
         productTitles.push(product.title);
       }
 
-      const paymentIntent = await createStripePaymentIntent(total, "usd", {
-        customerEmail: customerEmail || "",
-        sessionId,
-        productIds: productIds.join(","),
-      });
+      const paymentIntent = await createStripePaymentIntent(
+        total,
+        "usd",
+        {
+          customerEmail: customerEmail || "",
+          sessionId,
+          productIds: productIds.join(","),
+        },
+        customerEmail || undefined,
+        undefined
+      );
 
       res.json({
         clientSecret: paymentIntent.client_secret,

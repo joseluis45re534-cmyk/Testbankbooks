@@ -101,6 +101,17 @@ export default function StripeCheckout({
             googlePay: "auto",
           },
           paymentMethodOrder: ["card", "apple_pay", "google_pay", "link"],
+          // We supply name/email/phone from our form, but let Stripe collect
+          // billing address (incl. postal code) — required by most card issuers
+          // for AVS/fraud prevention.
+          fields: {
+            billingDetails: {
+              name: "never",
+              email: "never",
+              phone: "never",
+              address: "auto",
+            },
+          },
           defaultValues: {
             billingDetails: {
               email: customerEmail,
@@ -154,6 +165,13 @@ export default function StripeCheckout({
         confirmParams: {
           receipt_email: customerEmail,
           return_url: window.location.origin + "/checkout",
+          payment_method_data: {
+            billing_details: {
+              name: customerName || undefined,
+              email: customerEmail || undefined,
+              phone: phone || undefined,
+            },
+          },
         },
         redirect: "if_required",
       });

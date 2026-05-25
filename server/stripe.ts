@@ -28,20 +28,19 @@ export async function getStripePublishableKey(): Promise<string> {
 export async function createStripePaymentIntent(
   amount: number,
   currency: string = "usd",
-  metadata: Record<string, string> = {}
+  metadata: Record<string, string> = {},
+  customerEmail?: string,
+  customerName?: string
 ): Promise<Stripe.PaymentIntent> {
   const stripe = await getStripeInstance();
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(amount * 100),
     currency,
     metadata,
+    receipt_email: customerEmail || undefined,
+    description: customerName ? `Order for ${customerName}` : "TestBankBooks Order",
     automatic_payment_methods: {
       enabled: true,
-    },
-    payment_method_options: {
-      link: {
-        persistent_token: undefined,
-      },
     },
   });
   return paymentIntent;

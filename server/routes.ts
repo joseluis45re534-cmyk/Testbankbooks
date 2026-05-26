@@ -995,18 +995,61 @@ Sitemap: ${baseUrl}/sitemap.xml
       const sessionId = req.sessionID;
       const { email, customerName, phone } = req.body;
       if (!email) return res.status(400).json({ error: "Email required" });
+
+      // 1. Save contact info to cart items
       const updateData: any = { email };
       if (customerName) updateData.customerName = customerName;
       if (phone) updateData.phone = phone;
       await db.update(cartItems)
         .set(updateData)
         .where(eq(cartItems.sessionId, sessionId));
-      const abandonedUpdate: any = { email };
-      if (customerName) abandonedUpdate.customerName = customerName;
-      if (phone) abandonedUpdate.phone = phone;
-      await db.update(abandonedCarts)
-        .set(abandonedUpdate)
-        .where(eq(abandonedCarts.sessionId, sessionId));
+
+      // 2. Immediately create/update abandoned cart record so it shows up
+      //    in the admin panel right away — don't wait for the 60-min detector.
+      try {
+        const currentCart = await storage.getCartItems(sessionId);
+        if (currentCart && currentCart.length > 0) {
+          const productIds = currentCart.map((i) => String(i.product?.id ?? (i as any).productId ?? "")).filter(Boolean);
+          const productTitles = currentCart.map((i) => i.product?.title ?? "").filter(Boolean);
+          const totalAmount = currentCart.reduce((sum, i) => {
+            const price = i.product?.salePrice ? parseFloat(i.product.salePrice) : parseFloat(i.product?.price || "0");
+            return sum + price * i.quantity;
+          }, 0);
+
+          const existing = await db.select({ id: abandonedCarts.id })
+            .from(abandonedCarts)
+            .where(eq(abandonedCarts.sessionId, sessionId))
+            .limit(1);
+
+          if (existing.length > 0) {
+            await db.update(abandonedCarts)
+              .set({
+                email,
+                customerName: customerName || undefined,
+                phone: phone || undefined,
+                productIds,
+                productTitles,
+                totalAmount: totalAmount.toFixed(2),
+              })
+              .where(eq(abandonedCarts.sessionId, sessionId));
+          } else {
+            await db.insert(abandonedCarts).values({
+              sessionId,
+              email,
+              customerName: customerName || null,
+              phone: phone || null,
+              productIds,
+              productTitles,
+              totalAmount: totalAmount.toFixed(2),
+              recoveryEmailSent: false,
+            });
+          }
+        }
+      } catch (cartErr) {
+        // Non-fatal — log but don't fail the request
+        console.error("Failed to record abandoned cart:", cartErr);
+      }
+
       res.json({ success: true });
     } catch (error) {
       console.error("Error saving cart email:", error);

@@ -265,6 +265,9 @@ export class DatabaseStorage implements IStorage {
 
   async clearCart(sessionId: string): Promise<void> {
     await db.delete(cartItems).where(eq(cartItems.sessionId, sessionId));
+    // Also remove any abandoned cart record for this session so paid customers
+    // don't appear in the abandoned carts admin list.
+    await db.delete(abandonedCarts).where(eq(abandonedCarts.sessionId, sessionId));
   }
 
   async getProductCount(): Promise<number> {

@@ -1,0 +1,21 @@
+# Copy this file to .dev.vars and fill in your real values.
+# .dev.vars is loaded by `wrangler pages dev` for local CF Pages development.
+# It is gitignored — never commit real secrets.
+#
+# Note: the D1 database (binding "DB") and R2 bucket (binding "UPLOADS")
+# are configured in wrangler.toml, not here.
+
+SESSION_SECRET=change-me-to-a-long-random-string
+
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+PAYPAL_CLIENT_ID=...
+PAYPAL_CLIENT_SECRET=...
+
+RESEND_API_KEY=re_...
+
+# Optional — only needed if using WooCommerce download sync
+WC_URL=
+WC_KEY=
+WC_SECRET=

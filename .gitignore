@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.dev.vars
+.wrangler
+attached_assets/
+uploads/
+exports/
+.canvas/
+.agents/

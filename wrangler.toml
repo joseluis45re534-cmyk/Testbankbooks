@@ -1,0 +1,23 @@
+name = "testbankbooks"
+pages_build_output_dir = "dist/public"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "testbankbooks"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+# Create the DB with:
+#   npx wrangler d1 create testbankbooks
+# Then copy the printed database_id into the field above.
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "testbankbooks-uploads"
+
+# All other secrets (SESSION_SECRET, STRIPE_*, PAYPAL_*, RESEND_API_KEY) are
+# set via the Cloudflare Pages dashboard or `wrangler secret put <NAME>`.
+# Local dev: copy .dev.vars.example to .dev.vars and fill it in.

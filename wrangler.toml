@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "testbankbooks"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "6612e061-c490-44d3-a675-371fbab69279"
 # Create the DB with:
 #   npx wrangler d1 create testbankbooks
 # Then copy the printed database_id into the field above.

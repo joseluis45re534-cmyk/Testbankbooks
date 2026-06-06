@@ -50,7 +50,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
-        title="Testbankbooks - Premium Exam Prep & Study Materials for Nursing Students"
+        title="NursTestBank - Premium Exam Prep & Study Materials for Nursing Students"
         description="Access 300+ nursing exam prep materials and study guides designed specifically for nursing and medical students. Practice with real exam-style questions and boost your scores. Instant download available."
       />
       <Header cartCount={cartCount} />
@@ -290,7 +290,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-10">
               <p className="text-sm text-primary font-medium mb-1">Why Choose Us</p>
-              <h2 className="text-2xl md:text-3xl font-bold">The Testbankbooks Advantage</h2>
+              <h2 className="text-2xl md:text-3xl font-bold">The NursTestBank Advantage</h2>
               <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
                 Everything you need to ace your nursing exams in one place
               </p>

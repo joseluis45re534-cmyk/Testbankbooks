@@ -15,7 +15,7 @@ Disallow: /checkout
 Disallow: /thank-you
 Disallow: /api/
 
-Sitemap: https://testbankbooks.com/sitemap.xml
+Sitemap: https://nurstestbank.com/sitemap.xml
 `;
   return new Response(txt, {
     headers: {

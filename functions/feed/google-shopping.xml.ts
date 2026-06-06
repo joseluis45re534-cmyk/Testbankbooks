@@ -14,10 +14,10 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
   const db = createD1Db(env.DB);
   const storage = new DatabaseStorage(db);
   const allProducts = await storage.getAllProducts();
-  const base = "https://testbankbooks.com";
+  const base = "https://nurstestbank.com";
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n  <channel>\n';
-  xml += `    <title>Testbankbooks - Google Shopping Feed</title>\n    <link>${base}</link>\n    <description>Digital exam prep products for nursing students.</description>\n`;
+  xml += `    <title>NursTestBank - Google Shopping Feed</title>\n    <link>${base}</link>\n    <description>Digital exam prep products for nursing students.</description>\n`;
 
   for (const p of allProducts) {
     if (!p.imageUrl) continue;
@@ -30,7 +30,7 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
     xml += `      <g:availability>${p.availability === "in_stock" ? "in_stock" : "out_of_stock"}</g:availability>\n`;
     xml += `      <g:price>${price.toFixed(2)} USD</g:price>\n      <g:condition>new</g:condition>\n`;
     if (salePrice !== null && salePrice < price) xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
-    xml += `      <g:brand>${escXml(p.brand || "Testbankbooks")}</g:brand>\n      <g:identifier_exists>false</g:identifier_exists>\n      <g:google_product_category>5388</g:google_product_category>\n      <g:product_type>${escXml(p.category || "Digital Products")}</g:product_type>\n    </item>\n`;
+    xml += `      <g:brand>${escXml(p.brand || "NursTestBank")}</g:brand>\n      <g:identifier_exists>false</g:identifier_exists>\n      <g:google_product_category>5388</g:google_product_category>\n      <g:product_type>${escXml(p.category || "Digital Products")}</g:product_type>\n    </item>\n`;
   }
 
   xml += "  </channel>\n</rss>\n";

@@ -573,7 +573,7 @@ export async function registerRoutes(
     try {
       const allProducts = await storage.getAllProducts();
       const baseUrl = process.env.NODE_ENV === "production"
-        ? "https://testbankbooks.com"
+        ? "https://nurstestbank.com"
         : `${req.protocol}://${req.get("host")}`;
 
       function escXml(str: string | null | undefined): string {
@@ -595,7 +595,7 @@ export async function registerRoutes(
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
       xml += '<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n';
       xml += "  <channel>\n";
-      xml += `    <title>Testbankbooks - Google Shopping Feed</title>\n`;
+      xml += `    <title>NursTestBank - Google Shopping Feed</title>\n`;
       xml += `    <link>${escXml(baseUrl)}</link>\n`;
       xml += `    <description>Digital exam prep products for nursing students.</description>\n`;
 
@@ -622,7 +622,7 @@ export async function registerRoutes(
           xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
         }
 
-        xml += `      <g:brand>${escXml(p.brand || "Testbankbooks")}</g:brand>\n`;
+        xml += `      <g:brand>${escXml(p.brand || "NursTestBank")}</g:brand>\n`;
         xml += `      <g:identifier_exists>false</g:identifier_exists>\n`;
         xml += `      <g:google_product_category>5388</g:google_product_category>\n`;
         xml += `      <g:product_type>${escXml(p.category || "Digital Products")}</g:product_type>\n`;
@@ -677,7 +677,7 @@ export async function registerRoutes(
         xml += `    <sale_price>${escXml(p.salePrice || "")}</sale_price>\n`;
         xml += `    <display_price>${escXml(String(displayPrice))}</display_price>\n`;
         xml += `    <category>${escXml(p.category || "")}</category>\n`;
-        xml += `    <brand>${escXml(p.brand || "Testbankbooks")}</brand>\n`;
+        xml += `    <brand>${escXml(p.brand || "NursTestBank")}</brand>\n`;
         xml += `    <availability>${escXml(p.availability || "in_stock")}</availability>\n`;
         xml += `    <slug>${escXml(p.slug || "")}</slug>\n`;
         xml += `    <url>${escXml(`${baseUrl}/products/${p.slug}`)}</url>\n`;
@@ -718,7 +718,7 @@ export async function registerRoutes(
       const products = await storage.getAllProducts();
       const blogPostsList = await storage.getPublishedBlogPosts();
       const baseUrl = process.env.NODE_ENV === "production"
-        ? "https://testbankbooks.com"
+        ? "https://nurstestbank.com"
         : `${req.protocol}://${req.get("host")}`;
       
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -756,7 +756,7 @@ export async function registerRoutes(
   // Robots.txt
   app.get("/robots.txt", (req, res) => {
     const baseUrl = process.env.NODE_ENV === "production"
-      ? "https://testbankbooks.com"
+      ? "https://nurstestbank.com"
       : `${req.protocol}://${req.get("host")}`;
     const robotsTxt = `User-agent: Googlebot
 Allow: /
@@ -1294,7 +1294,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       }
 
       if ((downloadToken.downloadCount ?? 0) >= (downloadToken.maxDownloads ?? 5)) {
-        return res.status(403).send("Maximum downloads exceeded. Please contact support@testbankbooks.com for assistance.");
+        return res.status(403).send("Maximum downloads exceeded. Please contact support@nurstestbank.com for assistance.");
       }
 
       const product = await storage.getProductById(downloadToken.productId);
@@ -1322,7 +1322,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       }
 
       if (!fileUrl) {
-        return res.status(404).send("Download file not configured for this product. Please contact support@testbankbooks.com.");
+        return res.status(404).send("Download file not configured for this product. Please contact support@nurstestbank.com.");
       }
 
       const safeTitle = (product.title || "download")
@@ -1338,7 +1338,7 @@ Sitemap: ${baseUrl}/sitemap.xml
         const localPath = path.resolve(process.cwd(), fileUrl.replace(/^\//, ""));
         if (!localPath.startsWith(uploadsBase) || !fs.existsSync(localPath)) {
           return res.status(404).send(
-            "Download file not found on server. Please contact support@testbankbooks.com."
+            "Download file not found on server. Please contact support@nurstestbank.com."
           );
         }
 
@@ -1353,7 +1353,7 @@ Sitemap: ${baseUrl}/sitemap.xml
         stream.on("error", (err) => {
           console.error("Local file stream error:", err);
           if (!res.headersSent) {
-            res.status(500).send("Error reading download file. Please contact support@testbankbooks.com.");
+            res.status(500).send("Error reading download file. Please contact support@nurstestbank.com.");
           } else {
             res.end();
           }
@@ -1363,7 +1363,7 @@ Sitemap: ${baseUrl}/sitemap.xml
     } catch (error) {
       console.error("Error processing download:", error);
       if (!res.headersSent) {
-        res.status(500).send("Failed to process download. Please contact support@testbankbooks.com.");
+        res.status(500).send("Failed to process download. Please contact support@nurstestbank.com.");
       }
     }
   });
@@ -1974,7 +1974,7 @@ Sitemap: ${baseUrl}/sitemap.xml
       );
 
       // Inject a crawlable static product list visible to all crawlers
-      const baseUrl = "https://testbankbooks.com";
+      const baseUrl = "https://nurstestbank.com";
       const productListHtml = allProducts
         .map(
           (p) =>

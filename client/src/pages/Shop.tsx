@@ -106,10 +106,10 @@ export default function Shop() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const pageTitle = selectedCategory 
-    ? `${selectedCategory} Test Banks & Study Guides | Testbankbooks`
+    ? `${selectedCategory} Test Banks & Study Guides | NursTestBank`
     : activeSearch 
-      ? `Search: ${activeSearch} - Nursing Test Banks | Testbankbooks`
-      : "Browse 300+ Nursing Test Banks & Study Guides | Testbankbooks";
+      ? `Search: ${activeSearch} - Nursing Test Banks | NursTestBank`
+      : "Browse 300+ Nursing Test Banks & Study Guides | NursTestBank";
   
   const pageDescription = selectedCategory
     ? `Browse our collection of ${selectedCategory.toLowerCase()} test banks and study guides. Expertly crafted exam prep materials with instant digital download after purchase.`

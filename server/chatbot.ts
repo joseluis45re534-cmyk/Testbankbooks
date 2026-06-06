@@ -1,7 +1,7 @@
 import type { ChatMessage } from "@shared/schema";
 import type { IStorage } from "./storage";
 
-const BOT_NAME = "TestBankBooks Assistant";
+const BOT_NAME = "NursTestBank Assistant";
 
 export const BOT_HANDOFF_HINT =
   "If you'd like a real person, just type \"agent\" and our team will jump in.";
@@ -9,7 +9,7 @@ export const BOT_HANDOFF_HINT =
 export const BOT_WELCOME = (visitorName?: string | null): string => {
   const name = visitorName ? `, ${visitorName}` : "";
   return [
-    `Hi${name}! I'm the TestBankBooks Assistant.`,
+    `Hi${name}! I'm the NursTestBank Assistant.`,
     "",
     "I can help with:",
     "• How you'll receive your order",
@@ -109,7 +109,7 @@ function buildLinkLine(title: string, url: string | null | undefined): string {
   // expanded to fully-qualified URLs so the visitor can click them.
   const fullUrl = /^https?:\/\//i.test(url)
     ? url
-    : `https://testbankbooks.com${url.startsWith("/") ? "" : "/"}${url}`;
+    : `https://nurstestbank.com${url.startsWith("/") ? "" : "/"}${url}`;
   return `• ${title}\n  ${fullUrl}`;
 }
 
@@ -122,7 +122,7 @@ const GENERIC_DOWNLOAD_INFO = [
   "If you can't find your email:",
   "• Check your spam / promotions folder",
   "• Make sure you're checking the same inbox you used at checkout",
-  "• Whitelist `support@testbankbooks.com`",
+  "• Whitelist `support@nurstestbank.com`",
 ];
 
 async function buildDownloadReply(visitorEmail?: string | null, storage?: IStorage): Promise<string> {
@@ -206,7 +206,7 @@ const STATIC_REPLIES: Record<string, string> = {
   thanks: "You're welcome! Anything else I can help with?",
 
   how_to_receive: [
-    "All TestBankBooks products are **digital downloads** — there is no physical shipping.",
+    "All NursTestBank products are **digital downloads** — there is no physical shipping.",
     "",
     "As soon as your payment goes through, you'll get:",
     "• A confirmation email with secure download links",
@@ -256,8 +256,8 @@ const STATIC_REPLIES: Record<string, string> = {
     "You can reach us through:",
     "",
     "• This live chat — I'll route you to a human if I can't answer",
-    "• Email: **support@testbankbooks.com**",
-    "• Phone: **+1 (339) 228-4593**",
+    "• Email: **support@nurstestbank.com**",
+    "• Phone: **+1 (330) 390-8394**",
     "",
     "Our team usually replies within a few hours.",
   ].join("\n"),

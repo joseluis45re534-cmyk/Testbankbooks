@@ -18,7 +18,7 @@ interface SEOProps {
 }
 
 export function SEO({
-  title = "Testbankbooks - Premium Test Banks & Study Guides",
+  title = "NursTestBank - Premium Test Banks & Study Guides",
   description = "Get instant access to premium nursing test banks and study guides. Professional exam prep materials with instant digital download. Over 260+ titles available.",
   image,
   url,
@@ -32,35 +32,35 @@ export function SEO({
   publishedDate,
   authorName,
 }: SEOProps) {
-  const fullTitle = title.includes("Testbankbooks") ? title : `${title} | Testbankbooks`;
+  const fullTitle = title.includes("NursTestBank") ? title : `${title} | NursTestBank`;
   const displayPrice = salePrice || price;
 
   // Build canonical URL from route path (strips ?query params so search/filter pages
   // canonicalize to the clean base URL, fixing "Duplicate without user-selected canonical").
   const [routePath] = useLocation();
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://testbankbooks.com";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://nurstestbank.com";
   const canonicalUrl = url || `${origin}${routePath}`;
 
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "OnlineBusiness",
-    name: "Testbankbooks",
+    name: "NursTestBank",
     url: typeof window !== "undefined" ? window.location.origin : "",
     logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.png` : "",
     description: "Online retailer of digital nursing exam prep materials and test banks. Instant digital download — no physical products.",
     areaServed: "Worldwide",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "5 Alvingham Ave",
-      addressLocality: "Castle Douglas",
-      postalCode: "DG7 1JF",
-      addressCountry: "GB",
+      streetAddress: "7 Rue des Noyers",
+      addressLocality: "Lyon",
+      postalCode: "69005",
+      addressCountry: "FR",
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+13392284593",
+      telephone: "+13303908394",
       contactType: "customer service",
-      email: "support@testbankbooks.com",
+      email: "support@nurstestbank.com",
       availableLanguage: "English",
     },
     sameAs: [],
@@ -69,7 +69,7 @@ export function SEO({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Testbankbooks",
+    name: "NursTestBank",
     url: typeof window !== "undefined" ? window.location.origin : "",
     potentialAction: {
       "@type": "SearchAction",
@@ -95,7 +95,7 @@ export function SEO({
           sku: sku || undefined,
           brand: brand
             ? { "@type": "Brand", name: brand }
-            : { "@type": "Brand", name: "Testbankbooks" },
+            : { "@type": "Brand", name: "NursTestBank" },
           category: category || "Test Banks",
           additionalType: "https://schema.org/DigitalDocument",
           isAccessibleForFree: false,
@@ -109,7 +109,7 @@ export function SEO({
                 : "https://schema.org/OutOfStock",
             seller: {
               "@type": "Organization",
-              name: "Testbankbooks",
+              name: "NursTestBank",
             },
             url: canonicalUrl,
             priceValidUntil: new Date(
@@ -135,12 +135,12 @@ export function SEO({
           dateModified: publishedDate || new Date().toISOString().split("T")[0],
           author: {
             "@type": "Organization",
-            name: authorName || "Testbankbooks",
+            name: authorName || "NursTestBank",
             url: typeof window !== "undefined" ? window.location.origin : "",
           },
           publisher: {
             "@type": "Organization",
-            name: "Testbankbooks",
+            name: "NursTestBank",
             logo: {
               "@type": "ImageObject",
               url: typeof window !== "undefined" ? `${window.location.origin}/favicon.png` : "",
@@ -165,7 +165,7 @@ export function SEO({
       <meta property="og:description" content={description} />
       {image && <meta property="og:image" content={image} />}
       <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:site_name" content="Testbankbooks" />
+      <meta property="og:site_name" content="NursTestBank" />
       <meta property="og:locale" content="en_US" />
 
       {type === "product" && displayPrice && (
@@ -184,7 +184,7 @@ export function SEO({
       {type === "blog" && publishedDate && (
         <>
           <meta property="article:published_time" content={publishedDate} />
-          <meta property="article:author" content={authorName || "Testbankbooks"} />
+          <meta property="article:author" content={authorName || "NursTestBank"} />
           {category && <meta property="article:section" content={category} />}
         </>
       )}

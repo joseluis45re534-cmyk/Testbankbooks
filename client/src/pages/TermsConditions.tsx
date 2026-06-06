@@ -17,7 +17,7 @@ export default function TermsConditions() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Terms & Conditions"
-        description="Read the Terms and Conditions for using Testbankbooks. Understand your rights and obligations when purchasing digital test banks and study guides."
+        description="Read the Terms and Conditions for using NursTestBank. Understand your rights and obligations when purchasing digital test banks and study guides."
       />
       <Header cartCount={cartCount} />
 
@@ -38,10 +38,10 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  By accessing and using the Testbankbooks website and purchasing our products, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. If you do not agree to these terms, you must not use our website or services.
+                  By accessing and using the NursTestBank website and purchasing our products, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. If you do not agree to these terms, you must not use our website or services.
                 </p>
                 <p>
-                  These terms constitute a legally binding agreement between you ("User," "you," or "your") and Testbankbooks ("we," "our," or "us"). We reserve the right to modify these terms at any time, and your continued use of the website constitutes acceptance of any changes.
+                  These terms constitute a legally binding agreement between you ("User," "you," or "your") and NursTestBank ("we," "our," or "us"). We reserve the right to modify these terms at any time, and your continued use of the website constitutes acceptance of any changes.
                 </p>
               </CardContent>
             </Card>
@@ -52,7 +52,7 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  All products sold on Testbankbooks are digital goods delivered electronically. Our products include, but are not limited to:
+                  All products sold on NursTestBank are digital goods delivered electronically. Our products include, but are not limited to:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Test banks containing practice exam questions and answers</li>
@@ -71,10 +71,10 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  All content on this website, including but not limited to text, graphics, logos, images, digital downloads, and software, is the property of Testbankbooks or its content suppliers and is protected by United States and international copyright, trademark, and other intellectual property laws.
+                  All content on this website, including but not limited to text, graphics, logos, images, digital downloads, and software, is the property of NursTestBank or its content suppliers and is protected by United States and international copyright, trademark, and other intellectual property laws.
                 </p>
                 <p>
-                  The compilation of all content on this site is the exclusive property of Testbankbooks. Unauthorized use, reproduction, modification, distribution, or storage of any content for any purpose other than personal, non-commercial use is strictly prohibited without prior written permission.
+                  The compilation of all content on this site is the exclusive property of NursTestBank. Unauthorized use, reproduction, modification, distribution, or storage of any content for any purpose other than personal, non-commercial use is strictly prohibited without prior written permission.
                 </p>
               </CardContent>
             </Card>
@@ -85,14 +85,14 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  Upon purchasing a product from Testbankbooks, you are granted a limited, non-exclusive, non-transferable, revocable license to use the purchased materials for personal, educational purposes only. This license permits you to:
+                  Upon purchasing a product from NursTestBank, you are granted a limited, non-exclusive, non-transferable, revocable license to use the purchased materials for personal, educational purposes only. This license permits you to:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Download the purchased materials to your personal devices</li>
                   <li>Use the materials for personal study and exam preparation</li>
                   <li>Print portions for personal, non-commercial use</li>
                 </ul>
-                <p>This license does not grant you ownership of the content. All intellectual property rights remain with Testbankbooks and/or the original content creators.</p>
+                <p>This license does not grant you ownership of the content. All intellectual property rights remain with NursTestBank and/or the original content creators.</p>
               </CardContent>
             </Card>
 
@@ -165,7 +165,7 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  To the fullest extent permitted by applicable law, Testbankbooks shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to:
+                  To the fullest extent permitted by applicable law, NursTestBank shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Loss of profits, data, or business opportunities</li>
@@ -206,7 +206,7 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  You agree to indemnify, defend, and hold harmless Testbankbooks, its officers, directors, employees, agents, and affiliates from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorney fees) arising out of or in any way connected with your use of our website, violation of these terms, or infringement of any intellectual property or other rights of any person or entity.
+                  You agree to indemnify, defend, and hold harmless NursTestBank, its officers, directors, employees, agents, and affiliates from and against any claims, liabilities, damages, losses, and expenses (including reasonable attorney fees) arising out of or in any way connected with your use of our website, violation of these terms, or infringement of any intellectual property or other rights of any person or entity.
                 </p>
               </CardContent>
             </Card>
@@ -248,16 +248,16 @@ export default function TermsConditions() {
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-primary" />
-                    <a href="mailto:support@testbankbooks.com" className="hover:underline" data-testid="link-terms-email">support@testbankbooks.com</a>
+                    <a href="mailto:support@nurstestbank.com" className="hover:underline" data-testid="link-terms-email">support@nurstestbank.com</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-terms-phone">+1 (339) 228-4593</a>
+                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-terms-phone">+1 (330) 390-8394</a>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
-                  <strong className="text-foreground">Testbankbooks</strong><br />
-                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom
+                  <strong className="text-foreground">NursTestBank</strong><br />
+                  7 Rue des Noyers, 69005 Lyon, France
                 </p>
               </CardContent>
             </Card>

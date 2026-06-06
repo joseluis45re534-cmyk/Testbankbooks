@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Privacy Policy"
-        description="Learn how Testbankbooks collects, uses, and protects your personal data. GDPR-compliant privacy practices for your peace of mind."
+        description="Learn how NursTestBank collects, uses, and protects your personal data. GDPR-compliant privacy practices for your peace of mind."
       />
       <Header cartCount={cartCount} />
 
@@ -38,7 +38,7 @@ export default function PrivacyPolicy() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  Testbankbooks ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and purchase our digital products, including nursing test banks and study guides.
+                  NursTestBank ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and purchase our digital products, including nursing test banks and study guides.
                 </p>
                 <p>
                   By accessing or using our services, you agree to this Privacy Policy. If you do not agree with the terms of this policy, please do not access the site.
@@ -162,7 +162,7 @@ export default function PrivacyPolicy() {
                   <li><strong className="text-foreground">Right to Object:</strong> Object to the processing of your data for marketing purposes.</li>
                   <li><strong className="text-foreground">Right to Withdraw Consent:</strong> Withdraw your consent at any time where processing is based on consent.</li>
                 </ul>
-                <p>To exercise any of these rights, please contact us at support@testbankbooks.com. We will respond to your request within 30 days.</p>
+                <p>To exercise any of these rights, please contact us at support@nurstestbank.com. We will respond to your request within 30 days.</p>
               </CardContent>
             </Card>
 
@@ -194,7 +194,7 @@ export default function PrivacyPolicy() {
                   Our services are not intended for individuals under the age of 16. We do not knowingly collect personal data from children under 16. If we become aware that we have collected personal data from a child under 16 without parental consent, we will take steps to delete that information promptly.
                 </p>
                 <p>
-                  If you believe that we have inadvertently collected information from a child under 16, please contact us immediately at support@testbankbooks.com.
+                  If you believe that we have inadvertently collected information from a child under 16, please contact us immediately at support@nurstestbank.com.
                 </p>
               </CardContent>
             </Card>
@@ -236,18 +236,18 @@ export default function PrivacyPolicy() {
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-primary" />
-                    <a href="mailto:support@testbankbooks.com" className="hover:underline" data-testid="link-privacy-email">support@testbankbooks.com</a>
+                    <a href="mailto:support@nurstestbank.com" className="hover:underline" data-testid="link-privacy-email">support@nurstestbank.com</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-privacy-phone">+1 (339) 228-4593</a>
+                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-privacy-phone">+1 (330) 390-8394</a>
                   </div>
                 </div>
                 <p className="mt-4">
-                  <strong className="text-foreground">Testbankbooks</strong><br />
+                  <strong className="text-foreground">NursTestBank</strong><br />
                   Data Protection Officer<br />
-                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom<br />
-                  Email: support@testbankbooks.com
+                  7 Rue des Noyers, 69005 Lyon, France<br />
+                  Email: support@nurstestbank.com
                 </p>
               </CardContent>
             </Card>

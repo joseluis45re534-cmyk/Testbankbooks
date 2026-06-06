@@ -15,7 +15,7 @@ function getResend(): Resend | null {
 }
 
 function getBaseUrl(): string {
-  return "https://testbankbooks.com";
+  return "https://nurstestbank.com";
 }
 
 function normalizeDownloadUrl(url: string): string {
@@ -75,7 +75,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
           
           <tr>
             <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">TestBankBooks</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">NursTestBank</h1>
             </td>
           </tr>
 
@@ -151,10 +151,10 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
           <tr>
             <td style="background-color: #f9fafb; padding: 25px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280;">
-                Need help? Contact us at <a href="mailto:support@testbankbooks.com" style="color: #2563eb;">support@testbankbooks.com</a>
+                Need help? Contact us at <a href="mailto:support@nurstestbank.com" style="color: #2563eb;">support@nurstestbank.com</a>
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                © ${new Date().getFullYear()} TestBankBooks. All rights reserved.
+                © ${new Date().getFullYear()} NursTestBank. All rights reserved.
               </p>
             </td>
           </tr>
@@ -168,7 +168,7 @@ export async function sendOrderConfirmationEmail(data: OrderEmailData): Promise<
 
   try {
     const result = await resend.emails.send({
-      from: "TestBankBooks <support@testbankbooks.com>",
+      from: "NursTestBank <support@nurstestbank.com>",
       to: data.customerEmail,
       subject: `Order Confirmed - Your Downloads Are Ready! #${data.orderId.substring(0, 8).toUpperCase()}`,
       html,
@@ -222,7 +222,7 @@ export async function sendAbandonedCartRecoveryEmail(data: AbandonedCartEmailDat
           
           <tr>
             <td style="background-color: #1a1a2e; padding: 30px 40px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">TestBankBooks</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px;">NursTestBank</h1>
             </td>
           </tr>
 
@@ -267,10 +267,10 @@ export async function sendAbandonedCartRecoveryEmail(data: AbandonedCartEmailDat
           <tr>
             <td style="background-color: #f9fafb; padding: 25px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280;">
-                Need help? Contact us at <a href="mailto:support@testbankbooks.com" style="color: #2563eb;">support@testbankbooks.com</a>
+                Need help? Contact us at <a href="mailto:support@nurstestbank.com" style="color: #2563eb;">support@nurstestbank.com</a>
               </p>
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                © ${new Date().getFullYear()} TestBankBooks. All rights reserved.
+                © ${new Date().getFullYear()} NursTestBank. All rights reserved.
               </p>
             </td>
           </tr>
@@ -284,7 +284,7 @@ export async function sendAbandonedCartRecoveryEmail(data: AbandonedCartEmailDat
 
   try {
     const result = await resend.emails.send({
-      from: "TestBankBooks <support@testbankbooks.com>",
+      from: "NursTestBank <support@nurstestbank.com>",
       to: data.customerEmail,
       subject: "You left items in your cart - Complete your purchase!",
       html,

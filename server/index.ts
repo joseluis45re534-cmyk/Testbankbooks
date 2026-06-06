@@ -124,7 +124,7 @@ app.use(
       createTableIfMissing: true,
     }),
     name: "tbb.sid",
-    secret: process.env.SESSION_SECRET || "testbankbooks-dev-only-secret",
+    secret: process.env.SESSION_SECRET || "nurstestbank-dev-only-secret",
     resave: false,
     saveUninitialized: false,
     rolling: true,

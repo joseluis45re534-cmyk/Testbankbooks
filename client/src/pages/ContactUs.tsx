@@ -72,7 +72,7 @@ export default function ContactUs() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Contact Us"
-        description="Get in touch with Testbankbooks support. We're here to help with orders, refunds, download issues, and more. Response within 24 hours."
+        description="Get in touch with NursTestBank support. We're here to help with orders, refunds, download issues, and more. Response within 24 hours."
       />
       <Header cartCount={cartCount} />
 
@@ -91,11 +91,11 @@ export default function ContactUs() {
                 <Mail className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Email Us</h2>
                 <a
-                  href="mailto:support@testbankbooks.com"
+                  href="mailto:support@nurstestbank.com"
                   className="text-muted-foreground hover:underline text-sm"
                   data-testid="link-contact-email"
                 >
-                  support@testbankbooks.com
+                  support@nurstestbank.com
                 </a>
               </CardContent>
             </Card>
@@ -105,11 +105,11 @@ export default function ContactUs() {
                 <Phone className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Call Us</h2>
                 <a
-                  href="tel:+13392284593"
+                  href="tel:+13303908394"
                   className="text-muted-foreground hover:underline text-sm"
                   data-testid="link-contact-phone"
                 >
-                  +1 (339) 228-4593
+                  +1 (330) 390-8394
                 </a>
               </CardContent>
             </Card>
@@ -118,7 +118,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Location</h2>
-                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">5 Alvingham Ave<br />Castle Douglas DG7 1JF<br />United Kingdom</p>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">7 Rue des Noyers<br />69005 Lyon<br />France</p>
               </CardContent>
             </Card>
 
@@ -238,7 +238,7 @@ export default function ContactUs() {
                     <Phone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="font-semibold text-sm">Phone</p>
-                      <a href="tel:+13392284593" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+1 (339) 228-4593</a>
+                      <a href="tel:+13303908394" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+1 (330) 390-8394</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

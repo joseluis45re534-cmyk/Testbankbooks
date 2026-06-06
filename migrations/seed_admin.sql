@@ -2,7 +2,7 @@
 -- Username: soufiane9911
 -- Password: soufiane9911  (change it in Admin → Settings after first login)
 -- Apply with:
---   npx wrangler d1 execute testbankbooks --remote --file=migrations/seed_admin.sql
+--   npx wrangler d1 execute nurstestbank --remote --file=migrations/seed_admin.sql
 INSERT OR IGNORE INTO admin_users (id, username, password, created_at)
 VALUES (
   lower(hex(randomblob(16))),

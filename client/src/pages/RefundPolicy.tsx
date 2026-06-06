@@ -17,7 +17,7 @@ export default function RefundPolicy() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Refund Policy"
-        description="Testbankbooks offers a 30-day money-back guarantee on all digital purchases. Learn about our refund conditions and how to request a refund."
+        description="NursTestBank offers a 30-day money-back guarantee on all digital purchases. Learn about our refund conditions and how to request a refund."
       />
       <Header cartCount={cartCount} />
 
@@ -38,7 +38,7 @@ export default function RefundPolicy() {
                 <h2 className="text-xl font-semibold">30-Day Money-Back Guarantee</h2>
               </div>
               <p className="text-muted-foreground">
-                At Testbankbooks, we stand behind the quality of our products. We offer a 30-day money-back guarantee on all purchases. If you are not completely satisfied with your purchase, you may request a full refund within 30 days of your original purchase date.
+                At NursTestBank, we stand behind the quality of our products. We offer a 30-day money-back guarantee on all purchases. If you are not completely satisfied with your purchase, you may request a full refund within 30 days of your original purchase date.
               </p>
             </CardContent>
           </Card>
@@ -84,8 +84,8 @@ export default function RefundPolicy() {
                 <ol className="list-decimal pl-6 space-y-2">
                   <li>
                     <strong className="text-foreground">Contact our support team</strong> at{" "}
-                    <a href="mailto:support@testbankbooks.com" className="text-primary hover:underline" data-testid="link-refund-email">support@testbankbooks.com</a>{" "}
-                    or call <a href="tel:+13392284593" className="text-primary hover:underline" data-testid="link-refund-phone">+1 (339) 228-4593</a>
+                    <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline" data-testid="link-refund-email">support@nurstestbank.com</a>{" "}
+                    or call <a href="tel:+13303908394" className="text-primary hover:underline" data-testid="link-refund-phone">+1 (330) 390-8394</a>
                   </li>
                   <li>
                     <strong className="text-foreground">Include your order details:</strong> order number, email address used for purchase, and product name
@@ -176,11 +176,11 @@ export default function RefundPolicy() {
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-primary" />
-                    <a href="mailto:support@testbankbooks.com" className="hover:underline" data-testid="link-refund-contact-email">support@testbankbooks.com</a>
+                    <a href="mailto:support@nurstestbank.com" className="hover:underline" data-testid="link-refund-contact-email">support@nurstestbank.com</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-refund-contact-phone">+1 (339) 228-4593</a>
+                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-refund-contact-phone">+1 (330) 390-8394</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
@@ -188,8 +188,8 @@ export default function RefundPolicy() {
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
-                  <strong className="text-foreground">Testbankbooks</strong><br />
-                  5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom
+                  <strong className="text-foreground">NursTestBank</strong><br />
+                  7 Rue des Noyers, 69005 Lyon, France
                 </p>
                 <p className="mt-4">Our customer support team is dedicated to ensuring your satisfaction and will work with you to resolve any issues promptly.</p>
               </CardContent>

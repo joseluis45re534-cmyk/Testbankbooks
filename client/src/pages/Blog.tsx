@@ -55,7 +55,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Nursing Test Bank Study Guides & Exam Tips | Testbankbooks Blog"
+        title="Nursing Test Bank Study Guides & Exam Tips | NursTestBank Blog"
         description="Expert nursing exam prep guides, test bank tips, and study strategies. Browse by specialty: pharmacology, medical-surgical, fundamentals, pediatrics, and more."
       />
       <Header cartCount={cartCount} />

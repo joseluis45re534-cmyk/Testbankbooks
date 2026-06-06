@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         <div className="flex flex-col h-full">
           <div className="p-6 border-b">
-            <h1 className="text-xl font-bold">Testbankbooks</h1>
+            <h1 className="text-xl font-bold">NursTestBank</h1>
             <p className="text-sm text-muted-foreground">Admin Panel</p>
           </div>
 

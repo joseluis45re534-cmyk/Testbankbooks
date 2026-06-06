@@ -142,7 +142,7 @@ async function getPayPalAccessToken(clientId: string, clientSecret: string): Pro
 
 function sendEmail(resendKey: string, opts: { to: string; subject: string; html: string }) {
   const resend = new Resend(resendKey);
-  return resend.emails.send({ from: "TestBankBooks <support@testbankbooks.com>", ...opts });
+  return resend.emails.send({ from: "NursTestBank <support@nurstestbank.com>", ...opts });
 }
 
 function buildOrderEmailHtml(data: {
@@ -153,14 +153,14 @@ function buildOrderEmailHtml(data: {
   productTitles: string[];
 }) {
   const displayName = data.customerName || "Valued Customer";
-  const downloadLink = `https://testbankbooks.com/thank-you/${data.orderId}`;
+  const downloadLink = `https://nurstestbank.com/thank-you/${data.orderId}`;
   const productListHtml = data.productTitles
     .map((t) => `<li style="padding:8px 0;border-bottom:1px solid #eee">${t}</li>`)
     .join("");
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 20px">
 <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden">
-<tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">TestBankBooks</h1></td></tr>
+<tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">NursTestBank</h1></td></tr>
 <tr><td style="padding:40px">
 <h2 style="text-align:center">Thank You for Your Purchase!</h2>
 <p style="text-align:center;color:#6b7280">Hi ${displayName}, your order has been confirmed.</p>
@@ -173,7 +173,7 @@ function buildOrderEmailHtml(data: {
 </div>
 </td></tr>
 <tr><td style="background:#f9fafb;padding:25px 40px;text-align:center;border-top:1px solid #e5e7eb">
-<p style="margin:0;font-size:14px;color:#6b7280">Need help? <a href="mailto:support@testbankbooks.com">support@testbankbooks.com</a></p>
+<p style="margin:0;font-size:14px;color:#6b7280">Need help? <a href="mailto:support@nurstestbank.com">support@nurstestbank.com</a></p>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -191,18 +191,18 @@ function buildRecoveryEmailHtml(data: {
   return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 20px">
 <tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden">
-<tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">TestBankBooks</h1></td></tr>
+<tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">NursTestBank</h1></td></tr>
 <tr><td style="padding:40px">
 <h2 style="text-align:center">You Left Something Behind!</h2>
 <p style="text-align:center;color:#6b7280">Hi ${displayName}, your items are still waiting for you.</p>
 ${data.productTitles.length ? `<ul style="list-style:none;padding:0">${productListHtml}</ul>` : ""}
 ${amount ? `<p style="text-align:center;font-size:24px;font-weight:700">${amount}</p>` : ""}
 <div style="text-align:center;margin:30px 0">
-<a href="https://testbankbooks.com/shop" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:14px 40px;border-radius:8px;font-weight:600">Complete Your Purchase</a>
+<a href="https://nurstestbank.com/shop" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:14px 40px;border-radius:8px;font-weight:600">Complete Your Purchase</a>
 </div>
 </td></tr>
 <tr><td style="background:#f9fafb;padding:25px 40px;text-align:center;border-top:1px solid #e5e7eb">
-<p style="margin:0;font-size:14px;color:#6b7280">Need help? <a href="mailto:support@testbankbooks.com">support@testbankbooks.com</a></p>
+<p style="margin:0;font-size:14px;color:#6b7280">Need help? <a href="mailto:support@nurstestbank.com">support@nurstestbank.com</a></p>
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -602,7 +602,7 @@ app.get("/sitemap.xml", async (c) => {
     storage.getAllProducts(),
     storage.getPublishedBlogPosts(),
   ]);
-  const base = "https://testbankbooks.com";
+  const base = "https://nurstestbank.com";
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   const staticPages = [
     ["/", "daily", "1.0"], ["/shop", "daily", "0.9"], ["/blog", "daily", "0.8"],
@@ -624,15 +624,15 @@ app.get("/sitemap.xml", async (c) => {
 });
 
 app.get("/robots.txt", (c) => {
-  const txt = `User-agent: Googlebot\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /checkout\nDisallow: /api/\n\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /checkout\nDisallow: /api/\n\nSitemap: https://testbankbooks.com/sitemap.xml\n`;
+  const txt = `User-agent: Googlebot\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /checkout\nDisallow: /api/\n\nUser-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /checkout\nDisallow: /api/\n\nSitemap: https://nurstestbank.com/sitemap.xml\n`;
   return new Response(txt, { headers: { "Content-Type": "text/plain" } });
 });
 
 app.get("/feed/google-shopping.xml", async (c) => {
   const allProducts = await c.get("storage").getAllProducts();
-  const base = "https://testbankbooks.com";
+  const base = "https://nurstestbank.com";
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">\n  <channel>\n';
-  xml += `    <title>Testbankbooks - Google Shopping Feed</title>\n    <link>${base}</link>\n    <description>Digital exam prep products.</description>\n`;
+  xml += `    <title>NursTestBank - Google Shopping Feed</title>\n    <link>${base}</link>\n    <description>Digital exam prep products.</description>\n`;
   for (const p of allProducts) {
     if (!p.imageUrl) continue;
     const price = parseFloat(p.price);
@@ -642,7 +642,7 @@ app.get("/feed/google-shopping.xml", async (c) => {
     xml += `      <g:link>${base}/products/${p.slug}</g:link>\n      <g:image_link>${escXml(imageUrl)}</g:image_link>\n`;
     xml += `      <g:availability>in_stock</g:availability>\n      <g:price>${price.toFixed(2)} USD</g:price>\n      <g:condition>new</g:condition>\n`;
     if (salePrice !== null && salePrice < price) xml += `      <g:sale_price>${salePrice.toFixed(2)} USD</g:sale_price>\n`;
-    xml += `      <g:brand>${escXml(p.brand || "Testbankbooks")}</g:brand>\n      <g:identifier_exists>false</g:identifier_exists>\n    </item>\n`;
+    xml += `      <g:brand>${escXml(p.brand || "NursTestBank")}</g:brand>\n      <g:identifier_exists>false</g:identifier_exists>\n    </item>\n`;
   }
   xml += "  </channel>\n</rss>\n";
   return new Response(xml, { headers: { "Content-Type": "application/xml; charset=utf-8" } });
@@ -861,7 +861,7 @@ app.post("/api/admin/products/:id/upload-image", requireAdmin(), async (c) => {
     const key = `images/${id}-${Date.now()}.${ext}`;
     await c.env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
 
-    const imageUrl = `https://pub-uploads.testbankbooks.com/${key}`;
+    const imageUrl = `https://pub-uploads.nurstestbank.com/${key}`;
     await storage.updateProduct(id, { imageUrl });
     return c.json({ success: true, imageUrl });
   } catch (err: any) {
@@ -884,7 +884,7 @@ app.post("/api/admin/products/:id/upload-download", requireAdmin(), async (c) =>
     const key = `downloads/${id}-${Date.now()}.${ext}`;
     await c.env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
 
-    const downloadPath = `https://pub-uploads.testbankbooks.com/${key}`;
+    const downloadPath = `https://pub-uploads.nurstestbank.com/${key}`;
     await storage.updateProduct(id, { downloadPath });
     return c.json({ success: true, downloadPath });
   } catch (err: any) {

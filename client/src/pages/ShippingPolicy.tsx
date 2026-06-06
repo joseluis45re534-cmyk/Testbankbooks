@@ -17,7 +17,7 @@ export default function ShippingPolicy() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Shipping & Delivery Policy"
-        description="Learn about Testbankbooks' digital delivery process. Instant download access, email delivery, and troubleshooting for your test bank purchases."
+        description="Learn about NursTestBank' digital delivery process. Instant download access, email delivery, and troubleshooting for your test bank purchases."
       />
       <Header cartCount={cartCount} />
 
@@ -38,7 +38,7 @@ export default function ShippingPolicy() {
                 <h2 className="text-xl font-semibold">100% Digital Delivery - Instant Access</h2>
               </div>
               <p className="text-muted-foreground">
-                All Testbankbooks products are digital goods delivered electronically. There is no physical shipping involved. You will receive instant access to your purchased materials immediately after successful payment.
+                All NursTestBank products are digital goods delivered electronically. There is no physical shipping involved. You will receive instant access to your purchased materials immediately after successful payment.
               </p>
             </CardContent>
           </Card>
@@ -50,7 +50,7 @@ export default function ShippingPolicy() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  Testbankbooks exclusively sells digital products, including nursing test banks, study guides, and supplementary educational materials. All products are delivered electronically, ensuring instant access with no waiting time.
+                  NursTestBank exclusively sells digital products, including nursing test banks, study guides, and supplementary educational materials. All products are delivered electronically, ensuring instant access with no waiting time.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50">
@@ -101,7 +101,7 @@ export default function ShippingPolicy() {
                   <li>Confirmation emails are typically delivered within 1-5 minutes of purchase</li>
                   <li>If you do not receive the email, check your spam or junk folder</li>
                   <li>Ensure the email address provided during checkout is correct</li>
-                  <li>Add support@testbankbooks.com to your contacts to prevent future emails from being filtered</li>
+                  <li>Add support@nurstestbank.com to your contacts to prevent future emails from being filtered</li>
                 </ul>
                 <p>
                   If you have not received your confirmation email within 15 minutes, please contact our support team.
@@ -192,7 +192,7 @@ export default function ShippingPolicy() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  Testbankbooks is a 100% digital store. We do not offer physical products, and no items are shipped via postal services or courier. Key points to understand:
+                  NursTestBank is a 100% digital store. We do not offer physical products, and no items are shipped via postal services or courier. Key points to understand:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>No physical items will be mailed to your address</li>
@@ -212,11 +212,11 @@ export default function ShippingPolicy() {
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-primary" />
-                    <a href="mailto:support@testbankbooks.com" className="hover:underline" data-testid="link-shipping-email">support@testbankbooks.com</a>
+                    <a href="mailto:support@nurstestbank.com" className="hover:underline" data-testid="link-shipping-email">support@nurstestbank.com</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13392284593" className="hover:underline" data-testid="link-shipping-phone">+1 (339) 228-4593</a>
+                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-shipping-phone">+1 (330) 390-8394</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />

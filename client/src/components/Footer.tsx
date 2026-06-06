@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center">
-              <img src="/logo.png" alt="Testbankbooks - Your Key to Exam Success" className="h-10 w-auto" />
+              <img src="/logo.png" alt="NursTestBank - Your Key to Exam Success" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
               Your trusted source for premium nursing exam prep materials and study guides. Instant digital downloads for exam preparation.
@@ -35,18 +35,18 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                <span>support@testbankbooks.com</span>
+                <span>support@nurstestbank.com</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <a href="tel:+13392284593" className="hover:text-foreground transition-colors">+1 (339) 228-4593</a>
+                <a href="tel:+13303908394" className="hover:text-foreground transition-colors">+1 (330) 390-8394</a>
               </li>
               <li className="flex items-start gap-2 mt-2">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  <div>5 Alvingham Ave</div>
-                  <div>Castle Douglas DG7 1JF</div>
-                  <div>United Kingdom</div>
+                  <div>7 Rue des Noyers</div>
+                  <div>69005 Lyon</div>
+                  <div>France</div>
                 </div>
               </li>
             </ul>
@@ -92,7 +92,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Testbankbooks. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} NursTestBank. All rights reserved.</p>
           <p className="mt-2">
             <a href="/owner" className="text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors">Admin</a>
           </p>

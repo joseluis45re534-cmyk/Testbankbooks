@@ -274,7 +274,7 @@ export default function ThankYou() {
                   </p>
                 </div>
                 <Button variant="outline" asChild>
-                  <a href="mailto:support@testbankbooks.com" data-testid="link-contact-support">
+                  <a href="mailto:support@nurstestbank.com" data-testid="link-contact-support">
                     <Mail className="w-4 h-4 mr-2" />
                     Contact Support
                   </a>

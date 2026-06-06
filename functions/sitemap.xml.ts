@@ -12,7 +12,7 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
     storage.getAllProducts(),
     storage.getPublishedBlogPosts(),
   ]);
-  const base = "https://testbankbooks.com";
+  const base = "https://nurstestbank.com";
 
   let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
   const staticPages: [string, string, string][] = [

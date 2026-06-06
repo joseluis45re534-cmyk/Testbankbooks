@@ -136,7 +136,7 @@ ${faqHtml}
 <p><a href="/shop" class="cta-link">Browse All Test Banks & Study Guides →</a></p>
   `.trim();
 
-  const metaTitle = `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Study Guide | Testbankbooks`;
+  const metaTitle = `${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Study Guide | NursTestBank`;
   const metaDescription = `Master ${keyword} with our comprehensive study guide and practice questions. Proven exam strategies, high-yield topics, and instant-download test banks for nursing students.`;
 
   return {
@@ -291,7 +291,7 @@ ${topicsList}
 <p><a href="/products/${product.slug}" class="cta-link">Get the ${productTitle} test bank now for just $${price.toFixed(2)} →</a></p>
   `.trim();
 
-  const metaTitle = `${productTitle} Study Guide & Test Bank | Testbankbooks`;
+  const metaTitle = `${productTitle} Study Guide & Test Bank | NursTestBank`;
   const metaDescription = `Master your ${productTitle} exam with our comprehensive test bank. Hundreds of practice questions with detailed explanations, instant download. $${price.toFixed(2)} — 30-day guarantee.`;
 
   return {

@@ -278,7 +278,7 @@ export default function ProductDetail() {
         salePrice={hasDiscount ? salePrice.toFixed(2) : undefined}
         availability={product.availability || "in_stock"}
         category={product.category || "Test Banks"}
-        brand={product.brand || "Testbankbooks"}
+        brand={product.brand || "NursTestBank"}
         sku={product.id}
       />
       <Header cartCount={cartCount} />

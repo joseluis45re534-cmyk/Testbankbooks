@@ -12,8 +12,8 @@ export default function AboutUs() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="About Us | Testbankbooks - Nursing Exam Prep Materials"
-        description="Learn about Testbankbooks — a dedicated online store providing premium nursing exam prep materials and study guides for nursing and healthcare students worldwide."
+        title="About Us | NursTestBank - Nursing Exam Prep Materials"
+        description="Learn about NursTestBank — a dedicated online store providing premium nursing exam prep materials and study guides for nursing and healthcare students worldwide."
       />
       <Header cartCount={cartCount} />
 
@@ -25,7 +25,7 @@ export default function AboutUs() {
                 <BookOpen className="w-8 h-8 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">About Testbankbooks</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">About NursTestBank</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               We provide premium exam preparation materials and study resources to help nursing and healthcare students succeed in their academic journey.
             </p>
@@ -38,7 +38,7 @@ export default function AboutUs() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Who We Are</h2>
                 <p className="text-muted-foreground mb-4">
-                  Testbankbooks is a dedicated online retailer specializing in digital exam preparation materials for nursing and healthcare students. We operate as a fully digital store, offering instant access to study resources that help students prepare for exams and clinical assessments.
+                  NursTestBank is a dedicated online retailer specializing in digital exam preparation materials for nursing and healthcare students. We operate as a fully digital store, offering instant access to study resources that help students prepare for exams and clinical assessments.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   Our catalog includes over 300 exam prep materials covering all major nursing disciplines — from Anatomy & Physiology to Medical-Surgical Nursing, Pharmacology, Pediatrics, and more. Every product is delivered digitally and made available for immediate download after purchase.
@@ -51,13 +51,13 @@ export default function AboutUs() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Our Business Model</h2>
                 <p className="text-muted-foreground mb-4">
-                  We operate as a 100% digital business. All products sold on Testbankbooks are digital files delivered via secure download links. No physical products are shipped. After completing a purchase, customers receive an email with a secure link to access and download their materials.
+                  We operate as a 100% digital business. All products sold on NursTestBank are digital files delivered via secure download links. No physical products are shipped. After completing a purchase, customers receive an email with a secure link to access and download their materials.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   We accept major credit cards (via Stripe), PayPal, and other digital payment methods. All transactions are secured with SSL encryption.
                 </p>
                 <p className="text-muted-foreground">
-                  Customer support is available via email at <a href="mailto:support@testbankbooks.com" className="text-primary hover:underline">support@testbankbooks.com</a> and by phone at <a href="tel:+13392284593" className="text-primary hover:underline">+1 (339) 228-4593</a>.
+                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+13303908394" className="text-primary hover:underline">+1 (330) 390-8394</a>.
                 </p>
               </div>
             </div>
@@ -139,11 +139,11 @@ export default function AboutUs() {
               <div>
                 <h3 className="font-semibold mb-3">Business Details</h3>
                 <ul className="space-y-2 text-muted-foreground">
-                  <li><span className="font-medium text-foreground">Business Name:</span> Testbankbooks</li>
+                  <li><span className="font-medium text-foreground">Business Name:</span> NursTestBank</li>
                   <li><span className="font-medium text-foreground">Type:</span> Online Digital Retailer</li>
                   <li><span className="font-medium text-foreground">Products:</span> Digital Exam Prep Materials</li>
                   <li><span className="font-medium text-foreground">Delivery:</span> Instant Digital Download</li>
-                  <li><span className="font-medium text-foreground">Address:</span> 5 Alvingham Ave, Castle Douglas DG7 1JF, United Kingdom</li>
+                  <li><span className="font-medium text-foreground">Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
                 </ul>
               </div>
               <div>
@@ -151,11 +151,11 @@ export default function AboutUs() {
                 <ul className="space-y-2 text-muted-foreground">
                   <li>
                     <span className="font-medium text-foreground">Email: </span>
-                    <a href="mailto:support@testbankbooks.com" className="text-primary hover:underline">support@testbankbooks.com</a>
+                    <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a>
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Phone: </span>
-                    <a href="tel:+13392284593" className="text-primary hover:underline">+1 (339) 228-4593</a>
+                    <a href="tel:+13303908394" className="text-primary hover:underline">+1 (330) 390-8394</a>
                   </li>
                   <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM EST</li>
                   <li>

@@ -38,7 +38,7 @@ export async function createStripePaymentIntent(
     currency,
     metadata,
     receipt_email: customerEmail || undefined,
-    description: customerName ? `Order for ${customerName}` : "TestBankBooks Order",
+    description: customerName ? `Order for ${customerName}` : "NursTestBank Order",
     automatic_payment_methods: {
       enabled: true,
     },

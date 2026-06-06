@@ -30,7 +30,7 @@ const slugify = (title, id) =>
 
 let count = 0;
 let sql = "-- Seed: products from WooCommerce CSV\n";
-sql += "-- Apply: npx wrangler d1 execute testbankbooks --remote --file=migrations/seed_products.sql\n\n";
+sql += "-- Apply: npx wrangler d1 execute nurstestbank --remote --file=migrations/seed_products.sql\n\n";
 
 for (const r of records) {
   const id = r.ID || r.SKU;

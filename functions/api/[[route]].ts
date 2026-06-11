@@ -24,6 +24,7 @@ type Env = {
   SESSION_SECRET: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_PUBLISHABLE_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   PAYPAL_CLIENT_ID?: string;
   PAYPAL_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
@@ -465,6 +466,109 @@ app.post("/api/stripe/confirm-payment", async (c) => {
   } catch (err) {
     console.error("Stripe confirm error:", err);
     return c.json({ error: "Failed to confirm payment" }, 500);
+  }
+});
+
+// ─── Stripe webhook ──────────────────────────────────────────────────────────
+// Stripe POSTs payment events here. We verify the signature, then on
+// `payment_intent.succeeded` we create the order from the cart that matches
+// the sessionId stored in the PaymentIntent metadata. This is the
+// authoritative payment path — confirm-payment above is the optimistic
+// UI helper that fires immediately on the thank-you redirect.
+app.post("/api/stripe/webhook", async (c) => {
+  const sig = c.req.header("stripe-signature");
+  const secret = c.env.STRIPE_WEBHOOK_SECRET;
+  if (!sig || !secret) {
+    return c.json({ error: "Webhook signature or secret missing" }, 400);
+  }
+
+  const rawBody = await c.req.text();
+  const storage = c.get("storage");
+  const { secretKey } = await getStripeKeys(storage, c.env);
+  if (!secretKey) return c.json({ error: "Stripe not configured" }, 500);
+
+  const stripe = new Stripe(secretKey);
+  let event: Stripe.Event;
+  try {
+    // constructEventAsync uses SubtleCrypto — required in CF Workers.
+    event = await stripe.webhooks.constructEventAsync(rawBody, sig, secret);
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    return c.json({ error: `Webhook Error: ${err.message}` }, 400);
+  }
+
+  if (event.type !== "payment_intent.succeeded") {
+    // Ack other events so Stripe doesn't retry.
+    return c.json({ received: true, type: event.type });
+  }
+
+  const pi = event.data.object as Stripe.PaymentIntent;
+  const sessionId = pi.metadata?.sessionId;
+  const customerEmail = pi.metadata?.customerEmail || pi.receipt_email || "unknown@email.com";
+
+  if (!sessionId) {
+    console.error("Webhook: PaymentIntent missing sessionId metadata", pi.id);
+    return c.json({ received: true, warning: "no sessionId" });
+  }
+
+  try {
+    const cartItemsList = await storage.getCartItems(sessionId);
+    if (!cartItemsList.length) {
+      // Cart was already cleared by confirm-payment — order exists. Idempotent no-op.
+      return c.json({ received: true, alreadyProcessed: true });
+    }
+
+    let serverTotal = 0;
+    const productIds: string[] = [];
+    const productTitles: string[] = [];
+    const savedName = cartItemsList[0]?.customerName || null;
+    const savedPhone = cartItemsList[0]?.phone || null;
+    for (const item of cartItemsList) {
+      const p = item.product;
+      if (!p) continue;
+      serverTotal += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
+      productIds.push(p.id);
+      productTitles.push(p.title);
+    }
+
+    const paidAmount = pi.amount / 100;
+    if (Math.abs(paidAmount - serverTotal) > 0.01) {
+      console.error(`Webhook amount mismatch: Stripe=${paidAmount}, Server=${serverTotal}`);
+      // Still create the order — payment did go through — but flag it.
+    }
+
+    const order = await storage.createOrder({
+      customerEmail,
+      customerName: savedName,
+      phone: savedPhone,
+      amount: paidAmount.toFixed(2),
+      status: "paid",
+      paymentMethod: "stripe",
+      productIds,
+      productTitles,
+    });
+
+    await storage.clearCart(sessionId);
+
+    if (c.env.RESEND_API_KEY) {
+      sendEmail(c.env.RESEND_API_KEY, {
+        to: order.customerEmail,
+        subject: `Order Confirmed - Your Downloads Are Ready! #${order.id.substring(0, 8).toUpperCase()}`,
+        html: buildOrderEmailHtml({
+          customerName: order.customerName || null,
+          orderId: order.id,
+          amount: order.amount,
+          paymentMethod: "stripe",
+          productTitles,
+        }),
+      }).catch(console.error);
+    }
+
+    return c.json({ received: true, orderId: order.id });
+  } catch (err: any) {
+    console.error("Webhook order-creation error:", err);
+    // Return 500 so Stripe retries — we don't want to drop a paid order.
+    return c.json({ error: err.message || "Order creation failed" }, 500);
   }
 });
 

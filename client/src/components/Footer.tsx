@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center">
-              <img src="/logo.png" alt="NursTestBank - Your Key to Exam Success" className="h-10 w-auto" />
+              <img src="/logo.svg" alt="NursTestBank - Digital Study Materials for Nursing Students" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
               Your trusted source for premium nursing exam prep materials and study guides. Instant digital downloads for exam preparation.

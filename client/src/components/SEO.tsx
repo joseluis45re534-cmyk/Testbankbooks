@@ -46,7 +46,7 @@ export function SEO({
     "@type": "OnlineBusiness",
     name: "NursTestBank",
     url: typeof window !== "undefined" ? window.location.origin : "",
-    logo: typeof window !== "undefined" ? `${window.location.origin}/favicon.png` : "",
+    logo: typeof window !== "undefined" ? `${window.location.origin}/logo.svg` : "",
     description: "Online retailer of digital nursing exam prep materials and test banks. Instant digital download — no physical products.",
     areaServed: "Worldwide",
     address: {
@@ -143,7 +143,7 @@ export function SEO({
             name: "NursTestBank",
             logo: {
               "@type": "ImageObject",
-              url: typeof window !== "undefined" ? `${window.location.origin}/favicon.png` : "",
+              url: typeof window !== "undefined" ? `${window.location.origin}/logo.svg` : "",
             },
           },
           mainEntityOfPage: {

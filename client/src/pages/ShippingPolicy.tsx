@@ -17,7 +17,7 @@ export default function ShippingPolicy() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Shipping & Delivery Policy"
-        description="Learn about NursTestBank' digital delivery process. Instant download access, email delivery, and troubleshooting for your test bank purchases."
+        description="How NursTestBank ships your printed study book — free standard shipping, delivery times, tracking, and the free digital copy included with every order."
       />
       <Header cartCount={cartCount} />
 
@@ -35,10 +35,10 @@ export default function ShippingPolicy() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3 mb-4">
                 <Zap className="w-6 h-6 text-primary" />
-                <h2 className="text-xl font-semibold">100% Digital Delivery - Instant Access</h2>
+                <h2 className="text-xl font-semibold">Free Shipping + Free Digital Copy</h2>
               </div>
               <p className="text-muted-foreground">
-                All NursTestBank products are digital goods delivered electronically. There is no physical shipping involved. You will receive instant access to your purchased materials immediately after successful payment.
+                Every NursTestBank order is a professionally printed book that we ship to your address with free standard shipping. As a free bonus, a digital copy of your book is emailed to you instantly after purchase, so you can begin studying while your printed book is on its way.
               </p>
             </CardContent>
           </Card>
@@ -46,24 +46,24 @@ export default function ShippingPolicy() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>1. Digital Delivery Overview</CardTitle>
+                <CardTitle>1. Shipping Overview</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  NursTestBank exclusively sells digital products, including nursing test banks, study guides, and supplementary educational materials. All products are delivered electronically, ensuring instant access with no waiting time.
+                  NursTestBank sells printed study books — nursing test prep books, study guides, and supplementary educational materials. Each order is printed and shipped to the address you provide at checkout. A complimentary digital copy is also emailed to you so you can start studying immediately.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                   <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50">
                     <Zap className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-sm text-foreground">Instant Download</span>
+                    <span className="text-sm text-foreground">Free Standard Shipping</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50">
                     <Mail className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-sm text-foreground">Email Delivery</span>
+                    <span className="text-sm text-foreground">Free Digital Copy</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50">
                     <Shield className="w-5 h-5 text-primary shrink-0" />
-                    <span className="text-sm text-foreground">Secure Access</span>
+                    <span className="text-sm text-foreground">Tracked Delivery</span>
                   </div>
                 </div>
               </CardContent>
@@ -71,20 +71,26 @@ export default function ShippingPolicy() {
 
             <Card>
               <CardHeader>
-                <CardTitle>2. How Downloads Work</CardTitle>
+                <CardTitle>2. Processing & Delivery Times</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
-                <p>After completing your purchase, you will receive your digital products through two methods:</p>
+                <p>Here's what to expect after you place an order:</p>
                 <ol className="list-decimal pl-6 space-y-3">
                   <li>
-                    <strong className="text-foreground">Instant Download Link:</strong> Immediately after your payment is confirmed, you will be redirected to a download page where you can access and download your purchased materials.
+                    <strong className="text-foreground">Processing (1–2 business days):</strong> Your book is printed and prepared for shipment.
                   </li>
                   <li>
-                    <strong className="text-foreground">Email Confirmation:</strong> A confirmation email will be sent to the email address you provided during checkout. This email contains a secure download link for your purchased products.
+                    <strong className="text-foreground">Shipping &amp; tracking:</strong> Once shipped, we email you a tracking number so you can follow your delivery.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Standard delivery (5–8 business days):</strong> Estimated delivery within the United States after dispatch. International delivery may take longer.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Free digital copy (instant):</strong> A digital copy is emailed to you immediately after purchase and is also available on your order page.
                   </li>
                 </ol>
                 <p>
-                  Files are typically provided in PDF format and are compatible with all major devices, including computers, tablets, and smartphones.
+                  Standard shipping is <strong className="text-foreground">free</strong> on every order.
                 </p>
               </CardContent>
             </Card>
@@ -188,17 +194,18 @@ export default function ShippingPolicy() {
 
             <Card>
               <CardHeader>
-                <CardTitle>7. No Physical Shipping</CardTitle>
+                <CardTitle>7. Shipping Destinations & Costs</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  NursTestBank is a 100% digital store. We do not offer physical products, and no items are shipped via postal services or courier. Key points to understand:
+                  We ship printed books to customers in the United States and internationally. Key points:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>No physical items will be mailed to your address</li>
-                  <li>No shipping charges will be applied to your order</li>
-                  <li>Your billing address is used for payment verification purposes only</li>
-                  <li>There are no shipping delays as all products are available for immediate download</li>
+                  <li>Standard shipping is <strong className="text-foreground">free</strong> on all orders</li>
+                  <li>A valid shipping address is required at checkout so we can deliver your book</li>
+                  <li>You receive a tracking number by email once your order ships</li>
+                  <li>If a package is returned as undeliverable, we'll contact you to arrange reshipment</li>
+                  <li>A free digital copy is included so you can study even before your book arrives</li>
                 </ul>
               </CardContent>
             </Card>

@@ -114,10 +114,12 @@ function buildLinkLine(title: string, url: string | null | undefined): string {
 }
 
 const GENERIC_DOWNLOAD_INFO = [
-  "Your test banks are 100% digital — there's no shipping. After payment you receive your download in two ways:",
+  "Every order is a printed book shipped to you for free — plus a free digital copy so you can start studying right away. Here's how the digital copy reaches you:",
   "",
-  "1. **Email** — A confirmation email is sent right after checkout to the address you used. It contains a download link for each item.",
-  "2. **Thank-you page** — Right after payment, the order confirmation page also shows direct download buttons.",
+  "1. **Email** — A confirmation email is sent right after checkout to the address you used. It contains a link to your digital copy.",
+  "2. **Thank-you page** — Right after payment, the order confirmation page also shows your digital copy button.",
+  "",
+  "Your printed book ships within 1–2 business days and you'll get a tracking number by email.",
   "",
   "If you can't find your email:",
   "• Check your spam / promotions folder",
@@ -206,17 +208,18 @@ const STATIC_REPLIES: Record<string, string> = {
   thanks: "You're welcome! Anything else I can help with?",
 
   how_to_receive: [
-    "All NursTestBank products are **digital downloads** — there is no physical shipping.",
+    "Every order is a **printed book** that we ship to you with **free shipping** — plus a **free digital copy** so you can start studying right away.",
     "",
-    "As soon as your payment goes through, you'll get:",
-    "• A confirmation email with secure download links",
-    "• A thank-you page with the same download buttons",
+    "Here's how it works:",
+    "• Your printed book ships within 1–2 business days (you'll get a tracking number by email)",
+    "• Standard delivery is about 5–8 business days",
+    "• A free digital copy is emailed to you instantly and is on your thank-you page",
     "",
-    "Delivery is instant. If your email hasn't arrived in a few minutes, check spam or reply here with the email you used and I'll look it up.",
+    "If your email hasn't arrived in a few minutes, check spam or reply here with the email you used and I'll look it up.",
   ].join("\n"),
 
   order_status: [
-    "Orders are processed instantly because all products are digital. The moment your payment is confirmed, the order is marked **paid** and the download links are released.",
+    "Your printed book is printed and shipped within 1–2 business days, and you'll receive a tracking number by email once it's on its way. Your free digital copy is available immediately after payment.",
     "",
     "Reply with the email you used at checkout and I'll check the status of your most recent order.",
   ].join("\n"),

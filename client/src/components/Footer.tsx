@@ -11,7 +11,7 @@ export function Footer() {
               <img src="/logo.svg" alt="NursTestBank - Digital Study Materials for Nursing Students" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
-              Your trusted source for premium nursing exam prep materials and study guides. Instant digital downloads for exam preparation.
+              Your trusted source for printed nursing exam prep books and study guides — shipped to your door, with a free digital copy included.
             </p>
           </div>
 
@@ -53,7 +53,7 @@ export function Footer() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Zap className="w-4 h-4 text-primary" />
-                <span>Instant Download</span>
+                <span>Free Shipping + Digital Copy</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4 text-primary" />

@@ -14,11 +14,21 @@ function getStripe() {
   return stripePromise;
 }
 
+interface ShippingAddress {
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
 interface StripeCheckoutProps {
   amount: string;
   customerEmail: string;
   customerName?: string;
   phone?: string;
+  shippingAddress?: ShippingAddress;
   onPaymentSuccess: (paymentIntentId: string, orderData: any) => void;
   onPaymentError: (error: any) => void;
   onServerAmount?: (serverAmount: string) => void;
@@ -29,6 +39,7 @@ export default function StripeCheckout({
   customerEmail,
   customerName,
   phone,
+  shippingAddress,
   onPaymentSuccess,
   onPaymentError,
   onServerAmount,
@@ -60,7 +71,7 @@ export default function StripeCheckout({
         fetch("/api/stripe/create-payment-intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customerEmail }),
+          body: JSON.stringify({ customerEmail, shippingAddress }),
           credentials: "include",
         }),
       ]);
@@ -191,6 +202,7 @@ export default function StripeCheckout({
             customerEmail,
             customerName,
             phone,
+            shippingAddress,
           }),
           credentials: "include",
         });

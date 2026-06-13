@@ -67,6 +67,15 @@ export const orders = sqliteTable("orders", {
   paymentMethod: text("payment_method"),
   productIds: jsonStringArray("product_ids"),
   productTitles: jsonStringArray("product_titles"),
+  // Physical shipping fields — books are printed and mailed; a digital
+  // copy is also emailed as a free bonus.
+  shippingAddress1: text("shipping_address1"),
+  shippingAddress2: text("shipping_address2"),
+  shippingCity: text("shipping_city"),
+  shippingState: text("shipping_state"),
+  shippingPostalCode: text("shipping_postal_code"),
+  trackingNumber: text("tracking_number"),
+  shippedAt: ts("shipped_at"),
   createdAt: ts("created_at"),
 });
 

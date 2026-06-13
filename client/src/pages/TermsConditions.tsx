@@ -48,19 +48,19 @@ export default function TermsConditions() {
 
             <Card>
               <CardHeader>
-                <CardTitle>2. Nature of Digital Products</CardTitle>
+                <CardTitle>2. Nature of Our Products</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  All products sold on NursTestBank are digital goods delivered electronically. Our products include, but are not limited to:
+                  NursTestBank sells professionally printed study books that are shipped to the customer. Our products include, but are not limited to:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>Test banks containing practice exam questions and answers</li>
-                  <li>Study guides and supplementary learning materials</li>
-                  <li>Digital resources for nursing and healthcare education</li>
+                  <li>Printed study books containing practice questions and answer rationales</li>
+                  <li>Printed study guides and supplementary learning materials</li>
+                  <li>Reference books for nursing and healthcare education</li>
                 </ul>
                 <p>
-                  These digital products are delivered via instant download upon successful payment. No physical products are shipped. Once a digital product has been downloaded, the transaction is considered complete, subject to our Refund Policy.
+                  Each printed book ships with free standard shipping and includes a complimentary digital copy emailed to the customer after purchase. Delivery timelines and shipping details are described in our Shipping Policy, and returns are governed by our Refund Policy.
                 </p>
               </CardContent>
             </Card>

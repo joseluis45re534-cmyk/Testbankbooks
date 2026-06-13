@@ -128,7 +128,7 @@ export default function ThankYou() {
               Thank You for Your Purchase!
             </h1>
             <p className="text-muted-foreground">
-              Your order has been confirmed and your downloads are ready.
+              Your order is confirmed. Your printed book ships within 1–2 business days, and your free digital copy is ready to access right now below.
             </p>
           </div>
 
@@ -205,7 +205,7 @@ export default function ThankYou() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="w-5 h-5 text-primary" />
-                Your Downloads
+                Your Free Digital Copy
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -232,7 +232,7 @@ export default function ThankYou() {
                             data-testid={`button-download-${token.productId}`}
                           >
                             <Download className="w-5 h-5 mr-2" />
-                            Download Your Test Bank
+                            Download Digital Copy
                           </Button>
                         </a>
                       ) : (
@@ -244,10 +244,10 @@ export default function ThankYou() {
                     <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-blue-800 dark:text-blue-300">
-                        Instant Access
+                        Your printed book is on its way 📦
                       </p>
                       <p className="text-blue-700 dark:text-blue-400">
-                        Click the download button to get your file. A copy of your receipt has been sent to your email.
+                        This is your free digital copy. Your printed book ships within 1–2 business days and you'll get tracking by email. A copy of your receipt has also been sent to you.
                       </p>
                     </div>
                   </div>

@@ -19,7 +19,7 @@ interface SEOProps {
 
 export function SEO({
   title = "NursTestBank - Premium Test Banks & Study Guides",
-  description = "Get instant access to premium nursing test banks and study guides. Professional exam prep materials with instant digital download. Over 260+ titles available.",
+  description = "Shop premium printed nursing study books and exam prep guides. Free shipping on every order, plus a complimentary digital copy. Over 260+ titles available.",
   image,
   url,
   type = "website",
@@ -47,7 +47,7 @@ export function SEO({
     name: "NursTestBank",
     url: typeof window !== "undefined" ? window.location.origin : "",
     logo: typeof window !== "undefined" ? `${window.location.origin}/logo.svg` : "",
-    description: "Online retailer of digital nursing exam prep materials and test banks. Instant digital download — no physical products.",
+    description: "Retailer of printed nursing exam prep books and study guides. Free shipping on every order, with a complimentary digital copy included.",
     areaServed: "Worldwide",
     address: {
       "@type": "PostalAddress",

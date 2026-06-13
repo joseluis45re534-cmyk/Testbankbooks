@@ -30,6 +30,13 @@ interface Order {
   paymentMethod: string | null;
   productIds: string[] | null;
   productTitles: string[] | null;
+  shippingAddress1: string | null;
+  shippingAddress2: string | null;
+  shippingCity: string | null;
+  shippingState: string | null;
+  shippingPostalCode: string | null;
+  trackingNumber: string | null;
+  shippedAt: string | null;
   createdAt: string;
 }
 
@@ -86,6 +93,22 @@ export default function AdminOrders() {
     },
   });
 
+  const shipOrderMutation = useMutation({
+    mutationFn: async ({ orderId, trackingNumber }: { orderId: string; trackingNumber: string }) => {
+      const res = await apiRequest("POST", `/api/admin/orders/${orderId}/ship`, { trackingNumber });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/orders"] });
+      toast({ title: "Order marked shipped", description: "The customer has been emailed their tracking number." });
+    },
+    onError: async (error: any) => {
+      let message = "Failed to mark order shipped";
+      try { if (error?.message) message = error.message; } catch {}
+      toast({ title: "Error", description: message, variant: "destructive" });
+    },
+  });
+
   const sendRecoveryMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await apiRequest("POST", `/api/admin/abandoned-carts/${id}/send-recovery`);
@@ -125,6 +148,7 @@ export default function AdminOrders() {
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
       paid: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      shipped: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400",
       completed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
       pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
       refunded: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
@@ -307,28 +331,72 @@ export default function AdminOrders() {
                                             )) || <li className="text-muted-foreground">No product data</li>}
                                           </ul>
                                         </div>
+                                        <div className="space-y-1">
+                                          <div className="flex items-center gap-2 text-sm font-medium">
+                                            <Package className="w-4 h-4 text-muted-foreground" />
+                                            Shipping Address
+                                          </div>
+                                          <div className="text-sm pl-6 text-muted-foreground">
+                                            {order.shippingAddress1 ? (
+                                              <>
+                                                <p>{order.shippingAddress1}</p>
+                                                {order.shippingAddress2 && <p>{order.shippingAddress2}</p>}
+                                                <p>
+                                                  {[order.shippingCity, order.shippingState, order.shippingPostalCode].filter(Boolean).join(", ")}
+                                                </p>
+                                                <p>{order.country}</p>
+                                              </>
+                                            ) : (
+                                              <p>No shipping address on file</p>
+                                            )}
+                                            {order.trackingNumber && (
+                                              <p className="mt-1 text-foreground">
+                                                Tracking: <span className="font-mono">{order.trackingNumber}</span>
+                                              </p>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
-                                      <div className="flex items-center justify-between pt-2 border-t gap-4">
+                                      <div className="flex items-center justify-between pt-2 border-t gap-4 flex-wrap">
                                         <span className="text-xs text-muted-foreground truncate">
                                           Full ID: {order.id}
                                         </span>
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          disabled={resendingOrderId === order.id}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            resendEmailMutation.mutate(order.id);
-                                          }}
-                                          data-testid={`button-resend-email-${order.id}`}
-                                        >
-                                          {resendingOrderId === order.id ? (
-                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                          ) : (
-                                            <Mail className="w-4 h-4 mr-2" />
+                                        <div className="flex items-center gap-2">
+                                          {order.status !== "shipped" && (
+                                            <Button
+                                              size="sm"
+                                              disabled={shipOrderMutation.isPending}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const trackingNumber = window.prompt("Enter the tracking number for this shipment:");
+                                                if (trackingNumber && trackingNumber.trim()) {
+                                                  shipOrderMutation.mutate({ orderId: order.id, trackingNumber: trackingNumber.trim() });
+                                                }
+                                              }}
+                                              data-testid={`button-ship-${order.id}`}
+                                            >
+                                              <Package className="w-4 h-4 mr-2" />
+                                              Mark Shipped
+                                            </Button>
                                           )}
-                                          Resend Email
-                                        </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            disabled={resendingOrderId === order.id}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              resendEmailMutation.mutate(order.id);
+                                            }}
+                                            data-testid={`button-resend-email-${order.id}`}
+                                          >
+                                            {resendingOrderId === order.id ? (
+                                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                            ) : (
+                                              <Mail className="w-4 h-4 mr-2" />
+                                            )}
+                                            Resend Email
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
                                   </TableCell>

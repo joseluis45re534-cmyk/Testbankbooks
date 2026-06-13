@@ -51,7 +51,7 @@ export default function AboutUs() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Our Business Model</h2>
                 <p className="text-muted-foreground mb-4">
-                  We operate as a 100% digital business. All products sold on NursTestBank are digital files delivered via secure download links. No physical products are shipped. After completing a purchase, customers receive an email with a secure link to access and download their materials.
+                  NursTestBank sells professionally printed study books. Every order is printed and shipped to the customer's address with free standard shipping, and we include a complimentary digital copy by email so customers can start studying immediately while their book is in transit. Customers receive a tracking number once their order ships.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   We accept major credit cards (via Stripe), PayPal, and other digital payment methods. All transactions are secured with SSL encryption.
@@ -142,7 +142,7 @@ export default function AboutUs() {
                   <li><span className="font-medium text-foreground">Business Name:</span> NursTestBank</li>
                   <li><span className="font-medium text-foreground">Type:</span> Online Digital Retailer</li>
                   <li><span className="font-medium text-foreground">Products:</span> Digital Exam Prep Materials</li>
-                  <li><span className="font-medium text-foreground">Delivery:</span> Instant Digital Download</li>
+                  <li><span className="font-medium text-foreground">Delivery:</span> Free shipping on printed books + free digital copy</li>
                   <li><span className="font-medium text-foreground">Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
                 </ul>
               </div>

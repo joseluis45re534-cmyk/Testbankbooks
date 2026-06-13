@@ -16,6 +16,15 @@ declare global {
   }
 }
 
+interface ShippingAddress {
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
 interface PayPalButtonProps {
   amount: string;
   currency: string;
@@ -23,6 +32,7 @@ interface PayPalButtonProps {
   customerEmail?: string;
   customerName?: string;
   phone?: string;
+  shippingAddress?: ShippingAddress;
   onPaymentSuccess?: (orderId: string, captureData: any) => void;
   onPaymentError?: (error: any) => void;
 }
@@ -34,6 +44,7 @@ export default function PayPalButton({
   customerEmail,
   customerName,
   phone,
+  shippingAddress,
   onPaymentSuccess,
   onPaymentError,
 }: PayPalButtonProps) {
@@ -62,7 +73,7 @@ export default function PayPalButton({
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ customerEmail, customerName, phone }),
+      body: JSON.stringify({ customerEmail, customerName, phone, shippingAddress }),
     });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

@@ -70,7 +70,7 @@ export function ProductCard({ product, onAddToCart, isAdding }: ProductCardProps
         </div>
         <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
           <Zap className="w-3 h-3" />
-          <span>Instant Download</span>
+          <span>Free Shipping + Digital Copy</span>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0">

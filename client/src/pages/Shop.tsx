@@ -112,10 +112,10 @@ export default function Shop() {
       : "Browse 300+ Nursing Test Banks & Study Guides | NursTestBank";
   
   const pageDescription = selectedCategory
-    ? `Browse our collection of ${selectedCategory.toLowerCase()} test banks and study guides. Expertly crafted exam prep materials with instant digital download after purchase.`
+    ? `Browse our collection of printed ${selectedCategory.toLowerCase()} study books and exam prep guides. Free shipping, plus a complimentary digital copy with every order.`
     : activeSearch
-      ? `Search results for "${activeSearch}". Find nursing test banks and study materials for your exam preparation. Instant digital download.`
-      : "Shop 300+ premium nursing test banks and study guides. Real exam-style questions with detailed answer explanations. Instant digital download after purchase — no waiting, no shipping.";
+      ? `Search results for "${activeSearch}". Find printed nursing study books for your exam preparation. Free shipping and a free digital copy included.`
+      : "Shop 300+ printed nursing study books and exam prep guides. Real exam-style questions with detailed answer explanations. Free shipping plus a free digital copy with every order.";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

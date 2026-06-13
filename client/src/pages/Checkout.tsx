@@ -28,8 +28,23 @@ export default function Checkout() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
+  const [address1, setAddress1] = useState("");
+  const [address2, setAddress2] = useState("");
+  const [city, setCity] = useState("");
+  const [stateRegion, setStateRegion] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [country, setCountry] = useState("United States");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
   const [serverAmount, setServerAmount] = useState<string | null>(null);
+
+  const shippingAddress = {
+    address1,
+    address2,
+    city,
+    state: stateRegion,
+    postalCode,
+    country,
+  };
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -129,22 +144,12 @@ export default function Checkout() {
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const emailInput = document.getElementById("email") as HTMLInputElement;
-    const firstNameInput = document.getElementById("firstName") as HTMLInputElement;
-    const lastNameInput = document.getElementById("lastName") as HTMLInputElement;
-    const phoneInput = document.getElementById("phone") as HTMLInputElement;
-    const emailVal = emailInput?.value || "";
-    const phoneVal = phoneInput?.value || "";
-    setEmail(emailVal);
-    setFirstName(firstNameInput?.value || "");
-    setLastName(lastNameInput?.value || "");
-    setPhone(phoneVal);
     setStep(2);
-    const fullName = `${firstNameInput?.value || ""} ${lastNameInput?.value || ""}`.trim();
+    const fullName = `${firstName} ${lastName}`.trim();
     fetch("/api/cart/email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: emailVal, customerName: fullName, phone: phoneVal }),
+      body: JSON.stringify({ email, customerName: fullName, phone }),
     }).catch(() => {});
   };
 
@@ -174,7 +179,7 @@ export default function Checkout() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
         title="Secure Checkout" 
-        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${subtotal.toFixed(2)}. Secure payment with instant digital download.`} 
+        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${subtotal.toFixed(2)}. Secure payment, free shipping, and a free digital copy.`}
       />
       <Header cartCount={cartCount} />
 
@@ -230,22 +235,56 @@ export default function Checkout() {
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" placeholder="John" required data-testid="input-firstname" />
+                            <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-firstname" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" placeholder="Doe" required data-testid="input-lastname" />
+                            <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-lastname" />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" placeholder="john@example.com" required data-testid="input-email" />
-                          <p className="text-xs text-muted-foreground">Download links will be sent to this email</p>
+                          <Input id="email" type="email" placeholder="john@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-email" />
+                          <p className="text-xs text-muted-foreground">Order updates &amp; your free digital copy are sent here</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number (Optional)</Label>
-                          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" data-testid="input-phone" />
+                          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
                         </div>
+
+                        <Separator className="my-2" />
+                        <p className="text-sm font-medium">Shipping Address</p>
+                        <p className="text-xs text-muted-foreground -mt-2">Where should we mail your printed book?</p>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="address1">Street Address</Label>
+                          <Input id="address1" placeholder="123 Main St" required value={address1} onChange={(e) => setAddress1(e.target.value)} data-testid="input-address1" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="address2">Apartment, suite, etc. (Optional)</Label>
+                          <Input id="address2" placeholder="Apt 4B" value={address2} onChange={(e) => setAddress2(e.target.value)} data-testid="input-address2" />
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" placeholder="New York" required value={city} onChange={(e) => setCity(e.target.value)} data-testid="input-city" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="state">State / Province</Label>
+                            <Input id="state" placeholder="NY" required value={stateRegion} onChange={(e) => setStateRegion(e.target.value)} data-testid="input-state" />
+                          </div>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="postalCode">ZIP / Postal Code</Label>
+                            <Input id="postalCode" placeholder="10001" required value={postalCode} onChange={(e) => setPostalCode(e.target.value)} data-testid="input-postal" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" placeholder="United States" required value={country} onChange={(e) => setCountry(e.target.value)} data-testid="input-country" />
+                          </div>
+                        </div>
+
                         <Button type="submit" className="w-full" size="lg" data-testid="button-continue">
                           Continue to Payment
                         </Button>
@@ -305,6 +344,7 @@ export default function Checkout() {
                             customerEmail={email}
                             customerName={`${firstName} ${lastName}`.trim()}
                             phone={phone}
+                            shippingAddress={shippingAddress}
                             onPaymentSuccess={handleStripeSuccess}
                             onPaymentError={handlePaymentError}
                             onServerAmount={setServerAmount}
@@ -323,6 +363,7 @@ export default function Checkout() {
                               customerEmail={email}
                               customerName={`${firstName} ${lastName}`.trim()}
                               phone={phone}
+                              shippingAddress={shippingAddress}
                               onPaymentSuccess={handlePayPalSuccess}
                               onPaymentError={handlePaymentError}
                             />
@@ -351,7 +392,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-primary" />
-                  <span>Instant Delivery</span>
+                  <span>Free Shipping + Digital Copy</span>
                 </div>
               </div>
             </div>
@@ -397,8 +438,8 @@ export default function Checkout() {
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Delivery</span>
-                      <span className="text-primary font-medium">Free (Instant)</span>
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span className="text-primary font-medium">Free</span>
                     </div>
                   </div>
 
@@ -412,10 +453,10 @@ export default function Checkout() {
                   <div className="mt-4 p-3 bg-muted rounded-md">
                     <div className="flex items-center gap-2 text-sm">
                       <Zap className="w-4 h-4 text-primary" />
-                      <span className="font-medium">Instant Access</span>
+                      <span className="font-medium">Physical book + free digital copy</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Download links will be sent immediately after payment
+                      Your printed book ships within 1–2 business days. A free digital copy is emailed instantly after payment.
                     </p>
                   </div>
                 </CardContent>

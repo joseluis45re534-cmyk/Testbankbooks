@@ -55,22 +55,22 @@ export default function RefundPolicy() {
                   <li>You provide your order number and the email address used for the purchase</li>
                   <li>You provide a valid reason for the refund request</li>
                 </ul>
-                <p>We process refunds for digital products on a case-by-case basis to ensure fair use of our guarantee while protecting against misuse.</p>
+                <p>We process refunds and returns on a case-by-case basis to ensure fair use of our guarantee while protecting against misuse.</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>2. Digital Product Refund Conditions</CardTitle>
+                <CardTitle>2. Refund & Return Conditions</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
-                <p>Because our products are digital downloads, we understand the unique nature of these transactions. Valid reasons for a refund include:</p>
+                <p>Because each order is a printed book shipped to you (with a free digital copy included), valid reasons for a refund or return include:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>The product does not match its description or listing</li>
-                  <li>The file is corrupted, incomplete, or inaccessible</li>
+                  <li>The book arrives damaged, defective, or with printing/binding errors</li>
                   <li>Duplicate purchase of the same product</li>
                   <li>The product does not correspond to the correct textbook edition</li>
-                  <li>Technical issues preventing access to the downloaded content</li>
+                  <li>The order never arrived or was lost in transit</li>
                 </ul>
               </CardContent>
             </Card>

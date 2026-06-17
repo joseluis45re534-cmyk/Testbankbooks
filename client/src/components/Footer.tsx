@@ -91,7 +91,10 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground space-y-2">
+          <p>
+            NursTestBank is an international retailer of printed nursing study books, registered at 7 Rue des Noyers, 69005 Lyon, France. We ship worldwide. All prices are shown in US Dollars (USD).
+          </p>
           <p>&copy; {new Date().getFullYear()} NursTestBank. All rights reserved.</p>
         </div>
       </div>

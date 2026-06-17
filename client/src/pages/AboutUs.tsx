@@ -140,10 +140,12 @@ export default function AboutUs() {
                 <h3 className="font-semibold mb-3">Business Details</h3>
                 <ul className="space-y-2 text-muted-foreground">
                   <li><span className="font-medium text-foreground">Business Name:</span> NursTestBank</li>
-                  <li><span className="font-medium text-foreground">Type:</span> Online Digital Retailer</li>
-                  <li><span className="font-medium text-foreground">Products:</span> Digital Exam Prep Materials</li>
-                  <li><span className="font-medium text-foreground">Delivery:</span> Free shipping on printed books + free digital copy</li>
-                  <li><span className="font-medium text-foreground">Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
+                  <li><span className="font-medium text-foreground">Type:</span> Online retailer of printed study books</li>
+                  <li><span className="font-medium text-foreground">Products:</span> Printed nursing study books (free digital copy included)</li>
+                  <li><span className="font-medium text-foreground">Delivery:</span> Free worldwide shipping on printed books + free digital copy</li>
+                  <li><span className="font-medium text-foreground">Registered Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
+                  <li><span className="font-medium text-foreground">Markets Served:</span> Worldwide (international shipping)</li>
+                  <li><span className="font-medium text-foreground">Currency:</span> All prices in US Dollars (USD)</li>
                 </ul>
               </div>
               <div>

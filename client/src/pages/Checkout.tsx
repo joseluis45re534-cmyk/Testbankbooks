@@ -447,8 +447,9 @@ export default function Checkout() {
 
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-primary" data-testid="text-checkout-total">${subtotal.toFixed(2)}</span>
+                    <span className="text-primary" data-testid="text-checkout-total">${subtotal.toFixed(2)} USD</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-1 text-right">All prices in US Dollars (USD)</p>
 
                   <div className="mt-4 p-3 bg-muted rounded-md">
                     <div className="flex items-center gap-2 text-sm">

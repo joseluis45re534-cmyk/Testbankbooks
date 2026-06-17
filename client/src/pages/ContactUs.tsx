@@ -126,7 +126,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <Clock className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Business Hours</h2>
-                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM EST</p>
+                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM CET</p>
               </CardContent>
             </Card>
           </div>

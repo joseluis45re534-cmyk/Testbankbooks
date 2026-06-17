@@ -262,7 +262,7 @@ export default function ProductDetail() {
 
   const seoCategory = product.category || "Nursing";
   const seoTitle = product.seoTitle || `${product.title} | ${seoCategory} Test Bank for Exam Prep`;
-  const seoDescription = (product.seoDescription || `Ace your ${seoCategory.toLowerCase()} exam with the ${product.title}. $${displayPrice.toFixed(2)} — NCLEX-style questions, detailed rationale, instant download. 30-day money-back guarantee.`).substring(0, 160);
+  const seoDescription = (product.seoDescription || `Ace your ${seoCategory.toLowerCase()} exam with the ${product.title}. $${displayPrice.toFixed(2)} — NCLEX-style questions with detailed rationale. Free shipping + free digital copy. 30-day money-back guarantee.`).substring(0, 160);
 
   const currentImage = allImages[selectedImageIndex] || null;
 

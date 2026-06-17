@@ -156,7 +156,7 @@ export default function Checkout() {
   if (cartItems.length === 0 && !isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title="Checkout" description="Complete your purchase for instant access to test banks and study guides." />
+        <SEO title="Checkout" description="Complete your purchase — printed book shipped free, plus a free digital copy." />
         <Header cartCount={0} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">

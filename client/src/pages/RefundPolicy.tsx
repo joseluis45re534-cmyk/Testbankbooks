@@ -17,7 +17,7 @@ export default function RefundPolicy() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
         title="Refund Policy"
-        description="NursTestBank offers a 30-day money-back guarantee on all digital purchases. Learn about our refund conditions and how to request a refund."
+        description="NursTestBank offers a 30-day money-back guarantee on all orders. Learn about our refund and return conditions and how to request a refund."
       />
       <Header cartCount={cartCount} />
 
@@ -184,7 +184,7 @@ export default function RefundPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM EST</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">

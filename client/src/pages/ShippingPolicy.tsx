@@ -97,11 +97,11 @@ export default function ShippingPolicy() {
 
             <Card>
               <CardHeader>
-                <CardTitle>3. Email Delivery</CardTitle>
+                <CardTitle>3. Your Free Digital Copy</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  In addition to the instant download available on the confirmation page, a download link is sent to your email for convenience. Please note:
+                  As a free bonus, a digital copy of your book is emailed to you and is also available on your order confirmation page, so you can start studying while your printed book ships. Please note:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>Confirmation emails are typically delivered within 1-5 minutes of purchase</li>
@@ -227,7 +227,7 @@ export default function ShippingPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM EST</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
                   </div>
                 </div>
                 <p className="mt-4">Our support team typically responds within 24 hours during business days.</p>

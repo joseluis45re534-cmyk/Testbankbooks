@@ -38,13 +38,13 @@ export default function AboutUs() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Who We Are</h2>
                 <p className="text-muted-foreground mb-4">
-                  NursTestBank is a dedicated online retailer specializing in digital exam preparation materials for nursing and healthcare students. We operate as a fully digital store, offering instant access to study resources that help students prepare for exams and clinical assessments.
+                  NursTestBank is a dedicated retailer of printed study books and exam preparation guides for nursing and healthcare students. Every order is a professionally printed book that we ship to your door, with a complimentary digital copy emailed so you can begin studying right away.
                 </p>
                 <p className="text-muted-foreground mb-4">
-                  Our catalog includes over 300 exam prep materials covering all major nursing disciplines — from Anatomy & Physiology to Medical-Surgical Nursing, Pharmacology, Pediatrics, and more. Every product is delivered digitally and made available for immediate download after purchase.
+                  Our catalog includes over 300 study titles covering all major nursing disciplines — from Anatomy &amp; Physiology to Medical-Surgical Nursing, Pharmacology, Pediatrics, and more. Each book ships with free standard shipping and a tracking number.
                 </p>
                 <p className="text-muted-foreground">
-                  We believe every student deserves access to high-quality study resources. That's why we offer competitive pricing, regular discounts, and a 30-day money-back guarantee on all purchases.
+                  We believe every student deserves access to high-quality study resources. That's why we offer competitive pricing, free shipping, and a 30-day money-back guarantee on all purchases.
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export default function AboutUs() {
                     <span className="font-medium text-foreground">Phone: </span>
                     <a href="tel:+13303908394" className="text-primary hover:underline">+1 (330) 390-8394</a>
                   </li>
-                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM EST</li>
+                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM CET</li>
                   <li>
                     <span className="font-medium text-foreground">Support Page: </span>
                     <a href="/contact" className="text-primary hover:underline">Contact Us</a>

@@ -208,7 +208,7 @@ export default function Blog() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl font-bold mb-3">Ready to Start Practicing?</h2>
             <p className="opacity-90 mb-6">
-              Browse our full collection of nursing test banks and get instant access to hundreds of exam-style questions.
+              Browse our full collection of nursing test banks and get hundreds of exam-style questions in print, with a free digital copy.
             </p>
             <Link href="/shop">
               <Button variant="secondary" size="lg" data-testid="button-blog-cta">

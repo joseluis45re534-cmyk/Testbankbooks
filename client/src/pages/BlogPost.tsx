@@ -177,7 +177,7 @@ export default function BlogPost() {
               {relatedProduct && (
                 <Card className="border-2 border-primary/20 sticky top-24">
                   <CardContent className="p-5">
-                    <p className="text-xs font-medium text-primary uppercase tracking-wide mb-3">Get Instant Access</p>
+                    <p className="text-xs font-medium text-primary uppercase tracking-wide mb-3">Order Your Book</p>
                     {relatedProduct.imageUrl && (
                       <img
                         src={relatedProduct.imageUrl}

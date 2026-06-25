@@ -1,7 +1,7 @@
 // PayPal integration using the standard PayPal JS SDK (paypal.Buttons).
 // This replaces the fragile web-sdk/v6 beta flow. It loads the SDK with the
 // merchant clientId, renders the official PayPal button, and wires
-// createOrder -> POST /paypal/order and onApprove -> POST /paypal/order/:id/capture.
+// createOrder -> POST /api/paypal/order and onApprove -> POST /api/paypal/order/:id/capture.
 import { useEffect, useRef, useState } from "react";
 
 interface ShippingAddress {
@@ -78,7 +78,7 @@ export default function PayPalButton({
 
     (async () => {
       try {
-        const setupRes = await fetch("/paypal/setup");
+        const setupRes = await fetch("/api/paypal/setup");
         if (!setupRes.ok) throw new Error("PayPal is not configured");
         const { clientId } = await setupRes.json();
         if (!clientId) throw new Error("PayPal client ID missing");
@@ -90,7 +90,7 @@ export default function PayPalButton({
           style: { layout: "vertical", color: "blue", shape: "rect", label: "paypal" },
 
           createOrder: async () => {
-            const res = await fetch("/paypal/order", {
+            const res = await fetch("/api/paypal/order", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ amount, currency, intent }),
@@ -105,7 +105,7 @@ export default function PayPalButton({
           onApprove: async (data: any) => {
             try {
               const d = dataRef.current;
-              const res = await fetch(`/paypal/order/${data.orderID}/capture`, {
+              const res = await fetch(`/api/paypal/order/${data.orderID}/capture`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

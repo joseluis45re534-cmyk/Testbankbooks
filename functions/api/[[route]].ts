@@ -258,12 +258,12 @@ const contactSchema = z.object({
 
 // ─── PayPal ──────────────────────────────────────────────────────────────────
 
-app.get("/paypal/setup", async (c) => {
+app.get("/api/paypal/setup", async (c) => {
   const { clientId } = await getPayPalKeys(c.get("storage"), c.env);
   return c.json({ clientId });
 });
 
-app.post("/paypal/order", async (c) => {
+app.post("/api/paypal/order", async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
@@ -296,7 +296,7 @@ app.post("/paypal/order", async (c) => {
   }
 });
 
-app.post("/paypal/order/:orderID/capture", async (c) => {
+app.post("/api/paypal/order/:orderID/capture", async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");

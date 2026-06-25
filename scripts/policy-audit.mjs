@@ -76,6 +76,15 @@ for (const path of PAGES) {
       for (const [name, re] of Object.entries(TRUST_SIGNALS)) {
         console.log(`     ${re.test(text) || re.test(html) ? "✅" : "❌"} ${name}`);
       }
+      console.log("  Transparency statements (footer, global):");
+      const transparency = {
+        "ships worldwide / international": /ships worldwide|international retailer/i,
+        "currency stated (USD)": /US Dollars|USD/i,
+        "registered address stated": /registered at|7 Rue des Noyers/i,
+      };
+      for (const [name, re] of Object.entries(transparency)) {
+        console.log(`     ${re.test(text) ? "✅" : "❌"} ${name}`);
+      }
     }
   } catch (err) {
     console.log(`\n=== ${path} === ERROR: ${err.message}`);

@@ -1,20 +1,8 @@
-// PayPal Web Integration
-//
-// Retain this comment after all edits.
-//
-// <BEGIN_EXACT_CODE>
-import { useEffect } from "react";
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "paypal-button": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      >;
-    }
-  }
-}
+// PayPal integration using the standard PayPal JS SDK (paypal.Buttons).
+// This replaces the fragile web-sdk/v6 beta flow. It loads the SDK with the
+// merchant clientId, renders the official PayPal button, and wires
+// createOrder -> POST /paypal/order and onApprove -> POST /paypal/order/:id/capture.
+import { useEffect, useRef, useState } from "react";
 
 interface ShippingAddress {
   address1: string;
@@ -37,6 +25,34 @@ interface PayPalButtonProps {
   onPaymentError?: (error: any) => void;
 }
 
+const SDK_SCRIPT_ID = "paypal-sdk";
+
+function loadPayPalSdk(clientId: string, currency: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const w = window as any;
+    // Already loaded with the right client — reuse it.
+    if (w.paypal) {
+      resolve(w.paypal);
+      return;
+    }
+    const existing = document.getElementById(SDK_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve((window as any).paypal));
+      existing.addEventListener("error", reject);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = SDK_SCRIPT_ID;
+    script.src =
+      `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}` +
+      `&currency=${encodeURIComponent(currency)}&intent=capture&components=buttons&disable-funding=credit,card`;
+    script.async = true;
+    script.onload = () => resolve((window as any).paypal);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+
 export default function PayPalButton({
   amount,
   currency,
@@ -48,134 +64,103 @@ export default function PayPalButton({
   onPaymentSuccess,
   onPaymentError,
 }: PayPalButtonProps) {
-  const createOrder = async () => {
-    const orderPayload = {
-      amount: amount,
-      currency: currency,
-      intent: intent,
-    };
-    const response = await fetch("/paypal/order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderPayload),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to create PayPal order");
-    }
-    const output = await response.json();
-    return { orderId: output.id };
-  };
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const captureOrder = async (orderId: string) => {
-    const response = await fetch(`/paypal/order/${orderId}/capture`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ customerEmail, customerName, phone, shippingAddress }),
-    });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to capture PayPal order");
-    }
-    const data = await response.json();
-    return data;
-  };
-
-  const onApprove = async (data: any) => {
-    try {
-      const orderData = await captureOrder(data.orderId);
-      if (onPaymentSuccess) {
-        onPaymentSuccess(data.orderId, orderData);
-      }
-    } catch (error) {
-      console.error("Capture failed:", error);
-      if (onPaymentError) {
-        onPaymentError(error);
-      }
-    }
-  };
-
-  const onCancel = async (data: any) => {
-    console.log("Payment cancelled", data);
-  };
-
-  const onError = async (data: any) => {
-    console.error("Payment error", data);
-    if (onPaymentError) {
-      onPaymentError(data);
-    }
-  };
+  // Keep latest values in refs so the PayPal callbacks (created once) always
+  // read current props without re-rendering the button.
+  const dataRef = useRef({ customerEmail, customerName, phone, shippingAddress });
+  dataRef.current = { customerEmail, customerName, phone, shippingAddress };
 
   useEffect(() => {
-    const loadPayPalSDK = async () => {
+    let cancelled = false;
+    let buttonsInstance: any = null;
+
+    (async () => {
       try {
-        if (!(window as any).paypal) {
-          const script = document.createElement("script");
-          script.src = import.meta.env.PROD
-            ? "https://www.paypal.com/web-sdk/v6/core"
-            : "https://www.sandbox.paypal.com/web-sdk/v6/core";
-          script.async = true;
-          script.onload = () => initPayPal();
-          document.body.appendChild(script);
-        } else {
-          await initPayPal();
-        }
-      } catch (e) {
-        console.error("Failed to load PayPal SDK", e);
-      }
-    };
+        const setupRes = await fetch("/paypal/setup");
+        if (!setupRes.ok) throw new Error("PayPal is not configured");
+        const { clientId } = await setupRes.json();
+        if (!clientId) throw new Error("PayPal client ID missing");
 
-    loadPayPalSDK();
-  }, []);
-  const initPayPal = async () => {
-    try {
-      const clientToken: string = await fetch("/paypal/setup")
-        .then((res) => res.json())
-        .then((data) => {
-          return data.clientToken;
-        });
-      const sdkInstance = await (window as any).paypal.createInstance({
-        clientToken,
-        components: ["paypal-payments"],
-      });
+        const paypal = await loadPayPalSdk(clientId, currency || "USD");
+        if (cancelled || !paypal || !containerRef.current) return;
 
-      const paypalCheckout =
-            sdkInstance.createPayPalOneTimePaymentSession({
-              onApprove,
-              onCancel,
-              onError,
+        buttonsInstance = paypal.Buttons({
+          style: { layout: "vertical", color: "blue", shape: "rect", label: "paypal" },
+
+          createOrder: async () => {
+            const res = await fetch("/paypal/order", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ amount, currency, intent }),
             });
+            const data = await res.json();
+            if (!res.ok || !data.id) {
+              throw new Error(data.error || "Failed to create PayPal order");
+            }
+            return data.id;
+          },
 
-      const onClick = async () => {
-        try {
-          const checkoutOptionsPromise = createOrder();
-          await paypalCheckout.start(
-            { paymentFlow: "auto" },
-            checkoutOptionsPromise,
-          );
-        } catch (e) {
-          console.error(e);
+          onApprove: async (data: any) => {
+            try {
+              const d = dataRef.current;
+              const res = await fetch(`/paypal/order/${data.orderID}/capture`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  customerEmail: d.customerEmail,
+                  customerName: d.customerName,
+                  phone: d.phone,
+                  shippingAddress: d.shippingAddress,
+                }),
+              });
+              const captureData = await res.json();
+              if (!res.ok) {
+                throw new Error(captureData.error || "Failed to capture PayPal payment");
+              }
+              onPaymentSuccess?.(data.orderID, captureData);
+            } catch (err) {
+              console.error("PayPal capture failed:", err);
+              onPaymentError?.(err);
+            }
+          },
+
+          onError: (err: any) => {
+            console.error("PayPal error:", err);
+            setError("PayPal encountered an error. Please try again or use a card.");
+            onPaymentError?.(err);
+          },
+
+          onCancel: () => {
+            // Visitor closed the PayPal window — no action needed.
+          },
+        });
+
+        if (buttonsInstance.isEligible()) {
+          buttonsInstance.render(containerRef.current);
+        } else {
+          setError("PayPal is not available for this purchase.");
         }
-      };
-
-      const paypalButton = document.getElementById("paypal-button");
-
-      if (paypalButton) {
-        paypalButton.addEventListener("click", onClick);
+      } catch (err: any) {
+        console.error("PayPal init failed:", err);
+        setError(err?.message || "Could not load PayPal. Please try a card instead.");
       }
+    })();
 
-      return () => {
-        if (paypalButton) {
-          paypalButton.removeEventListener("click", onClick);
-        }
-      };
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    return () => {
+      cancelled = true;
+      try { buttonsInstance?.close?.(); } catch {}
+    };
+    // Re-init only if the currency changes (clientId/SDK depend on it).
+  }, [currency]);
 
-  return <paypal-button id="paypal-button" data-testid="button-paypal-pay"></paypal-button>;
+  return (
+    <div className="w-full">
+      <div ref={containerRef} data-testid="button-paypal-pay" />
+      {error && (
+        <p className="text-sm text-destructive mt-2" data-testid="text-paypal-error">{error}</p>
+      )}
+    </div>
+  );
 }
-// <END_EXACT_CODE>

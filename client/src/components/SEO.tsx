@@ -58,7 +58,7 @@ export function SEO({
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+33412345678",
+      telephone: "+33644657808",
       contactType: "customer service",
       email: "support@nurstestbank.com",
       availableLanguage: "English",

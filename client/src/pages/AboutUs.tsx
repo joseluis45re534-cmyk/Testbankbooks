@@ -57,7 +57,7 @@ export default function AboutUs() {
                   We accept major credit cards (via Stripe), PayPal, and other digital payment methods. All transactions are secured with SSL encryption.
                 </p>
                 <p className="text-muted-foreground">
-                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+33412345678" className="text-primary hover:underline">+33 4 12 34 56 78</a>.
+                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+33644657808" className="text-primary hover:underline">+33 6 44 65 78 08</a>.
                 </p>
               </div>
             </div>
@@ -157,7 +157,7 @@ export default function AboutUs() {
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Phone: </span>
-                    <a href="tel:+33412345678" className="text-primary hover:underline">+33 4 12 34 56 78</a>
+                    <a href="tel:+33644657808" className="text-primary hover:underline">+33 6 44 65 78 08</a>
                   </li>
                   <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM CET</li>
                   <li>

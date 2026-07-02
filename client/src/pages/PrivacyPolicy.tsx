@@ -240,7 +240,7 @@ export default function PrivacyPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+33412345678" className="hover:underline" data-testid="link-privacy-phone">+33 4 12 34 56 78</a>
+                    <a href="tel:+33644657808" className="hover:underline" data-testid="link-privacy-phone">+33 6 44 65 78 08</a>
                   </div>
                 </div>
                 <p className="mt-4">

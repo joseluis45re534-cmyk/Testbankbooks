@@ -105,11 +105,11 @@ export default function ContactUs() {
                 <Phone className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Call Us</h2>
                 <a
-                  href="tel:+33412345678"
+                  href="tel:+33644657808"
                   className="text-muted-foreground hover:underline text-sm"
                   data-testid="link-contact-phone"
                 >
-                  +33 4 12 34 56 78
+                  +33 6 44 65 78 08
                 </a>
               </CardContent>
             </Card>
@@ -238,7 +238,7 @@ export default function ContactUs() {
                     <Phone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="font-semibold text-sm">Phone</p>
-                      <a href="tel:+33412345678" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+33 4 12 34 56 78</a>
+                      <a href="tel:+33644657808" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+33 6 44 65 78 08</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

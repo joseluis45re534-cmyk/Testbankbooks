@@ -256,7 +256,7 @@ const STATIC_REPLIES: Record<string, string> = {
     "",
     "• This live chat — I'll route you to a human if I can't answer",
     "• Email: **support@nurstestbank.com**",
-    "• Phone: **+33 4 12 34 56 78**",
+    "• Phone: **+33 6 44 65 78 08**",
     "",
     "Our team usually replies within a few hours.",
   ].join("\n"),

@@ -49,11 +49,11 @@ const faqs = [
   },
   {
     question: "How do I receive my purchase?",
-    answer: "We print and ship your physical book within 1–2 business days, with free standard delivery (typically 5–8 business days). As a free bonus, a digital copy is emailed to you instantly after purchase so you can begin studying while your book is in transit."
+    answer: "Your purchase is delivered instantly. Upon checkout, you will be redirected to an order confirmation page with a direct download link, and a copy of the link is emailed to you so you can begin studying right away."
   },
   {
-    question: "Do I get tracking for my shipment?",
-    answer: "Yes. As soon as your book ships, we email you a tracking number so you can follow your delivery. The complimentary digital copy is also available on your order page and by email."
+    question: "Is there a download limit?",
+    answer: "Yes, to protect our files, each purchase allows up to 5 downloads per product, and the link expires after 24 hours. We recommend downloading and saving your files promptly."
   },
   {
     question: "Is there a money-back guarantee?",
@@ -65,9 +65,9 @@ const features = [
   "Extensive question bank covering key concepts",
   "Multiple question types including multiple-choice and short answer",
   "Aligned with curriculum and exam standards",
-  "Professionally printed book shipped free to your door",
+  "Instant digital download delivered to your email",
   "Thoroughly vetted by subject matter experts",
-  "Free digital copy emailed instantly so you can start now"
+  "Start studying immediately after purchase"
 ];
 
 const benefits = [
@@ -80,7 +80,7 @@ const benefits = [
 ];
 
 const howToSteps = [
-  { title: "Place Your Order", description: "Buy the book — it ships free, and your digital copy is emailed instantly." },
+  { title: "Place Your Order", description: "Buy the study materials — your digital copy is emailed instantly." },
   { title: "Review the Content Layout", description: "Familiarize yourself with the structure and question types included." },
   { title: "Set Study Goals", description: "Determine your objectives and identify weak areas that require more focus." },
   { title: "Practice Regularly", description: "Schedule regular practice sessions, simulating actual exam conditions." },
@@ -262,7 +262,7 @@ export default function ProductDetail() {
 
   const seoCategory = product.category || "Nursing";
   const seoTitle = product.seoTitle || `${product.title} | ${seoCategory} Test Bank for Exam Prep`;
-  const seoDescription = (product.seoDescription || `Ace your ${seoCategory.toLowerCase()} exam with the ${product.title}. $${displayPrice.toFixed(2)} — NCLEX-style questions with detailed rationale. Free shipping + free digital copy. 30-day money-back guarantee.`).substring(0, 160);
+  const seoDescription = (product.seoDescription || `Ace your ${seoCategory.toLowerCase()} exam with the ${product.title}. $${displayPrice.toFixed(2)} — NCLEX-style questions with detailed rationale. Instant digital download. 30-day money-back guarantee.`).substring(0, 160);
 
   const currentImage = allImages[selectedImageIndex] || null;
 
@@ -313,7 +313,7 @@ export default function ProductDetail() {
                   </Badge>
                 )}
                 <Badge variant="secondary" className="absolute top-4 right-4">
-                  Printed Book
+                  Digital File
                 </Badge>
               </div>
 
@@ -359,8 +359,8 @@ export default function ProductDetail() {
               </h1>
 
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">Printed Book Shipped Free</Badge>
-                <Badge variant="outline" className="text-xs">Free Digital Copy Included</Badge>
+                <Badge variant="secondary" className="text-xs">Digital Download</Badge>
+                <Badge variant="outline" className="text-xs">Instant Access</Badge>
               </div>
 
               <div className="flex items-baseline gap-3">
@@ -383,7 +383,7 @@ export default function ProductDetail() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="text-green-600 font-medium flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
-                  In stock — ships free within 1–2 business days
+                  Available — Instant Download
                 </span>
               </div>
 
@@ -419,8 +419,8 @@ export default function ProductDetail() {
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Zap className="w-5 h-5 mx-auto mb-1 text-primary" />
-                  <p className="text-xs font-medium">Free Shipping</p>
-                  <p className="text-xs text-muted-foreground">Ships in 1–2 days</p>
+                  <p className="text-xs font-medium">Instant Delivery</p>
+                  <p className="text-xs text-muted-foreground">Download right away</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
                   <Shield className="w-5 h-5 mx-auto mb-1 text-primary" />
@@ -441,8 +441,8 @@ export default function ProductDetail() {
                       <Download className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold">1 Printed Book + Free Digital Copy Included</p>
-                      <p className="text-sm text-muted-foreground">Book ships free within 1–2 business days. Free digital copy emailed instantly after purchase.</p>
+                      <p className="font-semibold">Instant Digital Download</p>
+                      <p className="text-sm text-muted-foreground">Download link is available immediately after purchase and emailed to you for safekeeping.</p>
                     </div>
                   </div>
                 </CardContent>
@@ -597,7 +597,7 @@ export default function ProductDetail() {
                               </Badge>
                             )}
                             <Badge variant="secondary" className="absolute top-2 right-2">
-                              Printed Book
+                              Digital File
                             </Badge>
                           </div>
                           <CardContent className="p-3">
@@ -608,7 +608,7 @@ export default function ProductDetail() {
                               {relatedProduct.title}
                             </h3>
                             <div className="flex items-center gap-1 mb-2">
-                              <Badge variant="outline" className="text-[10px] py-0 px-1">Printed Book + Free Digital Copy</Badge>
+                              <Badge variant="outline" className="text-[10px] py-0 px-1">Instant Digital Download</Badge>
                             </div>
                             <div className="flex items-baseline gap-2">
                               <span className="font-bold text-primary">

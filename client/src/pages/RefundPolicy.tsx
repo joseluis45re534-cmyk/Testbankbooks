@@ -64,13 +64,13 @@ export default function RefundPolicy() {
                 <CardTitle>2. Refund & Return Conditions</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
-                <p>Because each order is a printed book shipped to you (with a free digital copy included), valid reasons for a refund or return include:</p>
+                <p>Because each order is for a digital product, valid reasons for a refund or return include:</p>
                 <ul className="list-disc pl-6 space-y-1">
                   <li>The product does not match its description or listing</li>
-                  <li>The book arrives damaged, defective, or with printing/binding errors</li>
+                  <li>The digital file is corrupted or cannot be opened</li>
                   <li>Duplicate purchase of the same product</li>
                   <li>The product does not correspond to the correct textbook edition</li>
-                  <li>The order never arrived or was lost in transit</li>
+                  <li>You were unable to download the file despite following troubleshooting steps</li>
                 </ul>
               </CardContent>
             </Card>
@@ -85,7 +85,7 @@ export default function RefundPolicy() {
                   <li>
                     <strong className="text-foreground">Contact our support team</strong> at{" "}
                     <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline" data-testid="link-refund-email">support@nurstestbank.com</a>{" "}
-                    or call <a href="tel:+13303908394" className="text-primary hover:underline" data-testid="link-refund-phone">+1 (330) 390-8394</a>
+                    or call <a href="tel:+33412345678" className="text-primary hover:underline" data-testid="link-refund-phone">+33 4 12 34 56 78</a>
                   </li>
                   <li>
                     <strong className="text-foreground">Include your order details:</strong> order number, email address used for purchase, and product name
@@ -180,7 +180,7 @@ export default function RefundPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-refund-contact-phone">+1 (330) 390-8394</a>
+                    <a href="tel:+33412345678" className="hover:underline" data-testid="link-refund-contact-phone">+33 4 12 34 56 78</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />

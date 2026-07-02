@@ -11,7 +11,7 @@ export function Footer() {
               <img src="/logo.svg" alt="NursTestBank - Digital Study Materials for Nursing Students" className="h-10 w-auto" />
             </div>
             <p className="text-sm text-muted-foreground">
-              Your trusted source for printed nursing exam prep books and study guides — shipped to your door, with a free digital copy included.
+              Your trusted source for digital nursing exam prep books, test banks, and study guides — available for instant download.
             </p>
           </div>
 
@@ -39,7 +39,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <a href="tel:+13303908394" className="hover:text-foreground transition-colors">+1 (330) 390-8394</a>
+                <a href="tel:+33412345678" className="hover:text-foreground transition-colors">+33 4 12 34 56 78</a>
               </li>
               <li className="flex items-start gap-2 mt-2">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
@@ -53,7 +53,7 @@ export function Footer() {
             <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Zap className="w-4 h-4 text-primary" />
-                <span>Free Shipping + Digital Copy</span>
+                <span>Instant Digital Download</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4 text-primary" />
@@ -93,7 +93,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground space-y-2">
           <p>
-            NursTestBank is an international retailer of printed nursing study books, registered at 7 Rue des Noyers, 69005 Lyon, France. We ship worldwide. All prices are shown in US Dollars (USD).
+            NursTestBank is an international retailer of digital nursing study materials, registered at 7 Rue des Noyers, 69005 Lyon, France. All prices are shown in US Dollars (USD).
           </p>
           <p>&copy; {new Date().getFullYear()} NursTestBank. All rights reserved.</p>
         </div>

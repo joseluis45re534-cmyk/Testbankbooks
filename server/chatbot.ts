@@ -114,12 +114,10 @@ function buildLinkLine(title: string, url: string | null | undefined): string {
 }
 
 const GENERIC_DOWNLOAD_INFO = [
-  "Every order is a printed book shipped to you for free — plus a free digital copy so you can start studying right away. Here's how the digital copy reaches you:",
+  "Every order is a digital download so you can start studying right away. Here's how the digital copy reaches you:",
   "",
   "1. **Email** — A confirmation email is sent right after checkout to the address you used. It contains a link to your digital copy.",
   "2. **Thank-you page** — Right after payment, the order confirmation page also shows your digital copy button.",
-  "",
-  "Your printed book ships within 1–2 business days and you'll get a tracking number by email.",
   "",
   "If you can't find your email:",
   "• Check your spam / promotions folder",
@@ -208,18 +206,16 @@ const STATIC_REPLIES: Record<string, string> = {
   thanks: "You're welcome! Anything else I can help with?",
 
   how_to_receive: [
-    "Every order is a **printed book** that we ship to you with **free shipping** — plus a **free digital copy** so you can start studying right away.",
+    "Every order is an instant **digital download** so you can start studying right away.",
     "",
     "Here's how it works:",
-    "• Your printed book ships within 1–2 business days (you'll get a tracking number by email)",
-    "• Standard delivery is about 5–8 business days",
-    "• A free digital copy is emailed to you instantly and is on your thank-you page",
+    "• A digital copy is emailed to you instantly and is on your thank-you page",
     "",
     "If your email hasn't arrived in a few minutes, check spam or reply here with the email you used and I'll look it up.",
   ].join("\n"),
 
   order_status: [
-    "Your printed book is printed and shipped within 1–2 business days, and you'll receive a tracking number by email once it's on its way. Your free digital copy is available immediately after payment.",
+    "Your digital copy is available immediately after payment.",
     "",
     "Reply with the email you used at checkout and I'll check the status of your most recent order.",
   ].join("\n"),
@@ -260,7 +256,7 @@ const STATIC_REPLIES: Record<string, string> = {
     "",
     "• This live chat — I'll route you to a human if I can't answer",
     "• Email: **support@nurstestbank.com**",
-    "• Phone: **+1 (330) 390-8394**",
+    "• Phone: **+33 4 12 34 56 78**",
     "",
     "Our team usually replies within a few hours.",
   ].join("\n"),

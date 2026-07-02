@@ -38,26 +38,26 @@ export default function AboutUs() {
               <div>
                 <h2 className="text-2xl font-bold mb-4">Who We Are</h2>
                 <p className="text-muted-foreground mb-4">
-                  NursTestBank is a dedicated retailer of printed study books and exam preparation guides for nursing and healthcare students. Every order is a professionally printed book that we ship to your door, with a complimentary digital copy emailed so you can begin studying right away.
+                  NursTestBank is a dedicated retailer of digital study books and exam preparation guides for nursing and healthcare students. Every order provides instant access to your digital copy so you can begin studying right away.
                 </p>
                 <p className="text-muted-foreground mb-4">
-                  Our catalog includes over 300 study titles covering all major nursing disciplines — from Anatomy &amp; Physiology to Medical-Surgical Nursing, Pharmacology, Pediatrics, and more. Each book ships with free standard shipping and a tracking number.
+                  Our catalog includes over 300 study titles covering all major nursing disciplines — from Anatomy & Physiology to Medical-Surgical Nursing, Pharmacology, Pediatrics, and more. All products are delivered instantly via email and download link.
                 </p>
                 <p className="text-muted-foreground">
-                  We believe every student deserves access to high-quality study resources. That's why we offer competitive pricing, free shipping, and a 30-day money-back guarantee on all purchases.
+                  We believe every student deserves access to high-quality study resources. That's why we offer competitive pricing and a 30-day money-back guarantee on all purchases.
                 </p>
               </div>
 
               <div>
                 <h2 className="text-2xl font-bold mb-4">Our Business Model</h2>
                 <p className="text-muted-foreground mb-4">
-                  NursTestBank sells professionally printed study books. Every order is printed and shipped to the customer's address with free standard shipping, and we include a complimentary digital copy by email so customers can start studying immediately while their book is in transit. Customers receive a tracking number once their order ships.
+                  NursTestBank sells digital study books and test banks. Every order is delivered instantly. Customers receive a download link on the order confirmation page and via email immediately after checkout.
                 </p>
                 <p className="text-muted-foreground mb-4">
                   We accept major credit cards (via Stripe), PayPal, and other digital payment methods. All transactions are secured with SSL encryption.
                 </p>
                 <p className="text-muted-foreground">
-                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+13303908394" className="text-primary hover:underline">+1 (330) 390-8394</a>.
+                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+33412345678" className="text-primary hover:underline">+33 4 12 34 56 78</a>.
                 </p>
               </div>
             </div>
@@ -140,11 +140,11 @@ export default function AboutUs() {
                 <h3 className="font-semibold mb-3">Business Details</h3>
                 <ul className="space-y-2 text-muted-foreground">
                   <li><span className="font-medium text-foreground">Business Name:</span> NursTestBank</li>
-                  <li><span className="font-medium text-foreground">Type:</span> Online retailer of printed study books</li>
-                  <li><span className="font-medium text-foreground">Products:</span> Printed nursing study books (free digital copy included)</li>
-                  <li><span className="font-medium text-foreground">Delivery:</span> Free worldwide shipping on printed books + free digital copy</li>
+                  <li><span className="font-medium text-foreground">Type:</span> Online retailer of digital study books</li>
+                  <li><span className="font-medium text-foreground">Products:</span> Digital nursing study books, test banks, and guides</li>
+                  <li><span className="font-medium text-foreground">Delivery:</span> Instant worldwide digital delivery</li>
                   <li><span className="font-medium text-foreground">Registered Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
-                  <li><span className="font-medium text-foreground">Markets Served:</span> Worldwide (international shipping)</li>
+                  <li><span className="font-medium text-foreground">Markets Served:</span> Worldwide</li>
                   <li><span className="font-medium text-foreground">Currency:</span> All prices in US Dollars (USD)</li>
                 </ul>
               </div>
@@ -157,7 +157,7 @@ export default function AboutUs() {
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Phone: </span>
-                    <a href="tel:+13303908394" className="text-primary hover:underline">+1 (330) 390-8394</a>
+                    <a href="tel:+33412345678" className="text-primary hover:underline">+33 4 12 34 56 78</a>
                   </li>
                   <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM CET</li>
                   <li>

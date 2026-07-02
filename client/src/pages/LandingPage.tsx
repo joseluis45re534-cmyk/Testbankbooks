@@ -51,7 +51,7 @@ export default function LandingPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
         title="NursTestBank - Premium Exam Prep & Study Materials for Nursing Students"
-        description="Shop 300+ printed nursing exam prep books and study guides for nursing and medical students. Free shipping, plus a complimentary digital copy with every order so you can start practicing right away."
+        description="Shop 300+ digital nursing exam prep books and study guides for nursing and medical students. Instant digital download so you can start practicing right away."
       />
       <Header cartCount={cartCount} />
 
@@ -118,7 +118,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap justify-center gap-8 md:gap-16">
               <div className="flex items-center gap-3">
                 <Download className="w-6 h-6 text-primary" />
-                <span className="font-medium">Free Shipping + Digital Copy</span>
+                <span className="font-medium">Instant Digital Delivery</span>
               </div>
               <div className="flex items-center gap-3">
                 <Clock className="w-6 h-6 text-primary" />
@@ -140,8 +140,8 @@ export default function LandingPage() {
                   <div className="w-12 h-12 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
                     <Zap className="w-6 h-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold mb-2">Printed Book + Digital Copy</h3>
-                  <p className="text-sm text-muted-foreground">Book ships to your door; free digital copy emailed instantly</p>
+                  <h3 className="font-semibold mb-2">Instant Digital Access</h3>
+                  <p className="text-sm text-muted-foreground">Download links emailed immediately after purchase</p>
                 </CardContent>
               </Card>
               <Card className="text-center">
@@ -257,7 +257,7 @@ export default function LandingPage() {
                           </p>
                         )}
                         <div className="flex items-center gap-1 mb-2">
-                          <Badge variant="outline" className="text-[10px] py-0 px-1">Printed Book + Free Digital Copy</Badge>
+                          <Badge variant="outline" className="text-[10px] py-0 px-1">Instant Digital Download</Badge>
                         </div>
                         <div className="flex items-baseline gap-2">
                           <span className="font-bold text-primary">
@@ -313,9 +313,9 @@ export default function LandingPage() {
                   <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
                     <Zap className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Free Shipping + Digital Copy</h3>
+                  <h3 className="text-lg font-semibold mb-2">Instant Digital Access</h3>
                   <p className="text-muted-foreground">
-                    Your printed book ships free within 1–2 business days, and a free digital copy is emailed instantly so you can start studying right away
+                    Your digital files are available for download instantly so you can start studying right away
                   </p>
                 </CardContent>
               </Card>
@@ -338,7 +338,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Start Studying?</h2>
             <p className="text-lg opacity-90 mb-8">
-              Order your printed study book today — shipped free, with a digital copy included so you can start practicing immediately.
+              Order your digital study materials today — instant download included so you can start practicing immediately.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/shop">

@@ -166,14 +166,10 @@ function buildOrderEmailHtml(data: {
 <h2 style="text-align:center">Thank You for Your Order!</h2>
 <p style="text-align:center;color:#6b7280">Hi ${displayName}, your order is confirmed.</p>
 <h3>Your Items</h3>
-<ul style="list-style:none;padding:0">${productListHtml}</ul>
-<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:20px;margin:20px 0">
-<p style="margin:0 0 6px;font-weight:700;color:#1e40af">📦 Your printed book is on its way</p>
-<p style="margin:0;font-size:14px;color:#3b5b8c">We print and ship your book within 1–2 business days. You'll get a tracking number by email as soon as it ships. Standard delivery is 5–8 business days.</p>
-</div>
-<h3>Your free digital copy is ready now</h3>
+</ul>
+<h3>Your digital copy is ready now</h3>
 <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:24px;text-align:center">
-<p style="margin:0 0 14px;font-size:14px;color:#166534">While your book ships, start studying right away with the complimentary digital copy included with your order:</p>
+<p style="margin:0 0 14px;font-size:14px;color:#166534">Start studying right away with the digital copy included with your order:</p>
 <a href="${downloadLink}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:16px 48px;border-radius:8px;font-weight:700;font-size:17px">→ Access My Digital Copy</a>
 <p style="margin:16px 0 0;font-size:12px;color:#6b7280">${downloadLink}</p>
 </div>
@@ -482,7 +478,7 @@ app.post("/api/stripe/confirm-payment", async (c) => {
     if (c.env.RESEND_API_KEY) {
       sendEmail(c.env.RESEND_API_KEY, {
         to: order.customerEmail,
-        subject: `Order Confirmed #${order.id.substring(0, 8).toUpperCase()} — Book Shipping + Digital Copy`,
+        subject: `Order Confirmed #${order.id.substring(0, 8).toUpperCase()} — Digital Download`,
         html: buildOrderEmailHtml({ customerName: order.customerName || null, orderId: order.id, amount: order.amount, paymentMethod: "stripe", productTitles }),
       }).catch(console.error);
     }

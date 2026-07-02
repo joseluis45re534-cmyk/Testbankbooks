@@ -128,7 +128,7 @@ export default function ThankYou() {
               Thank You for Your Purchase!
             </h1>
             <p className="text-muted-foreground">
-              Your order is confirmed. Your printed book ships within 1–2 business days, and your free digital copy is ready to access right now below.
+              Your order is confirmed. Your digital copy is ready to access right now below.
             </p>
           </div>
 
@@ -240,18 +240,7 @@ export default function ThankYou() {
                       )}
                     </div>
                   ))}
-                  <div className="flex items-start gap-2 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-sm">
-                    <Shield className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium text-blue-800 dark:text-blue-300">
-                        Your printed book is on its way 📦
-                      </p>
-                      <p className="text-blue-700 dark:text-blue-400">
-                        This is your free digital copy. Your printed book ships within 1–2 business days and you'll get tracking by email. A copy of your receipt has also been sent to you.
-                      </p>
-                    </div>
                   </div>
-                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>Download links will appear here once your payment is verified.</p>

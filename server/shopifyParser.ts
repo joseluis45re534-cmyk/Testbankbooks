@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { parse } from "csv-parse/sync";
-import { storage } from "./storage";
+import { storage } from "./express-storage";
 import type { InsertProduct } from "@shared/schema";
 
 function cleanHtml(html: string): string {

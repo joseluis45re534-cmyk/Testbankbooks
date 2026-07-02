@@ -19,7 +19,7 @@ interface SEOProps {
 
 export function SEO({
   title = "NursTestBank - Premium Test Banks & Study Guides",
-  description = "Shop premium printed nursing study books and exam prep guides. Free shipping on every order, plus a complimentary digital copy. Over 260+ titles available.",
+  description = "Shop premium digital nursing study books and exam prep guides. Instant digital download. Over 260+ titles available.",
   image,
   url,
   type = "website",
@@ -47,7 +47,7 @@ export function SEO({
     name: "NursTestBank",
     url: typeof window !== "undefined" ? window.location.origin : "",
     logo: typeof window !== "undefined" ? `${window.location.origin}/logo.svg` : "",
-    description: "Retailer of printed nursing exam prep books and study guides. Free shipping on every order, with a complimentary digital copy included.",
+    description: "Retailer of digital nursing exam prep books and study guides. Instant digital download.",
     areaServed: "Worldwide",
     address: {
       "@type": "PostalAddress",
@@ -58,7 +58,7 @@ export function SEO({
     },
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: "+13303908394",
+      telephone: "+33412345678",
       contactType: "customer service",
       email: "support@nurstestbank.com",
       availableLanguage: "English",

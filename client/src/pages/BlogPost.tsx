@@ -213,7 +213,7 @@ export default function BlogPost() {
                       </Link>
                     </div>
                     <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">
-                      <li className="flex items-center gap-2">✅ Free shipping + free digital copy</li>
+                      <li className="flex items-center gap-2">✅ Instant digital download</li>
                       <li className="flex items-center gap-2">✅ Hundreds of exam-style questions</li>
                       <li className="flex items-center gap-2">✅ Detailed answer rationales</li>
                       <li className="flex items-center gap-2">✅ 30-day money-back guarantee</li>

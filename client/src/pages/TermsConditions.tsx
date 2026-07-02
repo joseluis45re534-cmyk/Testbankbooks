@@ -52,15 +52,15 @@ export default function TermsConditions() {
               </CardHeader>
               <CardContent className="text-muted-foreground space-y-3">
                 <p>
-                  NursTestBank sells professionally printed study books that are shipped to the customer. Our products include, but are not limited to:
+                  NursTestBank sells digital study materials that are delivered instantly. Our products include, but are not limited to:
                 </p>
                 <ul className="list-disc pl-6 space-y-1">
-                  <li>Printed study books containing practice questions and answer rationales</li>
-                  <li>Printed study guides and supplementary learning materials</li>
-                  <li>Reference books for nursing and healthcare education</li>
+                  <li>Digital test banks containing practice questions and answer rationales</li>
+                  <li>Digital study guides and supplementary learning materials</li>
+                  <li>Digital reference books for nursing and healthcare education</li>
                 </ul>
                 <p>
-                  Each printed book ships with free standard shipping and includes a complimentary digital copy emailed to the customer after purchase. Delivery timelines and shipping details are described in our Shipping Policy, and returns are governed by our Refund Policy.
+                  Each digital product is delivered instantly via email and download link. Delivery details are described in our Delivery Policy, and refunds are governed by our Refund Policy.
                 </p>
               </CardContent>
             </Card>
@@ -252,7 +252,7 @@ export default function TermsConditions() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+13303908394" className="hover:underline" data-testid="link-terms-phone">+1 (330) 390-8394</a>
+                    <a href="tel:+33412345678" className="hover:underline" data-testid="link-terms-phone">+33 4 12 34 56 78</a>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">

@@ -69,7 +69,7 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
     }
     xml += `      <g:condition>new</g:condition>\n`;
 
-    // Required identifiers (custom-printed books have no retail GTIN — mark explicitly)
+    // Required identifiers
     xml += `      <g:brand>${escXml(p.brand || "NursTestBank")}</g:brand>\n`;
     xml += `      <g:mpn>NTB-${escXml(p.id)}</g:mpn>\n`;
     xml += `      <g:identifier_exists>false</g:identifier_exists>\n`;
@@ -78,21 +78,9 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
     xml += `      <g:age_group>adult</g:age_group>\n`;
     xml += `      <g:gender>unisex</g:gender>\n`;
 
-    // Category mapping — physical printed books
-    xml += `      <g:google_product_category>784</g:google_product_category>\n`; // 784 = Media > Books > Print Books
+    // Category mapping
+    xml += `      <g:google_product_category>5388</g:google_product_category>\n`;
     xml += `      <g:product_type>${escXml(p.category || "Nursing Study Books")}</g:product_type>\n`;
-
-    // Physical product — free standard shipping, real handling/transit time
-    xml += `      <g:shipping>\n`;
-    xml += `        <g:country>US</g:country>\n`;
-    xml += `        <g:service>Standard</g:service>\n`;
-    xml += `        <g:price>0.00 USD</g:price>\n`;
-    xml += `      </g:shipping>\n`;
-    xml += `      <g:shipping_weight>0.5 kg</g:shipping_weight>\n`;
-    xml += `      <g:max_handling_time>2</g:max_handling_time>\n`;
-    xml += `      <g:min_handling_time>1</g:min_handling_time>\n`;
-    xml += `      <g:max_transit_time>8</g:max_transit_time>\n`;
-    xml += `      <g:min_transit_time>5</g:min_transit_time>\n`;
 
     xml += `      <g:is_bundle>no</g:is_bundle>\n`;
     xml += `      <g:adult>no</g:adult>\n`;

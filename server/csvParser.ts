@@ -1,6 +1,6 @@
 import { parse } from "csv-parse/sync";
 import fs from "fs";
-import { storage } from "./storage";
+import { storage } from "./express-storage";
 import type { InsertProduct } from "@shared/schema";
 
 function cleanHtmlEntities(text: string): string {

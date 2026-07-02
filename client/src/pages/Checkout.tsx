@@ -156,7 +156,7 @@ export default function Checkout() {
   if (cartItems.length === 0 && !isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <SEO title="Checkout" description="Complete your purchase — printed book shipped free, plus a free digital copy." />
+        <SEO title="Checkout" description="Complete your purchase — instant digital download." />
         <Header cartCount={0} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -179,7 +179,7 @@ export default function Checkout() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
         title="Secure Checkout" 
-        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${subtotal.toFixed(2)}. Secure payment, free shipping, and a free digital copy.`}
+        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${subtotal.toFixed(2)}. Secure payment and instant digital delivery.`}
       />
       <Header cartCount={cartCount} />
 
@@ -245,7 +245,7 @@ export default function Checkout() {
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <Input id="email" type="email" placeholder="john@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-email" />
-                          <p className="text-xs text-muted-foreground">Order updates &amp; your free digital copy are sent here</p>
+                          <p className="text-xs text-muted-foreground">Your digital download link will be sent here</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number (Optional)</Label>
@@ -253,8 +253,8 @@ export default function Checkout() {
                         </div>
 
                         <Separator className="my-2" />
-                        <p className="text-sm font-medium">Shipping Address</p>
-                        <p className="text-xs text-muted-foreground -mt-2">Where should we mail your printed book?</p>
+                        <p className="text-sm font-medium">Billing Address</p>
+                        <p className="text-xs text-muted-foreground -mt-2">Required for payment processing</p>
 
                         <div className="space-y-2">
                           <Label htmlFor="address1">Street Address</Label>
@@ -392,7 +392,7 @@ export default function Checkout() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Zap className="w-4 h-4 text-primary" />
-                  <span>Free Shipping + Digital Copy</span>
+                  <span>Instant Digital Delivery</span>
                 </div>
               </div>
             </div>
@@ -438,8 +438,8 @@ export default function Checkout() {
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Shipping</span>
-                      <span className="text-primary font-medium">Free</span>
+                      <span className="text-muted-foreground">Delivery</span>
+                      <span className="text-primary font-medium">Instant</span>
                     </div>
                   </div>
 
@@ -454,10 +454,10 @@ export default function Checkout() {
                   <div className="mt-4 p-3 bg-muted rounded-md">
                     <div className="flex items-center gap-2 text-sm">
                       <Zap className="w-4 h-4 text-primary" />
-                      <span className="font-medium">Physical book + free digital copy</span>
+                      <span className="font-medium">Instant Digital Download</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Your printed book ships within 1–2 business days. A free digital copy is emailed instantly after payment.
+                      Your digital download link is provided immediately after payment and emailed to you.
                     </p>
                   </div>
                 </CardContent>

@@ -91,6 +91,58 @@ function requireAdmin() {
   };
 }
 
+// ─── Rate limiting (D1-backed fixed window) ───────────────────────────────────
+// In-memory counters don't work on Pages (requests hit different isolates), so
+// we keep counters in D1. One atomic upsert per checked request. Returns true
+// when the request is allowed, false when the limit is exceeded.
+async function checkRateLimit(
+  db: any,
+  key: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<{ allowed: boolean; retryAfter: number }> {
+  const nowMs = Date.now();
+  const resetAt = nowMs + windowSeconds * 1000;
+  try {
+    const rows: any = await db.all(sql`
+      INSERT INTO rate_limits (key, count, reset_at)
+      VALUES (${key}, 1, ${resetAt})
+      ON CONFLICT(key) DO UPDATE SET
+        count    = CASE WHEN reset_at < ${nowMs} THEN 1 ELSE count + 1 END,
+        reset_at = CASE WHEN reset_at < ${nowMs} THEN ${resetAt} ELSE reset_at END
+      RETURNING count, reset_at
+    `);
+    const row = (rows?.results ?? rows)?.[0] ?? rows;
+    const count = Number(row?.count ?? 1);
+    const rowResetAt = Number(row?.reset_at ?? resetAt);
+    if (count > limit) {
+      return { allowed: false, retryAfter: Math.max(1, Math.ceil((rowResetAt - nowMs) / 1000)) };
+    }
+    return { allowed: true, retryAfter: 0 };
+  } catch (err) {
+    // Fail open — never block real users because the limiter errored.
+    console.error("Rate limit check failed:", err);
+    return { allowed: true, retryAfter: 0 };
+  }
+}
+
+// Middleware factory: rate-limit by client IP for a named bucket.
+function rateLimit(bucket: string, limit: number, windowSeconds: number) {
+  return async (c: any, next: any) => {
+    const ip = c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For") || "unknown";
+    const key = `${bucket}:${ip}`;
+    const { allowed, retryAfter } = await checkRateLimit(c.get("db"), key, limit, windowSeconds);
+    if (!allowed) {
+      return c.json(
+        { error: "Too many requests. Please slow down and try again shortly." },
+        429,
+        { "Retry-After": String(retryAfter) },
+      );
+    }
+    await next();
+  };
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getStripeKeys(storage: DatabaseStorage, env: Env) {
@@ -259,7 +311,7 @@ app.get("/api/paypal/setup", async (c) => {
   return c.json({ clientId });
 });
 
-app.post("/api/paypal/order", async (c) => {
+app.post("/api/paypal/order", rateLimit("pay", 20, 5 * 60), async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
@@ -376,7 +428,7 @@ app.get("/api/stripe/config", async (c) => {
   return c.json({ publishableKey });
 });
 
-app.post("/api/stripe/create-payment-intent", async (c) => {
+app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
@@ -709,7 +761,8 @@ app.post("/api/orders/:id/generate-download", async (c) => {
 
 // ─── Contact ──────────────────────────────────────────────────────────────────
 
-app.post("/api/contact", async (c) => {
+// Anti-spam: 5 contact submissions per 10 min per IP.
+app.post("/api/contact", rateLimit("contact", 5, 10 * 60), async (c) => {
   const v = contactSchema.safeParse(await c.req.json());
   if (!v.success) return c.json({ error: v.error.errors[0].message }, 400);
   console.log("Contact form:", v.data);
@@ -784,7 +837,8 @@ app.get("/feed/google-shopping.xml", async (c) => {
 
 // ─── Admin: Auth ──────────────────────────────────────────────────────────────
 
-app.post("/api/admin/login", async (c) => {
+// Brute-force protection: 8 login attempts per 15 min per IP.
+app.post("/api/admin/login", rateLimit("login", 8, 15 * 60), async (c) => {
   try {
     const v = adminLoginSchema.safeParse(await c.req.json());
     if (!v.success) return c.json({ error: "Invalid credentials" }, 400);
@@ -1186,7 +1240,8 @@ app.post("/api/chat/conversation", async (c) => {
   return c.json({ ...conversation, messages });
 });
 
-app.post("/api/chat/message", async (c) => {
+// Anti-spam: 20 chat messages per minute per IP.
+app.post("/api/chat/message", rateLimit("chat", 20, 60), async (c) => {
   const { conversationId, message, senderType } = await c.req.json();
   if (!conversationId || !message) return c.json({ error: "Required fields missing" }, 400);
 

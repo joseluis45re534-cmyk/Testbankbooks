@@ -17,4 +17,13 @@ export const onScheduled: ExportedHandlerScheduledHandler<Env> = async (event, e
   } catch (err) {
     console.error("[cron] Abandoned cart scan failed:", err);
   }
+
+  // Purge expired rate-limit counters so the table stays small.
+  try {
+    await env.DB.prepare("DELETE FROM rate_limits WHERE reset_at < ?")
+      .bind(Date.now())
+      .run();
+  } catch (err) {
+    console.error("[cron] rate_limits cleanup failed:", err);
+  }
 };

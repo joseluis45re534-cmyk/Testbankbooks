@@ -11,30 +11,29 @@
 import { chromium } from "playwright";
 
 const BASE = process.env.AUDIT_BASE || "https://nurstestbank.com";
-const PAGES = ["/", "/shop", "/about", "/contact", "/privacy-policy", "/terms-conditions", "/refund-policy", "/shipping-policy"];
+const PAGES = ["/", "/shop", "/about", "/contact", "/privacy-policy", "/terms-conditions", "/refund-policy", "/shipping-policy", "/blog"];
 
-// Phrases that contradict the physical-shipping model or signal inconsistency.
+// DIGITAL-PURITY audit: these physical/shipping phrases must NOT appear anywhere.
+// The store is 100% digital (email/download delivery only).
 const RED_FLAGS = [
-  /fully digital/i,
-  /100% digital/i,
-  /no physical (product|shipping|item)/i,
-  /instant download/i,
-  /delivered (digitally|electronically)/i,
-  /immediate download/i,
-  /digital goods/i,
-  /\bEST\b/,            // timezone mismatch vs France address
-  /downloads? (are )?ready/i,
+  /printed book/i,
+  /physical (book|item|product|copy|shipment)/i,
+  /\bship(s|ped|ping|ment)?\b(?!\w)/i,   // ship/ships/shipped/shipping/shipment (not "township")
+  /free shipping/i,
+  /tracking number/i,
+  /in transit/i,
+  /(ship|deliver|arrive|transit)\w*[^.]{0,30}\d\s*[–-]\s*\d\s*business days/i, // delivery window only (not refund processing)
+  /\bmailed to you/i,                     // \b so it does NOT match "e-mailed to you"
+  /delivered to your (door|address)/i,
+  /on its way/i,
+  /courier|postal service/i,
 ];
 
-// Trust signals Google looks for under the misrepresentation policy.
-const TRUST_SIGNALS = {
+// Affirmations that SHOULD be present (confirming the digital model is clear).
+const DIGITAL_SIGNALS = {
+  "instant/digital download": /instant.*download|digital download|download link/i,
+  "email delivery": /emailed to you|sent to (your|the) email|delivered.*email/i,
   "business email": /support@nurstestbank\.com/i,
-  "phone number": /\+?\d[\d()\s-]{7,}/,
-  "physical address": /Rue des Noyers|Lyon|France/i,
-  "shipping policy link": /shipping/i,
-  "refund/return policy link": /refund|return/i,
-  "privacy policy link": /privacy/i,
-  "terms link": /terms/i,
 };
 
 const browser = await chromium.launch();
@@ -56,34 +55,31 @@ for (const path of PAGES) {
     const text = await page.evaluate(() => document.body.innerText);
     const html = await page.content();
 
-    const flags = RED_FLAGS.filter((re) => re.test(text));
+    // Normalize before scanning:
+    //  - drop the footer "Delivery Policy" link label (not a physical claim)
+    //  - drop NEGATION clauses like "No physical items will be shipped" /
+    //    "there are no shipping fees" so digital-affirming sentences that
+    //    mention shipping-to-deny-it don't false-positive.
+    const NEGATION = /\b(no|not|never|without|won'?t|will not|there (?:is|are) no)\b[^.!?]*/gi;
+    const scan = text.replace(/Delivery Policy/gi, "").replace(NEGATION, "");
+    const flags = RED_FLAGS.filter((re) => re.test(scan));
     totalFlags += flags.length;
 
     console.log(`\n=== ${path}  [HTTP ${status}, ${text.length} chars] ===`);
     if (flags.length) {
-      console.log("  ❌ RED FLAGS:");
+      console.log("  ❌ PHYSICAL/SHIPPING RED FLAGS:");
       for (const re of flags) {
-        const m = text.match(re);
+        const m = scan.match(re);
         console.log(`     - ${re} → "${(m && m[0]) || ""}"`);
       }
     } else {
-      console.log("  ✅ no red-flag phrases");
+      console.log("  ✅ no physical/shipping phrases");
     }
 
-    // Only check trust signals on the homepage (footer is global).
     if (path === "/") {
-      console.log("  Trust signals (homepage):");
-      for (const [name, re] of Object.entries(TRUST_SIGNALS)) {
+      console.log("  Digital-delivery signals (homepage):");
+      for (const [name, re] of Object.entries(DIGITAL_SIGNALS)) {
         console.log(`     ${re.test(text) || re.test(html) ? "✅" : "❌"} ${name}`);
-      }
-      console.log("  Transparency statements (footer, global):");
-      const transparency = {
-        "ships worldwide / international": /ships worldwide|international retailer/i,
-        "currency stated (USD)": /US Dollars|USD/i,
-        "registered address stated": /registered at|7 Rue des Noyers/i,
-      };
-      for (const [name, re] of Object.entries(transparency)) {
-        console.log(`     ${re.test(text) ? "✅" : "❌"} ${name}`);
       }
     }
   } catch (err) {

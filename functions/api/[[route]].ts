@@ -1024,7 +1024,8 @@ app.post("/api/admin/products/:id/upload-image", requireAdmin(), async (c) => {
     const key = `images/${id}-${Date.now()}.${ext}`;
     await c.env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
 
-    const imageUrl = `https://pub-uploads.nurstestbank.com/${key}`;
+    // Served by functions/uploads/[[path]].ts from R2 on this same domain.
+    const imageUrl = `/uploads/${key}`;
     await storage.updateProduct(id, { imageUrl });
     return c.json({ success: true, imageUrl });
   } catch (err: any) {
@@ -1047,7 +1048,8 @@ app.post("/api/admin/products/:id/upload-download", requireAdmin(), async (c) =>
     const key = `downloads/${id}-${Date.now()}.${ext}`;
     await c.env.UPLOADS.put(key, file.stream(), { httpMetadata: { contentType: file.type } });
 
-    const downloadPath = `https://pub-uploads.nurstestbank.com/${key}`;
+    // Served by functions/uploads/[[path]].ts from R2 on this same domain.
+    const downloadPath = `/uploads/${key}`;
     await storage.updateProduct(id, { downloadPath });
     return c.json({ success: true, downloadPath });
   } catch (err: any) {

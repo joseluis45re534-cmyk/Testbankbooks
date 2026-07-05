@@ -7,7 +7,7 @@ vite.config.ts.*
 .dev.vars
 .wrangler
 attached_assets/
-uploads/
+/uploads/
 exports/
 .canvas/
 .agents/

@@ -26,7 +26,7 @@ export function Footer() {
               <li><a href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
               <li><a href="/terms-conditions" className="hover:text-foreground transition-colors">Terms & Conditions</a></li>
               <li><a href="/refund-policy" className="hover:text-foreground transition-colors">Refund & Return Policy</a></li>
-              <li><a href="/shipping-policy" className="hover:text-foreground transition-colors">Shipping Policy</a></li>
+              <li><a href="/shipping-policy" className="hover:text-foreground transition-colors">Delivery Policy</a></li>
             </ul>
           </div>
 

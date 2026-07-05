@@ -35,7 +35,6 @@ export interface IStorage {
   getOrderById(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
-  markOrderShipped(id: string, trackingNumber: string): Promise<Order | undefined>;
   getOrdersByEmail(email: string): Promise<Order[]>;
 
   getAllAbandonedCarts(): Promise<AbandonedCart[]>;
@@ -251,14 +250,6 @@ export class DatabaseStorage implements IStorage {
 
   async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
     const [u] = await this.db.update(orders).set({ status }).where(eq(orders.id, id)).returning();
-    return u;
-  }
-
-  async markOrderShipped(id: string, trackingNumber: string): Promise<Order | undefined> {
-    const [u] = await this.db.update(orders)
-      .set({ status: "shipped", trackingNumber, shippedAt: now() })
-      .where(eq(orders.id, id))
-      .returning();
     return u;
   }
 

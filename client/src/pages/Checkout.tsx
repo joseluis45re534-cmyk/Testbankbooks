@@ -28,23 +28,8 @@ export default function Checkout() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
-  const [address1, setAddress1] = useState("");
-  const [address2, setAddress2] = useState("");
-  const [city, setCity] = useState("");
-  const [stateRegion, setStateRegion] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [country, setCountry] = useState("United States");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
   const [serverAmount, setServerAmount] = useState<string | null>(null);
-
-  const shippingAddress = {
-    address1,
-    address2,
-    city,
-    state: stateRegion,
-    postalCode,
-    country,
-  };
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -252,39 +237,6 @@ export default function Checkout() {
                           <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
                         </div>
 
-                        <Separator className="my-2" />
-                        <p className="text-sm font-medium">Billing Address</p>
-                        <p className="text-xs text-muted-foreground -mt-2">Required for payment processing</p>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="address1">Street Address</Label>
-                          <Input id="address1" placeholder="123 Main St" required value={address1} onChange={(e) => setAddress1(e.target.value)} data-testid="input-address1" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="address2">Apartment, suite, etc. (Optional)</Label>
-                          <Input id="address2" placeholder="Apt 4B" value={address2} onChange={(e) => setAddress2(e.target.value)} data-testid="input-address2" />
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="city">City</Label>
-                            <Input id="city" placeholder="New York" required value={city} onChange={(e) => setCity(e.target.value)} data-testid="input-city" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="state">State / Province</Label>
-                            <Input id="state" placeholder="NY" required value={stateRegion} onChange={(e) => setStateRegion(e.target.value)} data-testid="input-state" />
-                          </div>
-                        </div>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="postalCode">ZIP / Postal Code</Label>
-                            <Input id="postalCode" placeholder="10001" required value={postalCode} onChange={(e) => setPostalCode(e.target.value)} data-testid="input-postal" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="country">Country</Label>
-                            <Input id="country" placeholder="United States" required value={country} onChange={(e) => setCountry(e.target.value)} data-testid="input-country" />
-                          </div>
-                        </div>
-
                         <Button type="submit" className="w-full" size="lg" data-testid="button-continue">
                           Continue to Payment
                         </Button>
@@ -344,7 +296,6 @@ export default function Checkout() {
                             customerEmail={email}
                             customerName={`${firstName} ${lastName}`.trim()}
                             phone={phone}
-                            shippingAddress={shippingAddress}
                             onPaymentSuccess={handleStripeSuccess}
                             onPaymentError={handlePaymentError}
                             onServerAmount={setServerAmount}
@@ -363,7 +314,6 @@ export default function Checkout() {
                               customerEmail={email}
                               customerName={`${firstName} ${lastName}`.trim()}
                               phone={phone}
-                              shippingAddress={shippingAddress}
                               onPaymentSuccess={handlePayPalSuccess}
                               onPaymentError={handlePaymentError}
                             />

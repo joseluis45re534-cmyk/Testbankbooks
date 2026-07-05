@@ -5,15 +5,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-interface ShippingAddress {
-  address1: string;
-  address2?: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-}
-
 interface PayPalButtonProps {
   amount: string;
   currency: string;
@@ -21,7 +12,6 @@ interface PayPalButtonProps {
   customerEmail?: string;
   customerName?: string;
   phone?: string;
-  shippingAddress?: ShippingAddress;
   onPaymentSuccess?: (orderId: string, captureData: any) => void;
   onPaymentError?: (error: any) => void;
 }
@@ -62,7 +52,6 @@ export default function PayPalButton({
   customerEmail,
   customerName,
   phone,
-  shippingAddress,
   onPaymentSuccess,
   onPaymentError,
 }: PayPalButtonProps) {
@@ -73,8 +62,8 @@ export default function PayPalButton({
 
   // Keep latest values in refs so the PayPal callbacks (created once) always
   // read current props without re-rendering the button.
-  const dataRef = useRef({ customerEmail, customerName, phone, shippingAddress });
-  dataRef.current = { customerEmail, customerName, phone, shippingAddress };
+  const dataRef = useRef({ customerEmail, customerName, phone });
+  dataRef.current = { customerEmail, customerName, phone };
 
   useEffect(() => {
     let cancelled = false;
@@ -117,7 +106,6 @@ export default function PayPalButton({
                   customerEmail: d.customerEmail,
                   customerName: d.customerName,
                   phone: d.phone,
-                  shippingAddress: d.shippingAddress,
                 }),
               });
               const captureData = await res.json();

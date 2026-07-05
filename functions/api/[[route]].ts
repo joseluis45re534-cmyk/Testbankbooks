@@ -216,13 +216,13 @@ function buildOrderEmailHtml(data: {
 <tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">NursTestBank</h1></td></tr>
 <tr><td style="padding:40px">
 <h2 style="text-align:center">Thank You for Your Order!</h2>
-<p style="text-align:center;color:#6b7280">Hi ${displayName}, your order is confirmed.</p>
+<p style="text-align:center;color:#6b7280">Hi ${displayName}, your order is confirmed and your download is ready.</p>
 <h3>Your Items</h3>
-</ul>
-<h3>Your digital copy is ready now</h3>
+<ul style="list-style:none;padding:0">${productListHtml}</ul>
+<h3>Your download is ready</h3>
 <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:24px;text-align:center">
-<p style="margin:0 0 14px;font-size:14px;color:#166534">Start studying right away with the digital copy included with your order:</p>
-<a href="${downloadLink}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:16px 48px;border-radius:8px;font-weight:700;font-size:17px">→ Access My Digital Copy</a>
+<p style="margin:0 0 14px;font-size:14px;color:#166534">Your digital study materials are available instantly — click below to access and download your files:</p>
+<a href="${downloadLink}" style="display:inline-block;background:#16a34a;color:#fff;text-decoration:none;padding:16px 48px;border-radius:8px;font-weight:700;font-size:17px">→ Access My Downloads</a>
 <p style="margin:16px 0 0;font-size:12px;color:#6b7280">${downloadLink}</p>
 </div>
 </td></tr>
@@ -348,7 +348,7 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
-    const { customerEmail, customerName, phone, shippingAddress } = await c.req.json();
+    const { customerEmail, customerName, phone } = await c.req.json();
 
     const cartItemsList = await storage.getCartItems(sessionId);
     if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
@@ -385,7 +385,6 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
       return c.json({ error: "Payment amount mismatch" }, 400);
     }
 
-    const sa = shippingAddress || {};
     const order = await storage.createOrder({
       customerEmail: customerEmail || "unknown@email.com",
       customerName: savedName,
@@ -395,12 +394,6 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
       paymentMethod: "paypal",
       productIds,
       productTitles,
-      country: sa.country || null,
-      shippingAddress1: sa.address1 || null,
-      shippingAddress2: sa.address2 || null,
-      shippingCity: sa.city || null,
-      shippingState: sa.state || null,
-      shippingPostalCode: sa.postalCode || null,
     });
 
     await storage.clearCart(sessionId);
@@ -432,7 +425,7 @@ app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), asyn
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
-    const { customerEmail, shippingAddress } = await c.req.json();
+    const { customerEmail } = await c.req.json();
 
     const cartItemsList = await storage.getCartItems(sessionId);
     if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
@@ -451,7 +444,6 @@ app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), asyn
     const { secretKey } = await getStripeKeys(storage, c.env);
     if (!secretKey) return c.json({ error: "Stripe not configured" }, 500);
 
-    const sa = shippingAddress || {};
     const stripe = new Stripe(secretKey);
     const pi = await stripe.paymentIntents.create({
       amount: Math.round(total * 100),
@@ -460,7 +452,6 @@ app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), asyn
         customerEmail: customerEmail || "",
         sessionId,
         productIds: productIds.join(","),
-        shippingAddress: JSON.stringify(sa),
       },
       receipt_email: customerEmail || undefined,
       automatic_payment_methods: { enabled: true },
@@ -477,7 +468,7 @@ app.post("/api/stripe/confirm-payment", async (c) => {
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
-    const { paymentIntentId, customerEmail, customerName, phone, shippingAddress } = await c.req.json();
+    const { paymentIntentId, customerEmail, customerName, phone } = await c.req.json();
     if (!paymentIntentId) return c.json({ error: "Payment intent ID required" }, 400);
 
     const { secretKey } = await getStripeKeys(storage, c.env);
@@ -507,7 +498,6 @@ app.post("/api/stripe/confirm-payment", async (c) => {
     const paidAmount = pi.amount / 100;
     if (Math.abs(paidAmount - serverTotal) > 0.01) return c.json({ error: "Payment amount mismatch" }, 400);
 
-    const sa = shippingAddress || {};
     const order = await storage.createOrder({
       customerEmail: customerEmail || "unknown@email.com",
       customerName: savedName,
@@ -517,12 +507,6 @@ app.post("/api/stripe/confirm-payment", async (c) => {
       paymentMethod: "stripe",
       productIds,
       productTitles,
-      country: sa.country || null,
-      shippingAddress1: sa.address1 || null,
-      shippingAddress2: sa.address2 || null,
-      shippingCity: sa.city || null,
-      shippingState: sa.state || null,
-      shippingPostalCode: sa.postalCode || null,
     });
 
     await storage.clearCart(sessionId);
@@ -610,9 +594,6 @@ app.post("/api/stripe/webhook", async (c) => {
       // Still create the order — payment did go through — but flag it.
     }
 
-    let sa: any = {};
-    try { sa = JSON.parse(pi.metadata?.shippingAddress || "{}"); } catch {}
-
     const order = await storage.createOrder({
       customerEmail,
       customerName: savedName,
@@ -622,12 +603,6 @@ app.post("/api/stripe/webhook", async (c) => {
       paymentMethod: "stripe",
       productIds,
       productTitles,
-      country: sa.country || null,
-      shippingAddress1: sa.address1 || null,
-      shippingAddress2: sa.address2 || null,
-      shippingCity: sa.city || null,
-      shippingState: sa.state || null,
-      shippingPostalCode: sa.postalCode || null,
     });
 
     await storage.clearCart(sessionId);
@@ -953,43 +928,6 @@ app.patch("/api/admin/orders/:id", requireAdmin(), async (c) => {
   const { status } = await c.req.json();
   const order = await c.get("storage").updateOrderStatus(c.req.param("id"), status);
   return c.json(order);
-});
-
-// Mark an order shipped + record tracking, then email the customer.
-app.post("/api/admin/orders/:id/ship", requireAdmin(), async (c) => {
-  const storage = c.get("storage");
-  const { trackingNumber } = await c.req.json();
-  if (!trackingNumber || typeof trackingNumber !== "string") {
-    return c.json({ error: "Tracking number is required" }, 400);
-  }
-  const order = await storage.markOrderShipped(c.req.param("id"), trackingNumber.trim());
-  if (!order) return c.json({ error: "Order not found" }, 404);
-
-  if (c.env.RESEND_API_KEY) {
-    const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:40px 20px"><tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:8px;overflow:hidden">
-<tr><td style="background:#1a1a2e;padding:30px 40px;text-align:center"><h1 style="color:#fff;margin:0">NursTestBank</h1></td></tr>
-<tr><td style="padding:40px">
-<h2 style="text-align:center">📦 Your book is on its way!</h2>
-<p style="text-align:center;color:#6b7280">Hi ${order.customerName || "there"}, your order #${order.id.substring(0, 8).toUpperCase()} has shipped.</p>
-<div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:24px;text-align:center;margin:20px 0">
-<p style="margin:0 0 6px;font-size:14px;color:#166534">Tracking number</p>
-<p style="margin:0;font-size:20px;font-weight:700;color:#166534;font-family:monospace">${trackingNumber}</p>
-</div>
-<p style="color:#6b7280;font-size:14px">Standard delivery typically takes 5–8 business days. In the meantime, your free digital copy is available on your order page: <a href="https://nurstestbank.com/thank-you/${order.id}">view order</a>.</p>
-</td></tr>
-<tr><td style="background:#f9fafb;padding:25px 40px;text-align:center;border-top:1px solid #e5e7eb">
-<p style="margin:0;font-size:14px;color:#6b7280">Need help? <a href="mailto:support@nurstestbank.com">support@nurstestbank.com</a></p>
-</td></tr></table></td></tr></table></body></html>`;
-    sendEmail(c.env.RESEND_API_KEY, {
-      to: order.customerEmail,
-      subject: `Your NursTestBank order has shipped 📦 — Tracking #${trackingNumber}`,
-      html,
-    }).catch(console.error);
-  }
-
-  return c.json({ success: true, order });
 });
 
 app.post("/api/admin/orders/:id/resend-email", requireAdmin(), async (c) => {

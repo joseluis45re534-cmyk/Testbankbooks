@@ -240,13 +240,13 @@ export default function PrivacyPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+33644657808" className="hover:underline" data-testid="link-privacy-phone">+33 6 44 65 78 08</a>
+                    <a href="tel:+447449766855" className="hover:underline" data-testid="link-privacy-phone">+44 7449 766855</a>
                   </div>
                 </div>
                 <p className="mt-4">
                   <strong className="text-foreground">NursTestBank</strong><br />
                   Data Protection Officer<br />
-                  7 Rue des Noyers, 69005 Lyon, France<br />
+                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom<br />
                   Email: support@nurstestbank.com
                 </p>
               </CardContent>

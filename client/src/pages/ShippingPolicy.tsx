@@ -144,11 +144,11 @@ export default function ShippingPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+33644657808" className="hover:underline" data-testid="link-shipping-phone">+33 6 44 65 78 08</a>
+                    <a href="tel:+447449766855" className="hover:underline" data-testid="link-shipping-phone">+44 7449 766855</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM GMT</span>
                   </div>
                 </div>
                 <p className="mt-4">Our support team typically responds within 24 hours during business days.</p>

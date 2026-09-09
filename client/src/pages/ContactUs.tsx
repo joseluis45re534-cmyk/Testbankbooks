@@ -105,11 +105,11 @@ export default function ContactUs() {
                 <Phone className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Call Us</h2>
                 <a
-                  href="tel:+33644657808"
+                  href="tel:+447449766855"
                   className="text-muted-foreground hover:underline text-sm"
                   data-testid="link-contact-phone"
                 >
-                  +33 6 44 65 78 08
+                  +44 7449 766855
                 </a>
               </CardContent>
             </Card>
@@ -118,7 +118,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Location</h2>
-                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">7 Rue des Noyers<br />69005 Lyon<br />France</p>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">24 Norlands<br />Errol, Perth PH2 7QU<br />United Kingdom</p>
               </CardContent>
             </Card>
 
@@ -126,7 +126,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <Clock className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Business Hours</h2>
-                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM CET</p>
+                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM GMT</p>
               </CardContent>
             </Card>
           </div>
@@ -238,7 +238,7 @@ export default function ContactUs() {
                     <Phone className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                     <div>
                       <p className="font-semibold text-sm">Phone</p>
-                      <a href="tel:+33644657808" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+33 6 44 65 78 08</a>
+                      <a href="tel:+447449766855" className="text-muted-foreground text-sm hover:underline" data-testid="link-contact-phone-sidebar">+44 7449 766855</a>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">

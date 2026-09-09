@@ -252,12 +252,12 @@ export default function TermsConditions() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+33644657808" className="hover:underline" data-testid="link-terms-phone">+33 6 44 65 78 08</a>
+                    <a href="tel:+447449766855" className="hover:underline" data-testid="link-terms-phone">+44 7449 766855</a>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
                   <strong className="text-foreground">NursTestBank</strong><br />
-                  7 Rue des Noyers, 69005 Lyon, France
+                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom
                 </p>
               </CardContent>
             </Card>

@@ -57,7 +57,7 @@ export default function AboutUs() {
                   We accept major credit cards (via Stripe), PayPal, and other digital payment methods. All transactions are secured with SSL encryption.
                 </p>
                 <p className="text-muted-foreground">
-                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+33644657808" className="text-primary hover:underline">+33 6 44 65 78 08</a>.
+                  Customer support is available via email at <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline">support@nurstestbank.com</a> and by phone at <a href="tel:+447449766855" className="text-primary hover:underline">+44 7449 766855</a>.
                 </p>
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function AboutUs() {
                   <li><span className="font-medium text-foreground">Type:</span> Online retailer of digital study books</li>
                   <li><span className="font-medium text-foreground">Products:</span> Digital nursing study books, test banks, and guides</li>
                   <li><span className="font-medium text-foreground">Delivery:</span> Instant worldwide digital delivery</li>
-                  <li><span className="font-medium text-foreground">Registered Address:</span> 7 Rue des Noyers, 69005 Lyon, France</li>
+                  <li><span className="font-medium text-foreground">Registered Address:</span> 24 Norlands, Errol, Perth PH2 7QU, United Kingdom</li>
                   <li><span className="font-medium text-foreground">Markets Served:</span> Worldwide</li>
                   <li><span className="font-medium text-foreground">Currency:</span> All prices in US Dollars (USD)</li>
                 </ul>
@@ -157,9 +157,9 @@ export default function AboutUs() {
                   </li>
                   <li>
                     <span className="font-medium text-foreground">Phone: </span>
-                    <a href="tel:+33644657808" className="text-primary hover:underline">+33 6 44 65 78 08</a>
+                    <a href="tel:+447449766855" className="text-primary hover:underline">+44 7449 766855</a>
                   </li>
-                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM CET</li>
+                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM GMT</li>
                   <li>
                     <span className="font-medium text-foreground">Support Page: </span>
                     <a href="/contact" className="text-primary hover:underline">Contact Us</a>

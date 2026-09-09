@@ -85,7 +85,7 @@ export default function RefundPolicy() {
                   <li>
                     <strong className="text-foreground">Contact our support team</strong> at{" "}
                     <a href="mailto:support@nurstestbank.com" className="text-primary hover:underline" data-testid="link-refund-email">support@nurstestbank.com</a>{" "}
-                    or call <a href="tel:+33644657808" className="text-primary hover:underline" data-testid="link-refund-phone">+33 6 44 65 78 08</a>
+                    or call <a href="tel:+447449766855" className="text-primary hover:underline" data-testid="link-refund-phone">+44 7449 766855</a>
                   </li>
                   <li>
                     <strong className="text-foreground">Include your order details:</strong> order number, email address used for purchase, and product name
@@ -180,16 +180,16 @@ export default function RefundPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
-                    <a href="tel:+33644657808" className="hover:underline" data-testid="link-refund-contact-phone">+33 6 44 65 78 08</a>
+                    <a href="tel:+447449766855" className="hover:underline" data-testid="link-refund-contact-phone">+44 7449 766855</a>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM GMT</span>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
                   <strong className="text-foreground">NursTestBank</strong><br />
-                  7 Rue des Noyers, 69005 Lyon, France
+                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom
                 </p>
                 <p className="mt-4">Our customer support team is dedicated to ensuring your satisfaction and will work with you to resolve any issues promptly.</p>
               </CardContent>

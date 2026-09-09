@@ -39,14 +39,14 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                <a href="tel:+33644657808" className="hover:text-foreground transition-colors">+33 6 44 65 78 08</a>
+                <a href="tel:+447449766855" className="hover:text-foreground transition-colors">+44 7449 766855</a>
               </li>
               <li className="flex items-start gap-2 mt-2">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  <div>7 Rue des Noyers</div>
-                  <div>69005 Lyon</div>
-                  <div>France</div>
+                  <div>24 Norlands</div>
+                  <div>Errol, Perth PH2 7QU</div>
+                  <div>United Kingdom</div>
                 </div>
               </li>
             </ul>
@@ -93,7 +93,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground space-y-2">
           <p>
-            NursTestBank is an international retailer of digital nursing study materials, registered at 7 Rue des Noyers, 69005 Lyon, France. All prices are shown in US Dollars (USD).
+            NursTestBank is an international retailer of digital nursing study materials, registered at 24 Norlands, Errol, Perth PH2 7QU, United Kingdom. All prices are shown in US Dollars (USD).
           </p>
           <p>&copy; {new Date().getFullYear()} NursTestBank. All rights reserved.</p>
         </div>

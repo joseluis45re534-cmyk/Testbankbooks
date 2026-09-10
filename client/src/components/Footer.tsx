@@ -44,9 +44,9 @@ export function Footer() {
               <li className="flex items-start gap-2 mt-2">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  <div>24 Norlands</div>
-                  <div>Errol, Perth PH2 7QU</div>
-                  <div>United Kingdom</div>
+                  <div>Via Martiri D'Otranto, 68</div>
+                  <div>Napoli NA 80141</div>
+                  <div>Italy</div>
                 </div>
               </li>
             </ul>
@@ -93,7 +93,7 @@ export function Footer() {
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground space-y-2">
           <p>
-            NursTestBank is an international retailer of digital nursing study materials, registered at 24 Norlands, Errol, Perth PH2 7QU, United Kingdom. All prices are shown in US Dollars (USD).
+            NursTestBank is an international retailer of digital nursing study materials, registered at Via Martiri D'Otranto, 68, Napoli NA 80141, Italy. All prices are shown in US Dollars (USD).
           </p>
           <p>&copy; {new Date().getFullYear()} NursTestBank. All rights reserved.</p>
         </div>

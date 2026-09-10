@@ -148,7 +148,7 @@ export default function ShippingPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM GMT</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
                   </div>
                 </div>
                 <p className="mt-4">Our support team typically responds within 24 hours during business days.</p>

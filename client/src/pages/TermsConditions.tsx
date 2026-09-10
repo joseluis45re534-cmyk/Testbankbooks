@@ -257,7 +257,7 @@ export default function TermsConditions() {
                 </div>
                 <p className="mt-4 text-muted-foreground">
                   <strong className="text-foreground">NursTestBank</strong><br />
-                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom
+                  Via Martiri D'Otranto, 68, Napoli NA 80141, Italy
                 </p>
               </CardContent>
             </Card>

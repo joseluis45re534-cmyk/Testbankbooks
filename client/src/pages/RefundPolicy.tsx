@@ -184,12 +184,12 @@ export default function RefundPolicy() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary" />
-                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM GMT</span>
+                    <span>Business Hours: Monday - Friday, 9:00 AM - 6:00 PM CET</span>
                   </div>
                 </div>
                 <p className="mt-4 text-muted-foreground">
                   <strong className="text-foreground">NursTestBank</strong><br />
-                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom
+                  Via Martiri D'Otranto, 68, Napoli NA 80141, Italy
                 </p>
                 <p className="mt-4">Our customer support team is dedicated to ensuring your satisfaction and will work with you to resolve any issues promptly.</p>
               </CardContent>

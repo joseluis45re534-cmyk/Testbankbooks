@@ -51,11 +51,11 @@ export function SEO({
     areaServed: "Worldwide",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "24 Norlands",
-      addressLocality: "Errol",
-      addressRegion: "Perth and Kinross",
-      postalCode: "PH2 7QU",
-      addressCountry: "GB",
+      streetAddress: "Via Martiri D'Otranto, 68",
+      addressLocality: "Napoli",
+      addressRegion: "NA",
+      postalCode: "80141",
+      addressCountry: "IT",
     },
     contactPoint: {
       "@type": "ContactPoint",

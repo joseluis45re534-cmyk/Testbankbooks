@@ -118,7 +118,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <MapPin className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Location</h2>
-                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">24 Norlands<br />Errol, Perth PH2 7QU<br />United Kingdom</p>
+                <p className="text-muted-foreground text-sm" data-testid="text-contact-address">Via Martiri D'Otranto, 68<br />Napoli NA 80141<br />Italy</p>
               </CardContent>
             </Card>
 
@@ -126,7 +126,7 @@ export default function ContactUs() {
               <CardContent className="pt-6 text-center">
                 <Clock className="w-8 h-8 text-primary mx-auto mb-3" />
                 <h2 className="font-semibold mb-1">Business Hours</h2>
-                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM GMT</p>
+                <p className="text-muted-foreground text-sm">Mon - Fri, 9AM - 6PM CET</p>
               </CardContent>
             </Card>
           </div>

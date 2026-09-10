@@ -143,7 +143,7 @@ export default function AboutUs() {
                   <li><span className="font-medium text-foreground">Type:</span> Online retailer of digital study books</li>
                   <li><span className="font-medium text-foreground">Products:</span> Digital nursing study books, test banks, and guides</li>
                   <li><span className="font-medium text-foreground">Delivery:</span> Instant worldwide digital delivery</li>
-                  <li><span className="font-medium text-foreground">Registered Address:</span> 24 Norlands, Errol, Perth PH2 7QU, United Kingdom</li>
+                  <li><span className="font-medium text-foreground">Registered Address:</span> Via Martiri D'Otranto, 68, Napoli NA 80141, Italy</li>
                   <li><span className="font-medium text-foreground">Markets Served:</span> Worldwide</li>
                   <li><span className="font-medium text-foreground">Currency:</span> All prices in US Dollars (USD)</li>
                 </ul>
@@ -159,7 +159,7 @@ export default function AboutUs() {
                     <span className="font-medium text-foreground">Phone: </span>
                     <a href="tel:+447449766855" className="text-primary hover:underline">+44 7449 766855</a>
                   </li>
-                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM GMT</li>
+                  <li><span className="font-medium text-foreground">Hours:</span> Mon–Fri, 9:00 AM – 6:00 PM CET</li>
                   <li>
                     <span className="font-medium text-foreground">Support Page: </span>
                     <a href="/contact" className="text-primary hover:underline">Contact Us</a>

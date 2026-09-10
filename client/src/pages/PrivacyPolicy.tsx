@@ -246,7 +246,7 @@ export default function PrivacyPolicy() {
                 <p className="mt-4">
                   <strong className="text-foreground">NursTestBank</strong><br />
                   Data Protection Officer<br />
-                  24 Norlands, Errol, Perth PH2 7QU, United Kingdom<br />
+                  Via Martiri D'Otranto, 68, Napoli NA 80141, Italy<br />
                   Email: support@nurstestbank.com
                 </p>
               </CardContent>

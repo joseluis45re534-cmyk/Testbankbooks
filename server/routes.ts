@@ -11,6 +11,7 @@ import multer from "multer";
 import rateLimit from "express-rate-limit";
 import { createPaypalOrder, capturePaypalOrderDirect, loadPaypalDefault } from "./paypal";
 import { createStripePaymentIntent, getStripeInstance, getStripePublishableKey } from "./stripe";
+import { getStripeKeys, getPaypalKeys } from "./settingsHelper";
 import { sendOrderConfirmationEmail, sendAbandonedCartRecoveryEmail } from "./email";
 import { db } from "./db";
 import { cartItems, abandonedCarts, siteSettings, chatConversations } from "@shared/schema";
@@ -99,6 +100,18 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // Which payment methods the checkout should offer. Mirrors the Pages
+  // Function: a method is listed only when it has credentials and its admin
+  // switch is on. (This dev server has no Shopify support.)
+  app.get("/api/payment-methods", async (_req, res) => {
+    const [stripe, paypal] = await Promise.all([getStripeKeys(), getPaypalKeys()]);
+    res.json({
+      stripe: stripe.configured && stripe.enabled,
+      paypal: paypal.configured && paypal.enabled,
+      shopify: false,
+    });
+  });
+
   // PayPal integration routes
   app.get("/paypal/setup", async (req, res) => {
     await loadPaypalDefault(req, res);

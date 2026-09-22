@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock } from "lucide-react";
-import { SiPaypal } from "react-icons/si";
+import { ArrowLeft, Shield, Zap, CheckCircle, CreditCard, Lock, Loader2 } from "lucide-react";
+import { SiPaypal, SiShopify } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,25 +11,99 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { analytics } from "@/lib/analytics";
 import type { CartItemWithProduct } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
 import StripeCheckout from "@/components/StripeCheckout";
+import ShopifyCheckout from "@/components/ShopifyCheckout";
 
-type PaymentMethod = "stripe" | "paypal";
+type PaymentMethod = "stripe" | "paypal" | "shopify";
+
+const PAYMENT_TILES: { id: PaymentMethod; label: string; icon: JSX.Element }[] = [
+  { id: "stripe", label: "Card / Wallet", icon: <CreditCard className="w-5 h-5" /> },
+  { id: "paypal", label: "PayPal / Card", icon: <SiPaypal className="w-5 h-5 text-[#00457C]" /> },
+  { id: "shopify", label: "Shopify Checkout", icon: <SiShopify className="w-5 h-5 text-[#95BF47]" /> },
+];
+
+const CHECKOUT_INFO_KEY = "checkout_contact_info";
+
+type SavedCheckoutInfo = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  paymentMethod?: PaymentMethod;
+  step?: number;
+};
+
+// Contact details survive a page refresh (and a trip to an external payment
+// page) so the customer never has to retype them.
+function loadSavedCheckoutInfo(): SavedCheckoutInfo {
+  try {
+    const saved = localStorage.getItem(CHECKOUT_INFO_KEY);
+    return saved ? (JSON.parse(saved) as SavedCheckoutInfo) : {};
+  } catch {
+    return {};
+  }
+}
+
+function hasCompleteContact(info: SavedCheckoutInfo): boolean {
+  return !!(info.firstName?.trim() && info.lastName?.trim() && info.email?.trim());
+}
+
+// Keep the saved contact details but send the next checkout back to step 1.
+function forgetSavedStep() {
+  try {
+    localStorage.setItem(CHECKOUT_INFO_KEY, JSON.stringify({ ...loadSavedCheckoutInfo(), step: 1 }));
+  } catch {
+    /* storage unavailable */
+  }
+}
 
 export default function Checkout() {
-  const [step, setStep] = useState(1);
+  const [savedInfo] = useState(loadSavedCheckoutInfo);
+  const [step, setStep] = useState(savedInfo.step === 2 && hasCompleteContact(savedInfo) ? 2 : 1);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
+  const [email, setEmail] = useState(savedInfo.email ?? "");
+  const [firstName, setFirstName] = useState(savedInfo.firstName ?? "");
+  const [lastName, setLastName] = useState(savedInfo.lastName ?? "");
+  const [phone, setPhone] = useState(savedInfo.phone ?? "");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(savedInfo.paymentMethod ?? "stripe");
   const [serverAmount, setServerAmount] = useState<string | null>(null);
+  // Set once a Shopify checkout tab is open: the webhook clears the cart, and
+  // we must keep this page (and its status polling) mounted until redirect.
+  const [shopifyInProgress, setShopifyInProgress] = useState(false);
+
+  const { data: paymentMethods } = useQuery<Record<PaymentMethod, boolean>>({
+    queryKey: ["/api/payment-methods"],
+    staleTime: 60_000,
+  });
+  const availableMethods = useMemo(
+    () => PAYMENT_TILES.map((t) => t.id).filter((id) => !!paymentMethods?.[id]),
+    [paymentMethods],
+  );
+  // Render from a method we know is offered, so a restored-but-since-disabled
+  // choice never shows a checkout form that cannot work.
+  const activeMethod = availableMethods.includes(paymentMethod) ? paymentMethod : availableMethods[0];
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        CHECKOUT_INFO_KEY,
+        JSON.stringify({ firstName, lastName, email, phone, paymentMethod, step }),
+      );
+    } catch {
+      /* storage unavailable (private mode, blocked cookies) — form still works */
+    }
+  }, [firstName, lastName, email, phone, paymentMethod, step]);
+
+  // Keep the stored choice in step with what the admin panel currently offers.
+  useEffect(() => {
+    if (activeMethod && activeMethod !== paymentMethod) setPaymentMethod(activeMethod);
+  }, [activeMethod, paymentMethod]);
 
   const { data: cartItems = [], isLoading } = useQuery<CartItemWithProduct[]>({
     queryKey: ["/api/cart"],
@@ -70,6 +144,7 @@ export default function Checkout() {
         description: "Your order has been placed successfully!",
       });
 
+      forgetSavedStep();
       setLocation(`/thank-you/${captureData.internalOrder.id}`);
     } catch (error) {
       console.error("Order handling failed:", error);
@@ -108,6 +183,7 @@ export default function Checkout() {
         description: "Your order has been placed successfully!",
       });
 
+      forgetSavedStep();
       setLocation(`/thank-you/${orderData.order.id}`);
     } catch (error) {
       console.error("Order handling failed:", error);
@@ -117,6 +193,24 @@ export default function Checkout() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleShopifySuccess = (orderId: string) => {
+    queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    analytics.purchase({
+      transactionId: orderId,
+      value: subtotal,
+      items: cartItems
+        .filter((i) => !!i.product)
+        .map((i) => ({ product: i.product!, quantity: i.quantity })),
+      paymentMethod: "shopify",
+    });
+    toast({
+      title: "Payment Successful",
+      description: "Your order has been placed successfully!",
+    });
+    forgetSavedStep();
+    setLocation(`/thank-you/${orderId}`);
   };
 
   const handlePaymentError = (error: any) => {
@@ -138,7 +232,7 @@ export default function Checkout() {
     }).catch(() => {});
   };
 
-  if (cartItems.length === 0 && !isLoading) {
+  if (cartItems.length === 0 && !isLoading && !shopifyInProgress) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <SEO title="Checkout" description="Complete your purchase — instant digital download." />
@@ -220,21 +314,21 @@ export default function Checkout() {
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" placeholder="John" required value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-firstname" />
+                            <Input id="firstName" placeholder="John" required autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-firstname" />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" placeholder="Doe" required value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-lastname" />
+                            <Input id="lastName" placeholder="Doe" required autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-lastname" />
                           </div>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" placeholder="john@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-email" />
+                          <Input id="email" type="email" placeholder="john@example.com" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-email" />
                           <p className="text-xs text-muted-foreground">Your digital download link will be sent here</p>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone Number (Optional)</Label>
-                          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
+                          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
                         </div>
 
                         <Button type="submit" className="w-full" size="lg" data-testid="button-continue">
@@ -251,45 +345,61 @@ export default function Checkout() {
                             <p className="font-medium">{firstName} {lastName}</p>
                             <p className="text-sm text-muted-foreground">{email}</p>
                           </div>
-                          <Button variant="ghost" size="sm" onClick={() => setStep(1)} data-testid="button-edit-contact">
+                          <Button variant="ghost" size="sm" onClick={() => setStep(1)} disabled={shopifyInProgress} data-testid="button-edit-contact">
                             Edit
                           </Button>
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <p className="text-sm font-medium text-muted-foreground">Choose payment method</p>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod("stripe")}
-                            className={`flex items-center justify-center gap-2 p-3 rounded-md border-2 transition-colors ${
-                              paymentMethod === "stripe"
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-muted-foreground/50"
-                            }`}
-                            data-testid="button-select-stripe"
-                          >
-                            <CreditCard className="w-5 h-5" />
-                            <span className="font-medium text-sm">Card / Wallet</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod("paypal")}
-                            className={`flex items-center justify-center gap-2 p-3 rounded-md border-2 transition-colors ${
-                              paymentMethod === "paypal"
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-muted-foreground/50"
-                            }`}
-                            data-testid="button-select-paypal"
-                          >
-                            <SiPaypal className="w-5 h-5 text-[#00457C]" />
-                            <span className="font-medium text-sm">PayPal</span>
-                          </button>
+                      {availableMethods.length > 1 && (
+                        <div className="space-y-3" hidden={shopifyInProgress}>
+                          <p className="text-sm font-medium text-muted-foreground">Choose payment method</p>
+                          <div className={`grid gap-3 ${availableMethods.length >= 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}>
+                            {PAYMENT_TILES.filter((tile) => availableMethods.includes(tile.id)).map((tile) => (
+                              <button
+                                key={tile.id}
+                                type="button"
+                                onClick={() => setPaymentMethod(tile.id)}
+                                className={`flex items-center justify-center gap-2 p-3 rounded-md border-2 transition-colors ${
+                                  activeMethod === tile.id
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border hover:border-muted-foreground/50"
+                                }`}
+                                data-testid={`button-select-${tile.id}`}
+                              >
+                                {tile.icon}
+                                <span className="font-medium text-sm">{tile.label}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
-                      {paymentMethod === "stripe" ? (
+                      {!paymentMethods ? (
+                        <div className="flex items-center justify-center gap-2 py-8 text-muted-foreground" data-testid="payment-methods-loading">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span className="text-sm">Loading payment options…</span>
+                        </div>
+                      ) : availableMethods.length === 0 ? (
+                        <div className="p-4 rounded-md border border-destructive/40 bg-destructive/5" data-testid="text-no-payment-methods">
+                          <p className="text-sm font-medium text-destructive">No payment method is available right now.</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Please contact us and we will complete your order manually.
+                          </p>
+                        </div>
+                      ) : activeMethod === "shopify" ? (
+                        <div data-testid="shopify-checkout-container">
+                          <ShopifyCheckout
+                            amount={subtotal.toFixed(2)}
+                            customerEmail={email}
+                            customerName={`${firstName} ${lastName}`.trim()}
+                            phone={phone}
+                            onPaymentSuccess={handleShopifySuccess}
+                            onPaymentError={handlePaymentError}
+                            onCheckoutStarted={() => setShopifyInProgress(true)}
+                          />
+                        </div>
+                      ) : activeMethod === "stripe" ? (
                         <div data-testid="stripe-checkout-container">
                           <StripeCheckout
                             amount={subtotal.toFixed(2)}
@@ -302,27 +412,31 @@ export default function Checkout() {
                           />
                         </div>
                       ) : (
-                        <div className="text-center space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            Click the button below to securely pay ${subtotal.toFixed(2)} via PayPal
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground text-center">
+                            Pay ${subtotal.toFixed(2)} with your PayPal account, or choose
+                            <span className="font-medium text-foreground"> Debit or Credit Card</span> — no PayPal
+                            account needed. Card payments are processed securely by PayPal.
                           </p>
                           <div className="flex justify-center" data-testid="paypal-button-container">
-                            <PayPalButton
-                              amount={subtotal.toFixed(2)}
-                              currency="USD"
-                              intent="CAPTURE"
-                              customerEmail={email}
-                              customerName={`${firstName} ${lastName}`.trim()}
-                              phone={phone}
-                              onPaymentSuccess={handlePayPalSuccess}
-                              onPaymentError={handlePaymentError}
-                            />
+                            <div className="w-full max-w-sm">
+                              <PayPalButton
+                                amount={subtotal.toFixed(2)}
+                                currency="USD"
+                                intent="CAPTURE"
+                                customerEmail={email}
+                                customerName={`${firstName} ${lastName}`.trim()}
+                                phone={phone}
+                                onPaymentSuccess={handlePayPalSuccess}
+                                onPaymentError={handlePaymentError}
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
 
                       <div className="pt-4">
-                        <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} data-testid="button-back-step">
+                        <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} disabled={shopifyInProgress} data-testid="button-back-step">
                           Back to Contact Info
                         </Button>
                       </div>

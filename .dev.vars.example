@@ -16,6 +16,15 @@ PAYPAL_CLIENT_SECRET=...
 
 RESEND_API_KEY=re_...
 
+# Optional — Shopify Payments (can also be set in Admin -> Settings).
+# Use a Dev Dashboard app's client ID + secret (scopes: write_draft_orders,
+# read_orders), or SHOPIFY_ACCESS_TOKEN for an older admin-created custom app.
+SHOPIFY_SHOP_DOMAIN=your-store.myshopify.com
+SHOPIFY_CLIENT_ID=
+SHOPIFY_CLIENT_SECRET=
+SHOPIFY_ACCESS_TOKEN=
+SHOPIFY_WEBHOOK_SECRET=
+
 # Optional — only needed if using WooCommerce download sync
 WC_URL=
 WC_KEY=

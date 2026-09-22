@@ -15,6 +15,6 @@ database_id = "6612e061-c490-44d3-a675-371fbab69279"
 binding = "UPLOADS"
 bucket_name = "testbankbooks-uploads"
 
-# All other secrets (SESSION_SECRET, STRIPE_*, PAYPAL_*, RESEND_API_KEY) are
+# All other secrets (SESSION_SECRET, STRIPE_*, PAYPAL_*, SHOPIFY_*, RESEND_API_KEY) are
 # set via the Cloudflare Pages dashboard or `wrangler secret put <NAME>`.
 # Local dev: copy .dev.vars.example to .dev.vars and fill it in.

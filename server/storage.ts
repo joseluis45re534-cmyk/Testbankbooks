@@ -34,6 +34,7 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   getOrderById(id: string): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
+  createOrderOnce(order: InsertOrder & { paymentRef: string }): Promise<{ order: Order; created: boolean }>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
   getOrdersByEmail(email: string): Promise<Order[]>;
 
@@ -246,6 +247,18 @@ export class DatabaseStorage implements IStorage {
   async createOrder(order: InsertOrder): Promise<Order> {
     const [c] = await this.db.insert(orders).values({ id: uuid(), createdAt: now(), ...order }).returning();
     return c;
+  }
+
+  // Idempotent on paymentRef: a second call for the same payment returns the
+  // existing order with created=false instead of inserting a duplicate.
+  async createOrderOnce(order: InsertOrder & { paymentRef: string }): Promise<{ order: Order; created: boolean }> {
+    const [c] = await this.db.insert(orders)
+      .values({ id: uuid(), createdAt: now(), ...order })
+      .onConflictDoNothing({ target: orders.paymentRef })
+      .returning();
+    if (c) return { order: c, created: true };
+    const [existing] = await this.db.select().from(orders).where(eq(orders.paymentRef, order.paymentRef));
+    return { order: existing, created: false };
   }
 
   async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {

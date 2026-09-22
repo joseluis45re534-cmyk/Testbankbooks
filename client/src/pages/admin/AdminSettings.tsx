@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Save, Loader2, CreditCard, DollarSign, Eye, EyeOff, Code, KeyRound } from "lucide-react";
+import { Save, Loader2, CreditCard, DollarSign, Eye, EyeOff, Code, KeyRound, ShoppingBag, PlugZap, Webhook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +61,9 @@ export default function AdminSettings() {
 
   const [paypalConfig, setPaypalConfig] = useState({ clientId: "", clientSecret: "", enabled: false });
   const [stripeConfig, setStripeConfig] = useState({ publishableKey: "", secretKey: "", enabled: false });
+  const [shopifyConfig, setShopifyConfig] = useState({
+    shopDomain: "", clientId: "", clientSecret: "", accessToken: "", webhookSecret: "", enabled: false,
+  });
   const [htmlTags, setHtmlTags] = useState({ headerHtml: "", bodyHtml: "", footerHtml: "" });
   const [credentials, setCredentials] = useState({ currentPassword: "", newUsername: "", newPassword: "", confirmPassword: "" });
 
@@ -70,6 +73,13 @@ export default function AdminSettings() {
 
   const { data: customHtml, isLoading: htmlLoading } = useQuery<Record<string, string>>({
     queryKey: ["/api/site-settings/custom-html"],
+  });
+
+  // Effective state for providers configured by env var only (no saved row):
+  // without this the switch would render "off" for a live provider and saving
+  // any other field would silently turn it off.
+  const { data: liveMethods } = useQuery<Record<string, boolean>>({
+    queryKey: ["/api/payment-methods"],
   });
 
   useEffect(() => {
@@ -86,6 +96,19 @@ export default function AdminSettings() {
     if (settings) {
       const paypal = settings.find((s) => s.provider === "paypal");
       const stripe = settings.find((s) => s.provider === "stripe");
+      const shopify = settings.find((s) => s.provider === "shopify");
+      if (shopify) {
+        let config: any = {};
+        try { config = shopify.config ? JSON.parse(shopify.config) : {}; } catch {}
+        setShopifyConfig({
+          shopDomain: config.shopDomain || "",
+          clientId: config.clientId || "",
+          clientSecret: config.clientSecret || "",
+          accessToken: config.accessToken || "",
+          webhookSecret: config.webhookSecret || "",
+          enabled: shopify.enabled ?? false,
+        });
+      }
 
       if (paypal?.config) {
         try {
@@ -94,6 +117,8 @@ export default function AdminSettings() {
         } catch {}
       } else if (paypal) {
         setPaypalConfig((prev) => ({ ...prev, enabled: paypal.enabled ?? false }));
+      } else if (liveMethods) {
+        setPaypalConfig((prev) => ({ ...prev, enabled: !!liveMethods.paypal }));
       }
       if (stripe?.config) {
         try {
@@ -102,9 +127,11 @@ export default function AdminSettings() {
         } catch {}
       } else if (stripe) {
         setStripeConfig((prev) => ({ ...prev, enabled: stripe.enabled ?? false }));
+      } else if (liveMethods) {
+        setStripeConfig((prev) => ({ ...prev, enabled: !!liveMethods.stripe }));
       }
     }
-  }, [settings]);
+  }, [settings, liveMethods]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: { provider: string; enabled: boolean; config?: string }) =>
@@ -177,6 +204,44 @@ export default function AdminSettings() {
         secretKey: stripeConfig.secretKey,
       }),
     });
+  };
+
+  const apiErrorMessage = (error: any, fallback: string) => {
+    const match = (error?.message || "").match(/^\d+: ([\s\S]+)$/);
+    if (match) {
+      try { return JSON.parse(match[1])?.error || fallback; } catch {}
+    }
+    return fallback;
+  };
+
+  const shopifyTestMutation = useMutation({
+    mutationFn: async () => (await apiRequest("POST", "/api/admin/shopify/test-connection")).json(),
+    onSuccess: (data: any) => {
+      toast({
+        title: `Connected to ${data.shopName}`,
+        description: data.usdEnabled
+          ? `Store currency: ${data.currency}. USD checkout is available.`
+          : `Store currency is ${data.currency} and USD is not enabled. Enable USD in Shopify Markets, or checkout will fail.`,
+        variant: data.usdEnabled ? undefined : "destructive",
+      });
+    },
+    onError: (error: any) => toast({ title: apiErrorMessage(error, "Shopify connection failed"), variant: "destructive" }),
+  });
+
+  const shopifyWebhookMutation = useMutation({
+    mutationFn: async () => (await apiRequest("POST", "/api/admin/shopify/register-webhook")).json(),
+    onSuccess: (data: any) => {
+      toast({
+        title: data.alreadyExists ? "Webhook already registered" : "Webhook registered",
+        description: data.uri,
+      });
+    },
+    onError: (error: any) => toast({ title: apiErrorMessage(error, "Webhook registration failed"), variant: "destructive" }),
+  });
+
+  const handleSaveShopify = () => {
+    const { enabled, ...config } = shopifyConfig;
+    saveMutation.mutate({ provider: "shopify", enabled, config: JSON.stringify(config) });
   };
 
   const handleSavePaypal = () => {
@@ -320,6 +385,109 @@ export default function AdminSettings() {
                 )}
                 Save PayPal Settings
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <ShoppingBag className="w-5 h-5 text-green-700" />
+                  </div>
+                  <div>
+                    <CardTitle>Shopify Payments</CardTitle>
+                    <CardDescription>Customers pay on your Shopify store's hosted checkout; orders are delivered here automatically</CardDescription>
+                  </div>
+                </div>
+                <Switch
+                  checked={shopifyConfig.enabled}
+                  onCheckedChange={(checked) => setShopifyConfig({ ...shopifyConfig, enabled: checked })}
+                  data-testid="switch-shopify"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Store domain</label>
+                <Input
+                  placeholder="your-store.myshopify.com"
+                  value={shopifyConfig.shopDomain}
+                  onChange={(e) => setShopifyConfig({ ...shopifyConfig, shopDomain: e.target.value })}
+                  data-testid="input-shopify-domain"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">App client ID</label>
+                  <MaskedInput
+                    placeholder="From the Shopify Dev Dashboard"
+                    value={shopifyConfig.clientId}
+                    onChange={(val) => setShopifyConfig({ ...shopifyConfig, clientId: val })}
+                    testId="input-shopify-client-id"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">App client secret</label>
+                  <MaskedInput
+                    placeholder="shpss_..."
+                    value={shopifyConfig.clientSecret}
+                    onChange={(val) => setShopifyConfig({ ...shopifyConfig, clientSecret: val })}
+                    testId="input-shopify-client-secret"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Admin API access token <span className="text-muted-foreground font-normal">(optional — only for older custom apps)</span>
+                </label>
+                <MaskedInput
+                  placeholder="shpat_..."
+                  value={shopifyConfig.accessToken}
+                  onChange={(val) => setShopifyConfig({ ...shopifyConfig, accessToken: val })}
+                  testId="input-shopify-access-token"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Webhook signing secret <span className="text-muted-foreground font-normal">(optional — defaults to the client secret)</span>
+                </label>
+                <MaskedInput
+                  placeholder="Only if you created the webhook manually in Shopify admin"
+                  value={shopifyConfig.webhookSecret}
+                  onChange={(val) => setShopifyConfig({ ...shopifyConfig, webhookSecret: val })}
+                  testId="input-shopify-webhook-secret"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The Shopify app needs the <code>write_draft_orders</code> and <code>read_orders</code> scopes. Save first, then
+                test the connection and register the order-paid webhook. Checkout charges in USD. Empty fields fall back to
+                environment variables.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleSaveShopify} disabled={saveMutation.isPending} data-testid="button-save-shopify">
+                  {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save Shopify Settings
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => shopifyTestMutation.mutate()}
+                  disabled={shopifyTestMutation.isPending}
+                  data-testid="button-test-shopify"
+                >
+                  {shopifyTestMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <PlugZap className="w-4 h-4 mr-2" />}
+                  Test Connection
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => shopifyWebhookMutation.mutate()}
+                  disabled={shopifyWebhookMutation.isPending}
+                  data-testid="button-register-shopify-webhook"
+                >
+                  {shopifyWebhookMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Webhook className="w-4 h-4 mr-2" />}
+                  Register Webhook
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

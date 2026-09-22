@@ -76,6 +76,29 @@ export const orders = sqliteTable("orders", {
   shippingPostalCode: text("shipping_postal_code"),
   trackingNumber: text("tracking_number"),
   shippedAt: ts("shipped_at"),
+  // Provider payment reference, e.g. "stripe:pi_123". Unique — makes order
+  // creation idempotent across webhook retries and confirm/webhook races.
+  paymentRef: text("payment_ref").unique(),
+  createdAt: ts("created_at"),
+});
+
+// A checkout handed off to an external hosted payment page (Shopify). The
+// cart is snapshotted so the webhook can create the order without the browser.
+export const pendingCheckouts = sqliteTable("pending_checkouts", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  provider: text("provider").notNull(),
+  status: text("status").notNull().default("pending"),
+  customerEmail: text("customer_email").notNull(),
+  customerName: text("customer_name"),
+  phone: text("phone"),
+  amount: text("amount").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  productIds: jsonStringArray("product_ids"),
+  productTitles: jsonStringArray("product_titles"),
+  externalId: text("external_id"),
+  checkoutUrl: text("checkout_url"),
+  orderId: text("order_id"),
   createdAt: ts("created_at"),
 });
 
@@ -229,6 +252,7 @@ export type User = typeof users.$inferSelect;
 export type InsertSeoKeyword = z.infer<typeof insertSeoKeywordSchema>;
 export type SeoKeyword = typeof seoKeywords.$inferSelect;
 export type BlogScheduleConfig = typeof blogScheduleConfig.$inferSelect;
+export type PendingCheckout = typeof pendingCheckouts.$inferSelect;
 
 export type ChatConversationWithMessages = ChatConversation & {
   messages: ChatMessage[];

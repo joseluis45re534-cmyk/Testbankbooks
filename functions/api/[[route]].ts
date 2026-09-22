@@ -11,8 +11,15 @@ import { createD1Db } from "../../server/db-neon";
 import { DatabaseStorage } from "../../server/storage";
 import {
   products, cartItems, orders, abandonedCarts, siteSettings, chatConversations,
-  adminUsers, paymentSettings, blogPosts,
+  adminUsers, paymentSettings, blogPosts, pendingCheckouts,
+  type CartItemWithProduct, type Order, type Product,
 } from "../../shared/schema";
+import { signedDownloadUrl } from "../../server/downloadLinks";
+import {
+  type ShopifyConfig, normalizeShopDomain, isShopifyConfigured, getShopInfo,
+  createDraftOrderCheckout, registerOrdersPaidWebhook, verifyShopifyWebhook,
+  checkoutIdFromOrderPayload,
+} from "../../server/shopify";
 import { generateBotReply, shouldBotReply, BOT_WELCOME } from "../../server/chatbot";
 import { generateBlogPostForProduct } from "../../server/blogGenerator";
 
@@ -28,6 +35,11 @@ type Env = {
   PAYPAL_CLIENT_ID?: string;
   PAYPAL_CLIENT_SECRET?: string;
   RESEND_API_KEY?: string;
+  SHOPIFY_SHOP_DOMAIN?: string;
+  SHOPIFY_CLIENT_ID?: string;
+  SHOPIFY_CLIENT_SECRET?: string;
+  SHOPIFY_ACCESS_TOKEN?: string;
+  SHOPIFY_WEBHOOK_SECRET?: string;
   WC_URL?: string;
   WC_KEY?: string;
   WC_SECRET?: string;
@@ -145,38 +157,37 @@ function rateLimit(bucket: string, limit: number, windowSeconds: number) {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function getStripeKeys(storage: DatabaseStorage, env: Env) {
+// Reads a provider's admin row once: its saved config and its on/off switch.
+// `enabled` is null when the admin has never saved the provider (no row), which
+// callers treat as "fall back to the env credentials" so env-only deployments
+// keep working.
+async function getProviderSetting(storage: DatabaseStorage, provider: string) {
+  let config: any = {};
+  let enabled: boolean | null = null;
   try {
-    const setting = await storage.getPaymentSetting("stripe");
-    if (setting?.config) {
-      const cfg = JSON.parse(setting.config);
-      return {
-        secretKey: cfg.secretKey || env.STRIPE_SECRET_KEY || null,
-        publishableKey: cfg.publishableKey || env.STRIPE_PUBLISHABLE_KEY || null,
-      };
+    const setting = await storage.getPaymentSetting(provider);
+    if (setting) {
+      enabled = !!setting.enabled;
+      if (setting.config) config = JSON.parse(setting.config);
     }
   } catch {}
-  return {
-    secretKey: env.STRIPE_SECRET_KEY || null,
-    publishableKey: env.STRIPE_PUBLISHABLE_KEY || null,
-  };
+  return { config, enabled };
+}
+
+async function getStripeKeys(storage: DatabaseStorage, env: Env) {
+  const { config: cfg, enabled } = await getProviderSetting(storage, "stripe");
+  const secretKey = cfg.secretKey || env.STRIPE_SECRET_KEY || null;
+  const publishableKey = cfg.publishableKey || env.STRIPE_PUBLISHABLE_KEY || null;
+  const configured = !!(secretKey && publishableKey);
+  return { secretKey, publishableKey, configured, enabled: enabled ?? configured };
 }
 
 async function getPayPalKeys(storage: DatabaseStorage, env: Env) {
-  try {
-    const setting = await storage.getPaymentSetting("paypal");
-    if (setting?.config) {
-      const cfg = JSON.parse(setting.config);
-      return {
-        clientId: cfg.clientId || env.PAYPAL_CLIENT_ID || null,
-        clientSecret: cfg.clientSecret || env.PAYPAL_CLIENT_SECRET || null,
-      };
-    }
-  } catch {}
-  return {
-    clientId: env.PAYPAL_CLIENT_ID || null,
-    clientSecret: env.PAYPAL_CLIENT_SECRET || null,
-  };
+  const { config: cfg, enabled } = await getProviderSetting(storage, "paypal");
+  const clientId = cfg.clientId || env.PAYPAL_CLIENT_ID || null;
+  const clientSecret = cfg.clientSecret || env.PAYPAL_CLIENT_SECRET || null;
+  const configured = !!(clientId && clientSecret);
+  return { clientId, clientSecret, configured, enabled: enabled ?? configured };
 }
 
 async function getPayPalAccessToken(clientId: string, clientSecret: string): Promise<string> {
@@ -191,6 +202,75 @@ async function getPayPalAccessToken(clientId: string, clientSecret: string): Pro
   });
   const data: any = await res.json();
   return data.access_token;
+}
+
+// Shopify settings: admin-saved config overrides env vars, like Stripe/PayPal.
+async function getShopifyConfig(storage: DatabaseStorage, env: Env): Promise<{ config: ShopifyConfig | null; enabled: boolean }> {
+  const { config: cfg, enabled: savedEnabled } = await getProviderSetting(storage, "shopify");
+  const enabled = !!savedEnabled;
+  const shopDomain = normalizeShopDomain(cfg.shopDomain || env.SHOPIFY_SHOP_DOMAIN);
+  if (!shopDomain) return { config: null, enabled };
+  const config: ShopifyConfig = {
+    shopDomain,
+    clientId: cfg.clientId || env.SHOPIFY_CLIENT_ID || null,
+    clientSecret: cfg.clientSecret || env.SHOPIFY_CLIENT_SECRET || null,
+    accessToken: cfg.accessToken || env.SHOPIFY_ACCESS_TOKEN || null,
+    webhookSecret: cfg.webhookSecret || env.SHOPIFY_WEBHOOK_SECRET || null,
+  };
+  return { config: isShopifyConfigured(config) ? config : null, enabled };
+}
+
+function summarizeCart(items: CartItemWithProduct[]) {
+  let total = 0;
+  const productIds: string[] = [];
+  const productTitles: string[] = [];
+  const lineItems: { productId: string; title: string; unitPrice: number; quantity: number }[] = [];
+  for (const item of items) {
+    const p = item.product;
+    if (!p) continue;
+    const unitPrice = p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price);
+    total += unitPrice * item.quantity;
+    productIds.push(p.id);
+    productTitles.push(p.title);
+    lineItems.push({ productId: p.id, title: p.title, unitPrice, quantity: item.quantity });
+  }
+  return { total, productIds, productTitles, lineItems };
+}
+
+// Create the order exactly once per provider payment, clear the cart, and
+// send the confirmation email only on first creation.
+async function finalizePaidOrder(
+  c: any,
+  order: Parameters<DatabaseStorage["createOrderOnce"]>[0],
+  opts: { sessionId: string | null; subjectSuffix?: string },
+): Promise<{ order: Order; created: boolean }> {
+  const storage: DatabaseStorage = c.get("storage");
+  const result = await storage.createOrderOnce(order);
+  if (opts.sessionId) await storage.clearCart(opts.sessionId);
+  if (result.created && c.env.RESEND_API_KEY) {
+    const o = result.order;
+    const send = sendEmail(c.env.RESEND_API_KEY, {
+      to: o.customerEmail,
+      subject: `Order Confirmed #${o.id.substring(0, 8).toUpperCase()}${opts.subjectSuffix || ""}`,
+      html: buildOrderEmailHtml({
+        customerName: o.customerName || null,
+        orderId: o.id,
+        amount: o.amount,
+        paymentMethod: o.paymentMethod || "",
+        productTitles: o.productTitles || [],
+      }),
+    }).catch(console.error);
+    // Keep the isolate alive until the email is handed to Resend.
+    try { c.executionCtx.waitUntil(send); } catch {}
+  }
+  return result;
+}
+
+// Public product payloads must never expose download file locations.
+function publicProduct<T>(p: T, isAdmin: boolean): T {
+  if (!p || isAdmin) return p;
+  const { downloadPath, ...rest } = p as any;
+  return rest;
 }
 
 function sendEmail(resendKey: string, opts: { to: string; subject: string; html: string }) {
@@ -307,7 +387,8 @@ const contactSchema = z.object({
 // ─── PayPal ──────────────────────────────────────────────────────────────────
 
 app.get("/api/paypal/setup", async (c) => {
-  const { clientId } = await getPayPalKeys(c.get("storage"), c.env);
+  const { clientId, configured, enabled } = await getPayPalKeys(c.get("storage"), c.env);
+  if (!configured || !enabled) return c.json({ error: "PayPal is not available" }, 503);
   return c.json({ clientId });
 });
 
@@ -325,8 +406,9 @@ app.post("/api/paypal/order", rateLimit("pay", 20, 5 * 60), async (c) => {
       total += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
     }
 
-    const { clientId, clientSecret } = await getPayPalKeys(storage, c.env);
+    const { clientId, clientSecret, enabled } = await getPayPalKeys(storage, c.env);
     if (!clientId || !clientSecret) return c.json({ error: "PayPal not configured" }, 500);
+    if (!enabled) return c.json({ error: "PayPal is not available" }, 503);
 
     const accessToken = await getPayPalAccessToken(clientId, clientSecret);
     const res = await fetch("https://api-m.paypal.com/v2/checkout/orders", {
@@ -385,7 +467,7 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
       return c.json({ error: "Payment amount mismatch" }, 400);
     }
 
-    const order = await storage.createOrder({
+    const { order } = await finalizePaidOrder(c, {
       customerEmail: customerEmail || "unknown@email.com",
       customerName: savedName,
       phone: savedPhone,
@@ -394,17 +476,8 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
       paymentMethod: "paypal",
       productIds,
       productTitles,
-    });
-
-    await storage.clearCart(sessionId);
-
-    if (c.env.RESEND_API_KEY) {
-      sendEmail(c.env.RESEND_API_KEY, {
-        to: order.customerEmail,
-        subject: `Order Confirmed #${order.id.substring(0, 8).toUpperCase()}`,
-        html: buildOrderEmailHtml({ customerName: order.customerName || null, orderId: order.id, amount: order.amount, paymentMethod: "paypal", productTitles }),
-      }).catch(console.error);
-    }
+      paymentRef: `paypal:${captureData.id || c.req.param("orderID")}`,
+    }, { sessionId });
 
     return c.json({ ...captureData, internalOrder: order });
   } catch (err) {
@@ -416,8 +489,9 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
 // ─── Stripe ──────────────────────────────────────────────────────────────────
 
 app.get("/api/stripe/config", async (c) => {
-  const { publishableKey } = await getStripeKeys(c.get("storage"), c.env);
-  if (!publishableKey) return c.json({ error: "Stripe not configured" }, 500);
+  const { publishableKey, configured, enabled } = await getStripeKeys(c.get("storage"), c.env);
+  if (!configured) return c.json({ error: "Stripe not configured" }, 500);
+  if (!enabled) return c.json({ error: "Stripe is not available" }, 503);
   return c.json({ publishableKey });
 });
 
@@ -441,8 +515,9 @@ app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), asyn
       productTitles.push(p.title);
     }
 
-    const { secretKey } = await getStripeKeys(storage, c.env);
+    const { secretKey, enabled } = await getStripeKeys(storage, c.env);
     if (!secretKey) return c.json({ error: "Stripe not configured" }, 500);
+    if (!enabled) return c.json({ error: "Stripe is not available" }, 503);
 
     const stripe = new Stripe(secretKey);
     const pi = await stripe.paymentIntents.create({
@@ -480,7 +555,12 @@ app.post("/api/stripe/confirm-payment", async (c) => {
     if (pi.metadata.sessionId !== sessionId) return c.json({ error: "Payment session mismatch" }, 403);
 
     const cartItemsList = await storage.getCartItems(sessionId);
-    if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
+    if (!cartItemsList.length) {
+      // The webhook may have already created the order and cleared the cart.
+      const [existing] = await c.get("db").select().from(orders).where(eq(orders.paymentRef, `stripe:${pi.id}`));
+      if (existing) return c.json({ success: true, order: existing });
+      return c.json({ error: "Cart is empty" }, 400);
+    }
 
     let serverTotal = 0;
     const productIds: string[] = [];
@@ -498,7 +578,7 @@ app.post("/api/stripe/confirm-payment", async (c) => {
     const paidAmount = pi.amount / 100;
     if (Math.abs(paidAmount - serverTotal) > 0.01) return c.json({ error: "Payment amount mismatch" }, 400);
 
-    const order = await storage.createOrder({
+    const { order } = await finalizePaidOrder(c, {
       customerEmail: customerEmail || "unknown@email.com",
       customerName: savedName,
       phone: savedPhone,
@@ -507,17 +587,8 @@ app.post("/api/stripe/confirm-payment", async (c) => {
       paymentMethod: "stripe",
       productIds,
       productTitles,
-    });
-
-    await storage.clearCart(sessionId);
-
-    if (c.env.RESEND_API_KEY) {
-      sendEmail(c.env.RESEND_API_KEY, {
-        to: order.customerEmail,
-        subject: `Order Confirmed #${order.id.substring(0, 8).toUpperCase()} — Digital Download`,
-        html: buildOrderEmailHtml({ customerName: order.customerName || null, orderId: order.id, amount: order.amount, paymentMethod: "stripe", productTitles }),
-      }).catch(console.error);
-    }
+      paymentRef: `stripe:${pi.id}`,
+    }, { sessionId, subjectSuffix: " — Digital Download" });
 
     return c.json({ success: true, order });
   } catch (err) {
@@ -594,7 +665,7 @@ app.post("/api/stripe/webhook", async (c) => {
       // Still create the order — payment did go through — but flag it.
     }
 
-    const order = await storage.createOrder({
+    const { order } = await finalizePaidOrder(c, {
       customerEmail,
       customerName: savedName,
       phone: savedPhone,
@@ -603,23 +674,8 @@ app.post("/api/stripe/webhook", async (c) => {
       paymentMethod: "stripe",
       productIds,
       productTitles,
-    });
-
-    await storage.clearCart(sessionId);
-
-    if (c.env.RESEND_API_KEY) {
-      sendEmail(c.env.RESEND_API_KEY, {
-        to: order.customerEmail,
-        subject: `Order Confirmed #${order.id.substring(0, 8).toUpperCase()}`,
-        html: buildOrderEmailHtml({
-          customerName: order.customerName || null,
-          orderId: order.id,
-          amount: order.amount,
-          paymentMethod: "stripe",
-          productTitles,
-        }),
-      }).catch(console.error);
-    }
+      paymentRef: `stripe:${pi.id}`,
+    }, { sessionId });
 
     return c.json({ received: true, orderId: order.id });
   } catch (err: any) {
@@ -629,32 +685,201 @@ app.post("/api/stripe/webhook", async (c) => {
   }
 });
 
+// ─── Shopify Payments (Shopify-hosted checkout) ──────────────────────────────
+// Flow: /api/shopify/checkout snapshots the cart into pending_checkouts and
+// creates a Shopify draft order → customer pays on its invoiceUrl → Shopify's
+// orders/paid webhook creates our order and emails the download link → the
+// checkout page polls /status and moves to the thank-you page.
+
+// Which payment methods the checkout should offer. A method appears only when
+// it has working credentials AND its admin switch is on, so turning one off in
+// the admin panel removes it from the checkout instead of showing a tile that
+// fails to initialize.
+app.get("/api/payment-methods", async (c) => {
+  const storage = c.get("storage");
+  const [stripe, paypal, shopify] = await Promise.all([
+    getStripeKeys(storage, c.env),
+    getPayPalKeys(storage, c.env),
+    getShopifyConfig(storage, c.env),
+  ]);
+  return c.json({
+    stripe: stripe.configured && stripe.enabled,
+    paypal: paypal.configured && paypal.enabled,
+    shopify: !!shopify.config && shopify.enabled,
+  });
+});
+
+const shopifyCheckoutSchema = z.object({
+  customerEmail: z.string().email().max(254),
+  customerName: z.string().max(200).optional(),
+  phone: z.string().max(50).optional(),
+});
+
+app.post("/api/shopify/checkout", rateLimit("pay", 20, 5 * 60), async (c) => {
+  try {
+    const v = shopifyCheckoutSchema.safeParse(await c.req.json());
+    if (!v.success) return c.json({ error: "A valid email address is required" }, 400);
+
+    const storage = c.get("storage");
+    const sessionId = c.get("sessionId");
+    const { config, enabled } = await getShopifyConfig(storage, c.env);
+    if (!config || !enabled) return c.json({ error: "Shopify Payments is not available" }, 503);
+
+    const cartItemsList = await storage.getCartItems(sessionId);
+    const cart = summarizeCart(cartItemsList);
+    if (!cart.lineItems.length) return c.json({ error: "Cart is empty" }, 400);
+
+    const checkoutId = crypto.randomUUID();
+    const currency = "USD";
+    const db = c.get("db");
+    await db.insert(pendingCheckouts).values({
+      id: checkoutId,
+      sessionId,
+      provider: "shopify",
+      status: "pending",
+      customerEmail: v.data.customerEmail,
+      customerName: v.data.customerName || cartItemsList[0]?.customerName || null,
+      phone: v.data.phone || cartItemsList[0]?.phone || null,
+      amount: cart.total.toFixed(2),
+      currency,
+      productIds: cart.productIds,
+      productTitles: cart.productTitles,
+      createdAt: new Date(),
+    });
+
+    const { draftOrderId, invoiceUrl } = await createDraftOrderCheckout(config, {
+      checkoutId,
+      email: v.data.customerEmail,
+      currency,
+      lineItems: cart.lineItems.map((li) => ({
+        title: li.title,
+        unitPrice: li.unitPrice.toFixed(2),
+        quantity: li.quantity,
+        sku: li.productId,
+      })),
+    });
+
+    await db.update(pendingCheckouts)
+      .set({ externalId: draftOrderId, checkoutUrl: invoiceUrl })
+      .where(eq(pendingCheckouts.id, checkoutId));
+
+    return c.json({ checkoutId, checkoutUrl: invoiceUrl, amount: cart.total.toFixed(2) });
+  } catch (err) {
+    console.error("Shopify checkout error:", err);
+    return c.json({ error: "Could not start Shopify checkout. Please try another payment method." }, 502);
+  }
+});
+
+// Polled by the checkout page. Only the browser session that started the
+// checkout can see the resulting order id.
+app.get("/api/shopify/checkout/:id/status", async (c) => {
+  const [row] = await c.get("db").select().from(pendingCheckouts).where(eq(pendingCheckouts.id, c.req.param("id")));
+  if (!row || row.sessionId !== c.get("sessionId")) return c.json({ error: "Not found" }, 404);
+  return c.json({ status: row.status, orderId: row.status === "paid" ? row.orderId : null });
+});
+
+app.post("/api/shopify/webhook", async (c) => {
+  const rawBody = await c.req.arrayBuffer();
+  const storage = c.get("storage");
+  const { config } = await getShopifyConfig(storage, c.env);
+  if (!config) return c.json({ error: "Shopify not configured" }, 503);
+
+  const valid = await verifyShopifyWebhook(
+    rawBody,
+    c.req.header("X-Shopify-Hmac-Sha256"),
+    config.webhookSecret || config.clientSecret,
+  );
+  if (!valid) return c.json({ error: "Invalid webhook signature" }, 401);
+
+  const topic = c.req.header("X-Shopify-Topic");
+  if (topic !== "orders/paid") return c.json({ received: true, ignored: topic });
+
+  let payload: any;
+  try {
+    payload = JSON.parse(new TextDecoder().decode(rawBody));
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+
+  const checkoutId = checkoutIdFromOrderPayload(payload);
+  if (!checkoutId) {
+    // An order placed directly in the Shopify store, not through this site.
+    return c.json({ received: true, ignored: "not a site checkout" });
+  }
+
+  try {
+    const db = c.get("db");
+    const [pending] = await db.select().from(pendingCheckouts).where(eq(pendingCheckouts.id, checkoutId));
+    if (!pending) {
+      console.error("Shopify webhook: unknown checkout id", checkoutId, "order", payload.id);
+      return c.json({ received: true, warning: "unknown checkout" });
+    }
+
+    const presentment = payload.current_total_price_set?.presentment_money || payload.total_price_set?.presentment_money;
+    const paidAmount = parseFloat(presentment?.amount ?? payload.current_total_price ?? payload.total_price ?? "0");
+    const paidCurrency = String(presentment?.currency_code || payload.presentment_currency || payload.currency || "");
+    const expected = parseFloat(pending.amount);
+
+    if (paidCurrency !== pending.currency || paidAmount + 0.01 < expected) {
+      console.error(`Shopify webhook amount mismatch for checkout ${checkoutId}: paid ${paidAmount} ${paidCurrency}, expected ${expected} ${pending.currency}, Shopify order ${payload.id}`);
+      await db.update(pendingCheckouts).set({ status: "amount_mismatch" }).where(eq(pendingCheckouts.id, checkoutId));
+      return c.json({ received: true, warning: "amount mismatch — review manually" });
+    }
+
+    const { order } = await finalizePaidOrder(c, {
+      customerEmail: pending.customerEmail || payload.email || payload.contact_email,
+      customerName: pending.customerName,
+      phone: pending.phone,
+      amount: paidAmount.toFixed(2),
+      status: "paid",
+      paymentMethod: "shopify",
+      productIds: pending.productIds || [],
+      productTitles: pending.productTitles || [],
+      paymentRef: `shopify:${payload.id}`,
+    }, { sessionId: pending.sessionId });
+
+    await db.update(pendingCheckouts)
+      .set({ status: "paid", orderId: order.id })
+      .where(eq(pendingCheckouts.id, checkoutId));
+
+    return c.json({ received: true, orderId: order.id });
+  } catch (err: any) {
+    console.error("Shopify webhook order-creation error:", err);
+    // Non-2xx makes Shopify retry — we don't want to drop a paid order.
+    return c.json({ error: "Order creation failed" }, 500);
+  }
+});
+
 // ─── Products ────────────────────────────────────────────────────────────────
 
 app.get("/api/products", async (c) => {
   const search = c.req.query("search") || "";
   const category = c.req.query("category") || null;
   const items = await c.get("storage").getProductsBySearch(search, category);
-  return c.json(items);
+  const isAdmin = !!c.get("adminId");
+  return c.json(items.map((p) => publicProduct(p, isAdmin)));
 });
 
 app.get("/api/products/id/:id", async (c) => {
   const product = await c.get("storage").getProductById(c.req.param("id"));
   if (!product) return c.json({ error: "Product not found" }, 404);
-  return c.json(product);
+  return c.json(publicProduct(product, !!c.get("adminId")));
 });
 
 app.get("/api/products/:slug", async (c) => {
   const product = await c.get("storage").getProductBySlug(c.req.param("slug"));
   if (!product) return c.json({ error: "Product not found" }, 404);
-  return c.json(product);
+  return c.json(publicProduct(product, !!c.get("adminId")));
 });
 
 app.get("/api/categories", async (c) => c.json(await c.get("storage").getCategories()));
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
-app.get("/api/cart", async (c) => c.json(await c.get("storage").getCartItems(c.get("sessionId"))));
+app.get("/api/cart", async (c) => {
+  const items = await c.get("storage").getCartItems(c.get("sessionId"));
+  return c.json(items.map((item) => ({ ...item, product: publicProduct(item.product, false) })));
+});
 
 app.post("/api/cart", async (c) => {
   const body = await c.req.json();
@@ -729,7 +954,8 @@ app.post("/api/orders/:id/generate-download", async (c) => {
   for (const pid of order.productIds || []) {
     const p = await storage.getProductById(pid);
     if (!p) continue;
-    tokens.push({ productId: pid, productTitle: p.title, downloadUrl: p.downloadPath || "" });
+    const downloadUrl = p.downloadPath ? await signedDownloadUrl(p.downloadPath, c.env.SESSION_SECRET) : "";
+    tokens.push({ productId: pid, productTitle: p.title, downloadUrl });
   }
   return c.json({ tokens });
 });
@@ -1083,6 +1309,31 @@ app.post("/api/admin/payment-settings", requireAdmin(), async (c) => {
   return c.json(await c.get("storage").upsertPaymentSetting(v.data));
 });
 
+// Verifies credentials and reports the store currency (checkout charges USD).
+app.post("/api/admin/shopify/test-connection", requireAdmin(), async (c) => {
+  const { config } = await getShopifyConfig(c.get("storage"), c.env);
+  if (!config) return c.json({ error: "Save a store domain and either a client ID + secret or an Admin API access token first" }, 400);
+  try {
+    const shop = await getShopInfo(config);
+    const usdEnabled = shop.currencyCode === "USD" || (shop.enabledPresentmentCurrencies || []).includes("USD");
+    return c.json({ success: true, shopName: shop.name, currency: shop.currencyCode, usdEnabled });
+  } catch (err: any) {
+    return c.json({ error: err.message || "Connection failed" }, 502);
+  }
+});
+
+app.post("/api/admin/shopify/register-webhook", requireAdmin(), async (c) => {
+  const { config } = await getShopifyConfig(c.get("storage"), c.env);
+  if (!config) return c.json({ error: "Shopify is not configured" }, 400);
+  const uri = `${new URL(c.req.url).origin}/api/shopify/webhook`;
+  try {
+    const result = await registerOrdersPaidWebhook(config, uri);
+    return c.json({ success: true, uri, ...result });
+  } catch (err: any) {
+    return c.json({ error: err.message || "Webhook registration failed" }, 502);
+  }
+});
+
 // ─── Admin: Site settings ─────────────────────────────────────────────────────
 
 app.get("/api/admin/settings", requireAdmin(), async (c) => {
@@ -1198,7 +1449,18 @@ app.post("/api/chat/message", rateLimit("chat", 20, 60), async (c) => {
       const recent = await storage.getMessagesByConversationId(conversationId);
       if (shouldBotReply(recent)) {
         const conv = await storage.getConversationById(conversationId);
-        const reply = await generateBotReply(message, conv?.visitorEmail || null, storage);
+        const resendKey = c.env.RESEND_API_KEY;
+        const resendOrderEmail = resendKey
+          ? async (order: Order) => {
+              const result: any = await sendEmail(resendKey, {
+                to: order.customerEmail,
+                subject: `Your Downloads — Order #${order.id.substring(0, 8).toUpperCase()}`,
+                html: buildOrderEmailHtml({ customerName: order.customerName || null, orderId: order.id, amount: order.amount, paymentMethod: order.paymentMethod || "", productTitles: order.productTitles || [] }),
+              });
+              return !result?.error;
+            }
+          : undefined;
+        const reply = await generateBotReply(message, conv?.visitorEmail || null, storage, resendOrderEmail);
         await storage.createMessage({ conversationId, message: reply, senderType: "bot", isRead: false });
       }
     } catch (e) {

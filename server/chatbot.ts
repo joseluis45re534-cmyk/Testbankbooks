@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@shared/schema";
+import type { ChatMessage, Order } from "@shared/schema";
 import type { IStorage } from "./storage";
 
 const BOT_NAME = "NursTestBank Assistant";
@@ -103,15 +103,9 @@ function detectIntent(text: string): string {
   return "fallback";
 }
 
-function buildLinkLine(title: string, url: string | null | undefined): string {
-  if (!url) return `• ${title} — (no link on file, our team will resend)`;
-  // External http(s) links are sent verbatim; local /uploads/* paths are
-  // expanded to fully-qualified URLs so the visitor can click them.
-  const fullUrl = /^https?:\/\//i.test(url)
-    ? url
-    : `https://nurstestbank.com${url.startsWith("/") ? "" : "/"}${url}`;
-  return `• ${title}\n  ${fullUrl}`;
-}
+// Re-sends an order's confirmation email (with its download link) to the
+// order's own address. Returns false if the email could not be sent.
+export type ResendOrderEmail = (order: Order) => Promise<boolean>;
 
 const GENERIC_DOWNLOAD_INFO = [
   "Every order is a digital download so you can start studying right away. Here's how the digital copy reaches you:",
@@ -125,12 +119,16 @@ const GENERIC_DOWNLOAD_INFO = [
   "• Whitelist `support@nurstestbank.com`",
 ];
 
-async function buildDownloadReply(visitorEmail?: string | null, storage?: IStorage): Promise<string> {
+async function buildDownloadReply(
+  visitorEmail?: string | null,
+  storage?: IStorage,
+  resendOrderEmail?: ResendOrderEmail,
+): Promise<string> {
   if (!visitorEmail || !storage) {
     return [
       ...GENERIC_DOWNLOAD_INFO,
       "",
-      "Reply with the email address you used at checkout and I'll look up your order and resend your download links right here in chat.",
+      "Reply with the email address you used at checkout and I'll look up your order and re-send your download email to that inbox.",
       "",
       BOT_HANDOFF_HINT,
     ].join("\n");
@@ -158,33 +156,24 @@ async function buildDownloadReply(visitorEmail?: string | null, storage?: IStora
         new Date(a.createdAt || 0).getTime(),
     )[0];
 
-    const productIds = latest.productIds || [];
-    const productTitles = latest.productTitles || [];
-
-    // Resolve each product to its current download URL.
-    const lines: string[] = [];
-    let missing = 0;
-    for (let i = 0; i < productIds.length; i++) {
-      const pid = productIds[i];
-      const fallbackTitle = productTitles[i] || "Your test bank";
-      try {
-        const product = await storage.getProductById(pid);
-        const title = product?.title || fallbackTitle;
-        const url = product?.downloadPath || null;
-        if (!url) missing++;
-        lines.push(buildLinkLine(title, url));
-      } catch {
-        missing++;
-        lines.push(buildLinkLine(fallbackTitle, null));
-      }
+    // Download links are only ever delivered to the order's own inbox — an
+    // email typed into chat is not proof of ownership.
+    const sent = resendOrderEmail ? await resendOrderEmail(latest).catch(() => false) : false;
+    if (sent) {
+      return [
+        `Good news — I found your most recent paid order under **${visitorEmail}** and just re-sent your download email to that address.`,
+        "",
+        "It should arrive within a minute or two. Please check your spam / promotions folder too.",
+        "",
+        BOT_HANDOFF_HINT,
+      ].join("\n");
     }
 
-    const intro = `Good news — I found your most recent paid order under **${visitorEmail}**. Here are your direct download links:`;
-    const footer = missing > 0
-      ? `\n\nA few items don't have a working link in our system right now — type "agent" and our team will resend those manually.`
-      : `\n\nClick each link to download. For your security, please don't share these links with anyone else. If a link doesn't work, type "agent" and we'll resend it.`;
-
-    return [intro, "", ...lines].join("\n") + footer;
+    return [
+      `I found a paid order under **${visitorEmail}**, but I couldn't re-send the email automatically.`,
+      "",
+      `Type "agent" and our team will send your download link to that address.`,
+    ].join("\n");
   } catch {
     return [
       ...GENERIC_DOWNLOAD_INFO,
@@ -294,6 +283,7 @@ export async function generateBotReply(
   userMessage: string,
   visitorEmail?: string | null,
   storage?: IStorage,
+  resendOrderEmail?: ResendOrderEmail,
 ): Promise<string> {
   const intent = detectIntent(userMessage);
 
@@ -326,7 +316,7 @@ export async function generateBotReply(
       }
     }
     if (intent === "download_help") {
-      return buildDownloadReply(visitorEmail, storage);
+      return buildDownloadReply(visitorEmail, storage, resendOrderEmail);
     }
   }
 

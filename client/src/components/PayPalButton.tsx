@@ -37,7 +37,9 @@ function loadPayPalSdk(clientId: string, currency: string): Promise<any> {
     script.src =
       `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}` +
       `&currency=${encodeURIComponent(currency)}&intent=capture&components=buttons` +
-      `&enable-funding=paylater&disable-funding=card`;
+      // card funding renders PayPal's "Debit or Credit Card" button, so buyers
+      // without a PayPal account can still pay by card through PayPal.
+      `&enable-funding=paylater,card`;
     script.async = true;
     script.onload = () => resolve((window as any).paypal);
     script.onerror = reject;
@@ -72,8 +74,11 @@ export default function PayPalButton({
     (async () => {
       try {
         const setupRes = await fetch("/api/paypal/setup");
-        if (!setupRes.ok) throw new Error("PayPal is not configured");
-        const { clientId } = await setupRes.json();
+        if (!setupRes.ok) {
+          const body: any = await setupRes.json().catch(() => ({}));
+          throw new Error(body.error || "PayPal is not available");
+        }
+        const { clientId } = (await setupRes.json()) as { clientId?: string };
         if (!clientId) throw new Error("PayPal client ID missing");
 
         const paypal = await loadPayPalSdk(clientId, currency || "USD");
@@ -122,7 +127,7 @@ export default function PayPalButton({
 
           onError: (err: any) => {
             console.error("PayPal error:", err);
-            setError("PayPal encountered an error. Please try again or use a card.");
+            setError("PayPal encountered an error. Please try again.");
             onPaymentError?.(err);
           },
 
@@ -140,7 +145,7 @@ export default function PayPalButton({
         }
       } catch (err: any) {
         console.error("PayPal init failed:", err);
-        setError(err?.message || "Could not load PayPal. Please try a card instead.");
+        setError(err?.message || "Could not load PayPal. Please try again.");
         setLoading(false);
       }
     })();
@@ -157,7 +162,7 @@ export default function PayPalButton({
       {loading && !error && (
         <div className="flex flex-col items-center justify-center gap-2 py-6 rounded-md border border-dashed bg-muted/30" data-testid="paypal-loading">
           <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Loading PayPal & Pay Later…</span>
+          <span className="text-sm text-muted-foreground">Loading PayPal, card & Pay Later…</span>
         </div>
       )}
 

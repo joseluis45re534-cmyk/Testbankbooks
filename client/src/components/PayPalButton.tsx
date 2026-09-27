@@ -93,7 +93,7 @@ export default function PayPalButton({
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ amount, currency, intent }),
             });
-            const data = await res.json();
+            const data: any = await res.json();
             if (!res.ok || !data.id) {
               throw new Error(data.error || "Failed to create PayPal order");
             }
@@ -102,9 +102,11 @@ export default function PayPalButton({
 
           onApprove: async (data: any) => {
             setProcessing(true);
+            const d = dataRef.current;
+            let res: Response | null = null;
+            let captureData: any = null;
             try {
-              const d = dataRef.current;
-              const res = await fetch(`/api/paypal/order/${data.orderID}/capture`, {
+              res = await fetch(`/api/paypal/order/${data.orderID}/capture`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -113,22 +115,32 @@ export default function PayPalButton({
                   phone: d.phone,
                 }),
               });
-              const captureData = await res.json();
-              if (!res.ok) {
-                throw new Error(captureData.error || "Failed to capture PayPal payment");
-              }
-              onPaymentSuccess?.(data.orderID, captureData);
+              captureData = await res.json().catch(() => null);
             } catch (err) {
-              console.error("PayPal capture failed:", err);
-              setProcessing(false);
-              onPaymentError?.(err);
+              // Lost connection: the payment may or may not have gone through.
+              console.error("PayPal capture request failed:", err);
             }
+
+            if (res?.ok && captureData?.status === "COMPLETED") {
+              // Paid. The buttons stay hidden while the checkout moves on.
+              onPaymentSuccess?.(data.orderID, captureData);
+              return;
+            }
+
+            setProcessing(false);
+            onPaymentError?.({
+              // Only an explicit answer proves no money moved. A server error or
+              // a lost connection can follow a successful charge.
+              notCharged: captureData?.charged === false,
+              message: captureData?.error,
+            });
           },
 
           onError: (err: any) => {
+            // SDK errors happen before our capture call, so nothing was charged.
             console.error("PayPal error:", err);
             setError("PayPal encountered an error. Please try again.");
-            onPaymentError?.(err);
+            onPaymentError?.({ notCharged: true, cause: err });
           },
 
           onCancel: () => {

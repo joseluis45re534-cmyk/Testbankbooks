@@ -238,16 +238,17 @@ function summarizeCart(items: CartItemWithProduct[]) {
 }
 
 // Create the order exactly once per provider payment, clear the cart, and
-// send the confirmation email only on first creation.
+// send the confirmation email only on first creation. Held orders pass
+// notifyCustomer: false, since they have no download to send yet.
 async function finalizePaidOrder(
   c: any,
   order: Parameters<DatabaseStorage["createOrderOnce"]>[0],
-  opts: { sessionId: string | null; subjectSuffix?: string },
+  opts: { sessionId: string | null; subjectSuffix?: string; notifyCustomer?: boolean },
 ): Promise<{ order: Order; created: boolean }> {
   const storage: DatabaseStorage = c.get("storage");
   const result = await storage.createOrderOnce(order);
   if (opts.sessionId) await storage.clearCart(opts.sessionId);
-  if (result.created && c.env.RESEND_API_KEY) {
+  if (result.created && opts.notifyCustomer !== false && c.env.RESEND_API_KEY) {
     const o = result.order;
     const send = sendEmail(c.env.RESEND_API_KEY, {
       to: o.customerEmail,
@@ -259,11 +260,33 @@ async function finalizePaidOrder(
         paymentMethod: o.paymentMethod || "",
         productTitles: o.productTitles || [],
       }),
-    }).catch(console.error);
+    })
+      // Resend reports a failed send in its result instead of throwing.
+      .then((r: any) => { if (r?.error) console.error("Order email failed:", o.id, r.error); })
+      .catch((err) => console.error("Order email failed:", o.id, err));
     // Keep the isolate alive until the email is handed to Resend.
     try { c.executionCtx.waitUntil(send); } catch {}
   }
   return result;
+}
+
+// Emails the store when a customer has paid but their order needs a person:
+// it could not be saved, or it is held for review. Never throws, because it
+// runs after the customer has been charged.
+function alertOwner(c: any, subject: string, details: Record<string, unknown>) {
+  console.error(`[owner alert] ${subject}`, JSON.stringify(details));
+  if (!c.env.RESEND_API_KEY) return;
+  const rows = Object.entries(details)
+    .map(([k, v]) => `<tr><td style="padding:4px 16px 4px 0;color:#6b7280">${escXml(k)}</td><td>${escXml(Array.isArray(v) ? v.join(", ") : String(v ?? ""))}</td></tr>`)
+    .join("");
+  const send = sendEmail(c.env.RESEND_API_KEY, {
+    to: "support@nurstestbank.com",
+    subject: `[Action needed] ${subject}`,
+    html: `<p>A customer has paid, but their order needs your attention: ${escXml(subject)}.</p><table style="font-family:sans-serif;font-size:14px">${rows}</table>`,
+  })
+    .then((r: any) => { if (r?.error) console.error("Owner alert email failed:", r.error); })
+    .catch((err) => console.error("Owner alert email failed:", err));
+  try { c.executionCtx.waitUntil(send); } catch {}
 }
 
 // Public product payloads must never expose download file locations.
@@ -427,13 +450,17 @@ app.post("/api/paypal/order", rateLimit("pay", 20, 5 * 60), async (c) => {
 });
 
 app.post("/api/paypal/order/:orderID/capture", async (c) => {
+  const orderID = c.req.param("orderID");
+  // No money moves until PayPal confirms the capture, so failures before that
+  // point say `charged: false` and the checkout can safely offer a retry.
+  let captureAttempted = false;
   try {
     const storage = c.get("storage");
     const sessionId = c.get("sessionId");
     const { customerEmail, customerName, phone } = await c.req.json();
 
     const cartItemsList = await storage.getCartItems(sessionId);
-    if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
+    if (!cartItemsList.length) return c.json({ error: "Cart is empty", charged: false }, 400);
 
     let serverTotal = 0;
     const productIds: string[] = [];
@@ -449,40 +476,68 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
     }
 
     const { clientId, clientSecret } = await getPayPalKeys(storage, c.env);
-    if (!clientId || !clientSecret) return c.json({ error: "PayPal not configured" }, 500);
+    if (!clientId || !clientSecret) return c.json({ error: "PayPal not configured", charged: false }, 500);
 
     const accessToken = await getPayPalAccessToken(clientId, clientSecret);
-    const captureRes = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${c.req.param("orderID")}/capture`, {
+    captureAttempted = true;
+    const captureRes = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${orderID}/capture`, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     });
     const captureData: any = await captureRes.json();
 
     if (captureData.status !== "COMPLETED") {
-      return c.json({ error: "Payment not completed", details: captureData }, 400);
+      // A repeat capture of an order that was already paid still means the customer paid.
+      const alreadyCaptured = (captureData.details || []).some((d: any) => d?.issue === "ORDER_ALREADY_CAPTURED");
+      return c.json({ error: "Payment not completed", charged: alreadyCaptured ? undefined : false, details: captureData }, 400);
     }
 
-    const capturedAmount = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value;
-    if (capturedAmount && Math.abs(parseFloat(capturedAmount) - serverTotal) > 0.01) {
-      return c.json({ error: "Payment amount mismatch" }, 400);
-    }
-
-    const { order } = await finalizePaidOrder(c, {
+    // The customer has paid. From here on never answer with an error: the
+    // checkout would tell them the payment failed, and they would pay again.
+    const capturedAmount: string | undefined = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value;
+    const amountMatches = !capturedAmount || Math.abs(parseFloat(capturedAmount) - serverTotal) <= 0.01;
+    const paymentRef = `paypal:${captureData.id || orderID}`;
+    const orderDetails = {
       customerEmail: customerEmail || "unknown@email.com",
       customerName: savedName,
       phone: savedPhone,
       amount: capturedAmount || serverTotal.toFixed(2),
-      status: "paid",
       paymentMethod: "paypal",
       productIds,
       productTitles,
-      paymentRef: `paypal:${captureData.id || c.req.param("orderID")}`,
-    }, { sessionId });
+      paymentRef,
+    };
 
-    return c.json({ ...captureData, internalOrder: order });
+    try {
+      // If the cart changed after the PayPal order was created, the payment no
+      // longer matches it: hold the order for a manual check rather than
+      // deliver files that weren't paid for.
+      const { order } = await finalizePaidOrder(
+        c,
+        { ...orderDetails, status: amountMatches ? "paid" : "pending" },
+        { sessionId, notifyCustomer: amountMatches },
+      );
+      if (!amountMatches) {
+        alertOwner(c, "PayPal payment held for review: amount differs from the cart", {
+          orderId: order.id, ...orderDetails, cartTotal: serverTotal.toFixed(2),
+        });
+      }
+      return c.json({ ...captureData, internalOrder: order, paymentRef });
+    } catch (err) {
+      alertOwner(c, "PayPal payment received but the order could not be saved", {
+        ...orderDetails, error: String(err),
+      });
+      try { await storage.clearCart(sessionId); } catch {}
+      return c.json({ ...captureData, internalOrder: null, paymentRef });
+    }
   } catch (err) {
     console.error("PayPal capture error:", err);
-    return c.json({ error: "Failed to capture PayPal order" }, 500);
+    if (captureAttempted) {
+      alertOwner(c, "PayPal capture result unknown: check PayPal for this payment", {
+        paypalOrderId: orderID, error: String(err),
+      });
+    }
+    return c.json({ error: "Failed to capture PayPal order", charged: captureAttempted ? undefined : false }, 500);
   }
 });
 

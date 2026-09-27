@@ -1,5 +1,5 @@
 -- Add physical shipping fields to orders.
--- Apply: npx wrangler d1 execute nurstestbank --remote --file=migrations/0001_orders_shipping.sql
+-- Apply: npx wrangler d1 execute testbankbooks --remote --file=migrations/0001_orders_shipping.sql
 ALTER TABLE orders ADD COLUMN shipping_address1 text;
 ALTER TABLE orders ADD COLUMN shipping_address2 text;
 ALTER TABLE orders ADD COLUMN shipping_city text;

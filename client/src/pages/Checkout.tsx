@@ -76,6 +76,10 @@ export default function Checkout() {
   // Set once a Shopify checkout tab is open: the webhook clears the cart, and
   // we must keep this page (and its status polling) mounted until redirect.
   const [shopifyInProgress, setShopifyInProgress] = useState(false);
+  // PayPal reference of a payment that went through but whose order needs a
+  // person (not saved, or held for review). While set, the page says so and
+  // offers no way to pay again.
+  const [paymentReceived, setPaymentReceived] = useState<string | null>(null);
 
   const { data: paymentMethods } = useQuery<Record<PaymentMethod, boolean>>({
     queryKey: ["/api/payment-methods"],
@@ -117,43 +121,52 @@ export default function Checkout() {
     return sum + price * item.quantity;
   }, 0);
 
-  const handlePayPalSuccess = async (paypalOrderId: string, captureData: any) => {
+  // Only called once PayPal reports the payment COMPLETED, so from here on the
+  // customer has paid and must never be told to try again.
+  const handlePayPalSuccess = (paypalOrderId: string, captureData: any) => {
+    const order = captureData.internalOrder;
+    queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     try {
-      if (captureData.status !== "COMPLETED" || !captureData.internalOrder) {
-        toast({
-          title: "Payment Not Completed",
-          description: "Your payment was not completed. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-
       analytics.purchase({
-        transactionId: captureData.internalOrder.id,
+        transactionId: order?.id || paypalOrderId,
         value: subtotal,
         items: cartItems
           .filter((i) => !!i.product)
           .map((i) => ({ product: i.product!, quantity: i.quantity })),
         paymentMethod: "paypal",
       });
+    } catch (error) {
+      console.error("Analytics error:", error);
+    }
+    forgetSavedStep();
 
+    if (order?.status === "paid") {
       toast({
         title: "Payment Successful",
         description: "Your order has been placed successfully!",
       });
+      setLocation(`/thank-you/${order.id}`);
+      return;
+    }
+    setPaymentReceived(captureData.paymentRef || `paypal:${paypalOrderId}`);
+  };
 
-      forgetSavedStep();
-      setLocation(`/thank-you/${captureData.internalOrder.id}`);
-    } catch (error) {
-      console.error("Order handling failed:", error);
+  const handlePayPalError = (error: { notCharged?: boolean }) => {
+    if (error?.notCharged) {
       toast({
-        title: "Order Error",
-        description: "Payment was received but there was an issue. Please contact support.",
+        title: "Payment Not Completed",
+        description: "Your payment did not go through and you have not been charged. Please try again.",
         variant: "destructive",
       });
+      return;
     }
+    toast({
+      title: "We Couldn't Confirm Your Payment",
+      description:
+        "Before trying again, check your PayPal account or email for a receipt. If you were charged, please don't pay again. Email support@nurstestbank.com and we'll send your download.",
+      variant: "destructive",
+      duration: 30000,
+    });
   };
 
   const handleStripeSuccess = async (paymentIntentId: string, orderData: any) => {
@@ -232,7 +245,7 @@ export default function Checkout() {
     }).catch(() => {});
   };
 
-  if (cartItems.length === 0 && !isLoading && !shopifyInProgress) {
+  if (cartItems.length === 0 && !isLoading && !shopifyInProgress && !paymentReceived) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <SEO title="Checkout" description="Complete your purchase — instant digital download." />
@@ -294,7 +307,12 @@ export default function Checkout() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    {step === 1 ? (
+                    {paymentReceived ? (
+                      <>
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                        Payment Received
+                      </>
+                    ) : step === 1 ? (
                       <>
                         <CreditCard className="w-5 h-5" />
                         Contact Information
@@ -308,7 +326,25 @@ export default function Checkout() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {step === 1 ? (
+                  {paymentReceived ? (
+                    <div className="space-y-4 text-center py-4" data-testid="payment-received">
+                      <CheckCircle className="w-12 h-12 text-green-600 mx-auto" />
+                      <p className="text-lg font-semibold">Thank you, your payment went through.</p>
+                      <p className="text-muted-foreground">
+                        We're finishing your order and will email your download link to{" "}
+                        <span className="font-medium text-foreground">{email}</span> shortly.
+                      </p>
+                      <p className="font-medium">Please don't pay again. You won't need to.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Payment reference: <span className="font-mono">{paymentReceived}</span>
+                        <br />
+                        Questions?{" "}
+                        <a href="mailto:support@nurstestbank.com" className="underline">
+                          support@nurstestbank.com
+                        </a>
+                      </p>
+                    </div>
+                  ) : step === 1 ? (
                     <form onSubmit={handleContactSubmit}>
                       <div className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
@@ -428,7 +464,7 @@ export default function Checkout() {
                                 customerName={`${firstName} ${lastName}`.trim()}
                                 phone={phone}
                                 onPaymentSuccess={handlePayPalSuccess}
-                                onPaymentError={handlePaymentError}
+                                onPaymentError={handlePayPalError}
                               />
                             </div>
                           </div>
@@ -461,6 +497,7 @@ export default function Checkout() {
               </div>
             </div>
 
+            {!paymentReceived && (
             <div className="lg:col-span-1">
               <Card className="sticky top-24">
                 <CardContent className="p-6">
@@ -527,6 +564,7 @@ export default function Checkout() {
                 </CardContent>
               </Card>
             </div>
+            )}
           </div>
         </div>
       </main>

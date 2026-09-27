@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
+import { trackPageView } from "./lib/visitTracker";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +14,7 @@ import Checkout from "@/pages/Checkout";
 import NotFound from "@/pages/not-found";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminOrders from "@/pages/admin/AdminOrders";
 import AdminProducts from "@/pages/admin/AdminProducts";
 import AdminSettings from "@/pages/admin/AdminSettings";
@@ -40,6 +43,14 @@ function ChatWidgetWrapper() {
   return <ChatWidget />;
 }
 
+function VisitTracker() {
+  const [location] = useLocation();
+  useEffect(() => {
+    trackPageView(location);
+  }, [location]);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -51,6 +62,7 @@ function Router() {
       <Route path="/thank-you/:orderId" component={ThankYou} />
       <Route path="/owner" component={AdminLogin} />
       <Route path="/owner/dashboard" component={AdminDashboard} />
+      <Route path="/owner/analytics" component={AdminAnalytics} />
       <Route path="/owner/orders" component={AdminOrders} />
       <Route path="/owner/products" component={AdminProducts} />
       <Route path="/owner/blog" component={AdminBlog} />
@@ -81,6 +93,7 @@ function App() {
           <CustomScripts />
           <Router />
           <ChatWidgetWrapper />
+          <VisitTracker />
         </TooltipProvider>
       </QueryClientProvider>
     </HelmetProvider>

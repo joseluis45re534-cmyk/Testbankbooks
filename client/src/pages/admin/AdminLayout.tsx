@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { 
   LayoutDashboard, ShoppingCart, Package, Settings, LogOut, 
-  Menu, X, ChevronRight, Download, MessageCircle, BookOpen, TrendingUp, HardDrive
+  Menu, X, ChevronRight, Download, MessageCircle, BookOpen, TrendingUp, HardDrive, BarChart3
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface AdminLayoutProps {
 
 const navItems = [
   { href: "/owner/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/owner/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/owner/orders", label: "Orders", icon: ShoppingCart },
   { href: "/owner/products", label: "Products", icon: Package },
   { href: "/owner/blog", label: "Blog", icon: BookOpen },

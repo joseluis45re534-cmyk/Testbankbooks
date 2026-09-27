@@ -22,6 +22,10 @@ import {
 } from "../../server/shopify";
 import { generateBotReply, shouldBotReply, BOT_WELCOME } from "../../server/chatbot";
 import { generateBlogPostForProduct } from "../../server/blogGenerator";
+import {
+  VISIT_COOKIE, classifyVisit, isBot, deviceFromUA, dailyVisitorId, recordEvent,
+  parseRange, buildAnalyticsReport, type EventType,
+} from "../../server/analytics";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -237,6 +241,30 @@ function summarizeCart(items: CartItemWithProduct[]) {
   return { total, productIds, productTitles, lineItems };
 }
 
+// Records a checkout step for Admin -> Analytics. Best effort: it runs inside
+// the cart and payment paths, so it never throws and never delays a response.
+// The store owner's own browsing (admin cookie) is not counted.
+function trackEvent(
+  c: any,
+  type: Exclude<EventType, "pageview">,
+  extra: { productId?: string; value?: number; orderId?: string } = {},
+) {
+  try {
+    const userAgent = c.req.header("User-Agent") || "";
+    if (c.get("adminId") || isBot(userAgent)) return;
+    const write = recordEvent(c.env.DB, {
+      type,
+      sessionId: getCookie(c, VISIT_COOKIE) || null,
+      country: (c.req.raw as any).cf?.country || c.req.header("CF-IPCountry") || null,
+      device: deviceFromUA(userAgent),
+      ...extra,
+    }).catch((err: unknown) => console.error("Analytics event failed:", type, err));
+    try { c.executionCtx.waitUntil(write); } catch {}
+  } catch (err) {
+    console.error("Analytics event failed:", type, err);
+  }
+}
+
 // Create the order exactly once per provider payment, clear the cart, and
 // send the confirmation email only on first creation. Held orders pass
 // notifyCustomer: false, since they have no download to send yet.
@@ -248,6 +276,9 @@ async function finalizePaidOrder(
   const storage: DatabaseStorage = c.get("storage");
   const result = await storage.createOrderOnce(order);
   if (opts.sessionId) await storage.clearCart(opts.sessionId);
+  if (result.created && result.order.status === "paid") {
+    trackEvent(c, "purchase", { value: parseFloat(result.order.amount) || 0, orderId: result.order.id });
+  }
   if (result.created && opts.notifyCustomer !== false && c.env.RESEND_API_KEY) {
     const o = result.order;
     const send = sendEmail(c.env.RESEND_API_KEY, {
@@ -946,6 +977,7 @@ app.post("/api/cart", async (c) => {
   if (!product) return c.json({ error: "Product not found" }, 404);
 
   const item = await storage.addToCart({ sessionId: c.get("sessionId"), productId: v.data.productId, quantity: 1 });
+  trackEvent(c, "add_to_cart", { productId: product.id, value: parseFloat(product.salePrice || product.price) || 0 });
   return c.json(item);
 });
 
@@ -978,11 +1010,52 @@ app.post("/api/cart/email", async (c) => {
     if (phone) updateData.phone = phone;
     await db.update(cartItems).set(updateData).where(eq(cartItems.sessionId, sessionId));
     await db.update(abandonedCarts).set(updateData).where(eq(abandonedCarts.sessionId, sessionId));
+    // The checkout sends contact details when the customer moves on to payment.
+    trackEvent(c, "begin_checkout");
     return c.json({ success: true });
   } catch (err) {
     console.error("Save cart email error:", err);
     return c.json({ error: "Failed to save email" }, 500);
   }
+});
+
+// ─── Visit tracking ───────────────────────────────────────────────────────────
+
+const visitSchema = z.object({
+  p: z.string().min(1).max(300), // path
+  l: z.boolean().optional(), // first page view of this page load
+  r: z.string().max(1000).optional(), // document.referrer, landing views only
+  q: z.string().max(1000).optional(), // landing query string (utm_*, gclid, ...)
+});
+
+// Page-view beacon for Admin -> Analytics. Always answers 204: tracking must
+// never surface an error on the storefront.
+app.post("/api/visit", rateLimit("visit", 120, 60), async (c) => {
+  try {
+    const userAgent = c.req.header("User-Agent") || "";
+    const v = visitSchema.safeParse(await c.req.json().catch(() => null));
+    if (!v.success || c.get("adminId") || isBot(userAgent)) return c.body(null, 204);
+    const path = v.data.p.split("?")[0];
+    if (!path.startsWith("/") || path.startsWith("/owner")) return c.body(null, 204);
+
+    const landing = v.data.l ? classifyVisit(v.data.r || null, v.data.q || null) : null;
+    await recordEvent(c.env.DB, {
+      type: "pageview",
+      sessionId: getCookie(c, VISIT_COOKIE) || null,
+      visitorId: await dailyVisitorId(c.env.SESSION_SECRET || "", c.req.header("CF-Connecting-IP") || "", userAgent),
+      path,
+      source: landing?.source ?? null,
+      referrerHost: landing?.referrerHost ?? null,
+      utmSource: landing?.utmSource ?? null,
+      utmMedium: landing?.utmMedium ?? null,
+      utmCampaign: landing?.utmCampaign ?? null,
+      country: (c.req.raw as any).cf?.country || c.req.header("CF-IPCountry") || null,
+      device: deviceFromUA(userAgent),
+    });
+  } catch (err) {
+    console.error("Visit tracking failed:", err);
+  }
+  return c.body(null, 204);
 });
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
@@ -1191,6 +1264,21 @@ app.get("/api/admin/stats", requireAdmin(), async (c) => {
 app.get("/api/admin/sales-trend", requireAdmin(), async (c) => {
   const days = parseInt(c.req.query("days") || "30");
   return c.json(await c.get("storage").getSalesTrend(days));
+});
+
+// ?from=YYYY-MM-DD&to=YYYY-MM-DD (inclusive, admin's local days) &tz=getTimezoneOffset()
+app.get("/api/admin/analytics", requireAdmin(), async (c) => {
+  const range = parseRange(c.req.query("from"), c.req.query("to"), c.req.query("tz"));
+  if (!range) return c.json({ error: "Invalid date range (max 400 days)" }, 400);
+  try {
+    return c.json(await buildAnalyticsReport(c.env.DB, range));
+  } catch (err: any) {
+    console.error("Analytics report failed:", err);
+    if (/no such table: analytics_events/i.test(String(err?.message ?? err))) {
+      return c.json({ error: "Analytics is not set up yet. Run migrations/0005_analytics.sql on the database." }, 503);
+    }
+    return c.json({ error: "Could not build the analytics report" }, 500);
+  }
 });
 
 app.get("/api/admin/orders", requireAdmin(), async (c) => {

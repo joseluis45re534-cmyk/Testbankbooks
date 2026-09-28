@@ -18,7 +18,7 @@ import { signedDownloadUrl } from "../../server/downloadLinks";
 import {
   type ShopifyConfig, normalizeShopDomain, isShopifyConfigured, getShopInfo,
   createDraftOrderCheckout, registerOrdersPaidWebhook, verifyShopifyWebhook,
-  checkoutIdFromOrderPayload,
+  checkoutIdFromOrderPayload, buyerFromOrderPayload,
 } from "../../server/shopify";
 import { generateBotReply, shouldBotReply, BOT_WELCOME } from "../../server/chatbot";
 import { generateBlogPostForProduct } from "../../server/blogGenerator";
@@ -528,9 +528,12 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
     const capturedAmount: string | undefined = captureData.purchase_units?.[0]?.payments?.captures?.[0]?.amount?.value;
     const amountMatches = !capturedAmount || Math.abs(parseFloat(capturedAmount) - serverTotal) <= 0.01;
     const paymentRef = `paypal:${captureData.id || orderID}`;
+    // A checkout that asked only for an email leaves the name to PayPal.
+    const payer = captureData.payer || {};
+    const payerName = [payer.name?.given_name, payer.name?.surname].filter(Boolean).join(" ") || null;
     const orderDetails = {
-      customerEmail: customerEmail || "unknown@email.com",
-      customerName: savedName,
+      customerEmail: customerEmail || payer.email_address || "unknown@email.com",
+      customerName: savedName || payerName,
       phone: savedPhone,
       amount: capturedAmount || serverTotal.toFixed(2),
       paymentMethod: "paypal",
@@ -912,10 +915,13 @@ app.post("/api/shopify/webhook", async (c) => {
       return c.json({ received: true, warning: "amount mismatch — review manually" });
     }
 
+    // While Shopify is offered, the site asks only for an email. The name and
+    // phone come from what the buyer entered on Shopify's checkout.
+    const buyer = buyerFromOrderPayload(payload);
     const { order } = await finalizePaidOrder(c, {
       customerEmail: pending.customerEmail || payload.email || payload.contact_email,
-      customerName: pending.customerName,
-      phone: pending.phone,
+      customerName: pending.customerName || buyer.name,
+      phone: pending.phone || buyer.phone,
       amount: paidAmount.toFixed(2),
       status: "paid",
       paymentMethod: "shopify",

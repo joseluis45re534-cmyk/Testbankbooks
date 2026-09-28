@@ -49,8 +49,10 @@ function loadSavedCheckoutInfo(): SavedCheckoutInfo {
   }
 }
 
+// Only the email is essential: when the contact step skips the name, the
+// payment provider (PayPal or Shopify) supplies it with the payment.
 function hasCompleteContact(info: SavedCheckoutInfo): boolean {
-  return !!(info.firstName?.trim() && info.lastName?.trim() && info.email?.trim());
+  return !!info.email?.trim();
 }
 
 // Keep the saved contact details but send the next checkout back to step 1.
@@ -81,10 +83,14 @@ export default function Checkout() {
   // offers no way to pay again.
   const [paymentReceived, setPaymentReceived] = useState<string | null>(null);
 
-  const { data: paymentMethods } = useQuery<Record<PaymentMethod, boolean>>({
+  const { data: paymentMethods, isError: paymentMethodsFailed } = useQuery<Record<PaymentMethod, boolean>>({
     queryKey: ["/api/payment-methods"],
     staleTime: 60_000,
   });
+  // Shopify's hosted checkout asks for name, phone and billing details itself,
+  // so while it is offered the contact step only asks for the delivery email.
+  const emailOnly = !!paymentMethods?.shopify;
+  const fullName = `${firstName} ${lastName}`.trim();
   const availableMethods = useMemo(
     () => PAYMENT_TILES.map((t) => t.id).filter((id) => !!paymentMethods?.[id]),
     [paymentMethods],
@@ -345,41 +351,55 @@ export default function Checkout() {
                       </p>
                     </div>
                   ) : step === 1 ? (
+                    !paymentMethods && !paymentMethodsFailed ? (
+                      <div className="flex items-center justify-center py-8 text-muted-foreground" data-testid="contact-loading">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      </div>
+                    ) : (
                     <form onSubmit={handleContactSubmit}>
                       <div className="space-y-4">
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" placeholder="John" required autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-firstname" />
+                        {!emailOnly && (
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="firstName">First Name</Label>
+                              <Input id="firstName" placeholder="John" required autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} data-testid="input-firstname" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="lastName">Last Name</Label>
+                              <Input id="lastName" placeholder="Doe" required autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-lastname" />
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" placeholder="Doe" required autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} data-testid="input-lastname" />
-                          </div>
-                        </div>
+                        )}
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <Input id="email" type="email" placeholder="john@example.com" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="input-email" />
                           <p className="text-xs text-muted-foreground">Your digital download link will be sent here</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Phone Number (Optional)</Label>
-                          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
-                        </div>
+                        {emailOnly ? (
+                          <p className="text-sm text-muted-foreground" data-testid="text-email-only">
+                            You'll enter your name and payment details on the secure payment page.
+                          </p>
+                        ) : (
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number (Optional)</Label>
+                            <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="input-phone" />
+                          </div>
+                        )}
 
                         <Button type="submit" className="w-full" size="lg" data-testid="button-continue">
                           Continue to Payment
                         </Button>
                       </div>
                     </form>
+                    )
                   ) : (
                     <div className="space-y-6">
                       <div className="p-4 bg-muted rounded-md">
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div>
                             <p className="text-sm text-muted-foreground">Contact</p>
-                            <p className="font-medium">{firstName} {lastName}</p>
-                            <p className="text-sm text-muted-foreground">{email}</p>
+                            {fullName && <p className="font-medium">{fullName}</p>}
+                            <p className={fullName ? "text-sm text-muted-foreground" : "font-medium"}>{email}</p>
                           </div>
                           <Button variant="ghost" size="sm" onClick={() => setStep(1)} disabled={shopifyInProgress} data-testid="button-edit-contact">
                             Edit

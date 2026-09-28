@@ -166,6 +166,18 @@ export async function verifyShopifyWebhook(rawBody: ArrayBuffer, hmacHeader: str
   return diff === 0;
 }
 
+/** The buyer's name and phone as entered on Shopify's checkout (billing address first, then customer). */
+export function buyerFromOrderPayload(payload: any): { name: string | null; phone: string | null } {
+  const billing = payload?.billing_address || {};
+  const customer = payload?.customer || {};
+  const name =
+    billing.name ||
+    [billing.first_name, billing.last_name].filter(Boolean).join(" ") ||
+    [customer.first_name, customer.last_name].filter(Boolean).join(" ");
+  const phone = payload?.phone || billing.phone || customer.phone;
+  return { name: String(name || "").trim() || null, phone: String(phone || "").trim() || null };
+}
+
 /** Pull our checkout id out of an orders/paid payload (note attribute, falling back to tag). */
 export function checkoutIdFromOrderPayload(payload: any): string | null {
   const attrs: any[] = payload?.note_attributes || [];

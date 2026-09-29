@@ -11,6 +11,9 @@ import {
 } from "@shared/schema";
 import { eq, like, or, and, sql, desc, count, isNotNull, asc, notInArray } from "drizzle-orm";
 
+// A cart counts as abandoned once its last item was added this long ago.
+export const ABANDONED_AFTER_MINUTES = 30;
+
 export interface IStorage {
   getAllProducts(): Promise<Product[]>;
   getProductsBySearch(search: string, category?: string | null): Promise<Product[]>;
@@ -283,7 +286,7 @@ export class DatabaseStorage implements IStorage {
     await this.db.update(abandonedCarts).set({ recoveryEmailSent: true }).where(eq(abandonedCarts.id, id));
   }
 
-  async detectAndRecordAbandonedCarts(thresholdMinutes: number = 60): Promise<number> {
+  async detectAndRecordAbandonedCarts(thresholdMinutes: number = ABANDONED_AFTER_MINUTES): Promise<number> {
     // SQLite version of the abandoned cart detection.
     // Uses unix-ms timestamps (drizzle ts column) so we compare against an integer cutoff.
     const cutoffMs = Date.now() - thresholdMinutes * 60 * 1000;

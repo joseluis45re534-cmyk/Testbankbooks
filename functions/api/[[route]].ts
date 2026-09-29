@@ -275,7 +275,13 @@ async function finalizePaidOrder(
 ): Promise<{ order: Order; created: boolean }> {
   const storage: DatabaseStorage = c.get("storage");
   const result = await storage.createOrderOnce(order);
-  if (opts.sessionId) await storage.clearCart(opts.sessionId);
+  if (opts.sessionId) {
+    await storage.clearCart(opts.sessionId);
+    // A cart that became an order is no longer abandoned. Best effort: the order
+    // already exists, so a failure here must not look like a lost order.
+    await c.get("db").delete(abandonedCarts).where(eq(abandonedCarts.sessionId, opts.sessionId))
+      .catch((err: unknown) => console.error("Abandoned-cart cleanup failed:", err));
+  }
   if (result.created && result.order.status === "paid") {
     trackEvent(c, "purchase", { value: parseFloat(result.order.amount) || 0, orderId: result.order.id });
   }
@@ -1263,7 +1269,7 @@ app.post("/api/admin/change-credentials", requireAdmin(), async (c) => {
 
 app.get("/api/admin/stats", requireAdmin(), async (c) => {
   const storage = c.get("storage");
-  await storage.detectAndRecordAbandonedCarts(60);
+  await storage.detectAndRecordAbandonedCarts();
   return c.json(await storage.getDashboardStats());
 });
 
@@ -1330,7 +1336,7 @@ app.post("/api/admin/orders/:id/resend-email", requireAdmin(), async (c) => {
 
 app.get("/api/admin/abandoned-carts", requireAdmin(), async (c) => {
   const storage = c.get("storage");
-  await storage.detectAndRecordAbandonedCarts(60);
+  await storage.detectAndRecordAbandonedCarts();
   return c.json(await storage.getAllAbandonedCarts());
 });
 

@@ -10,7 +10,7 @@ export const onScheduled: ExportedHandlerScheduledHandler<Env> = async (event, e
   const storage = new DatabaseStorage(db);
 
   try {
-    const found = await storage.detectAndRecordAbandonedCarts(60);
+    const found = await storage.detectAndRecordAbandonedCarts();
     if (found > 0) {
       console.log(`[cron] Detected ${found} abandoned cart(s)`);
     }

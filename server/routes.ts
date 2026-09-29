@@ -905,7 +905,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Dashboard stats
   app.get("/api/admin/stats", requireAdmin, async (req, res) => {
     try {
-      await storage.detectAndRecordAbandonedCarts(60);
+      await storage.detectAndRecordAbandonedCarts();
       const stats = await storage.getDashboardStats();
       res.json(stats);
     } catch (error) {
@@ -1030,7 +1030,7 @@ Sitemap: ${baseUrl}/sitemap.xml
   // Abandoned carts - detect fresh ones on each request
   app.get("/api/admin/abandoned-carts", requireAdmin, async (req, res) => {
     try {
-      await storage.detectAndRecordAbandonedCarts(60);
+      await storage.detectAndRecordAbandonedCarts();
       const carts = await storage.getAllAbandonedCarts();
       res.json(carts);
     } catch (error) {

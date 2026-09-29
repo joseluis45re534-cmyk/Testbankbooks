@@ -366,7 +366,7 @@ app.use((req, res, next) => {
       // Scan for abandoned carts every 30 minutes
       setInterval(async () => {
         try {
-          const found = await storage.detectAndRecordAbandonedCarts(60);
+          const found = await storage.detectAndRecordAbandonedCarts();
           if (found > 0) {
             log(`Detected ${found} abandoned cart(s)`, "abandoned-carts");
           }

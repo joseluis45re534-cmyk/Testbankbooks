@@ -140,8 +140,8 @@ export default function AdminSettings() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/payment-settings"] });
       toast({ title: "Settings saved successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to save settings", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ title: apiErrorMessage(error, "Failed to save settings"), variant: "destructive" });
     },
   });
 
@@ -409,7 +409,9 @@ export default function AdminSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Store domain</label>
+                <label className="text-sm font-medium">
+                  Store domain <span className="text-muted-foreground font-normal">(your .myshopify.com address — not a custom domain)</span>
+                </label>
                 <Input
                   placeholder="your-store.myshopify.com"
                   value={shopifyConfig.shopDomain}

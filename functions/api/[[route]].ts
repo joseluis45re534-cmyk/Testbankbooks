@@ -16,7 +16,7 @@ import {
 } from "../../shared/schema";
 import { signedDownloadUrl } from "../../server/downloadLinks";
 import {
-  type ShopifyConfig, normalizeShopDomain, isShopifyConfigured, getShopInfo,
+  type ShopifyConfig, normalizeShopDomain, isShopifyConfigured, getShopInfo, SHOP_DOMAIN_HELP,
   createDraftOrderCheckout, registerOrdersPaidWebhook, verifyShopifyWebhook,
   checkoutIdFromOrderPayload, buyerFromOrderPayload,
 } from "../../server/shopify";
@@ -209,11 +209,15 @@ async function getPayPalAccessToken(clientId: string, clientSecret: string): Pro
 }
 
 // Shopify settings: admin-saved config overrides env vars, like Stripe/PayPal.
-async function getShopifyConfig(storage: DatabaseStorage, env: Env): Promise<{ config: ShopifyConfig | null; enabled: boolean }> {
+async function getShopifyConfig(
+  storage: DatabaseStorage,
+  env: Env,
+): Promise<{ config: ShopifyConfig | null; enabled: boolean; domainInvalid?: boolean }> {
   const { config: cfg, enabled: savedEnabled } = await getProviderSetting(storage, "shopify");
   const enabled = !!savedEnabled;
-  const shopDomain = normalizeShopDomain(cfg.shopDomain || env.SHOPIFY_SHOP_DOMAIN);
-  if (!shopDomain) return { config: null, enabled };
+  const rawDomain = cfg.shopDomain || env.SHOPIFY_SHOP_DOMAIN;
+  const shopDomain = normalizeShopDomain(rawDomain);
+  if (!shopDomain) return { config: null, enabled, domainInvalid: !!rawDomain };
   const config: ShopifyConfig = {
     shopDomain,
     clientId: cfg.clientId || env.SHOPIFY_CLIENT_ID || null,
@@ -1461,13 +1465,26 @@ app.get("/api/admin/payment-settings", requireAdmin(), async (c) =>
 app.post("/api/admin/payment-settings", requireAdmin(), async (c) => {
   const v = paymentSettingSchema.safeParse(await c.req.json());
   if (!v.success) return c.json({ error: "Invalid data" }, 400);
+  if (v.data.provider === "shopify") {
+    let shopDomain = "";
+    try { shopDomain = String(JSON.parse(v.data.config || "{}").shopDomain || "").trim(); } catch {}
+    // Refuse rather than save: a domain the API can't use would silently take
+    // Shopify off the checkout.
+    if (shopDomain && !normalizeShopDomain(shopDomain)) return c.json({ error: SHOP_DOMAIN_HELP }, 400);
+  }
   return c.json(await c.get("storage").upsertPaymentSetting(v.data));
 });
 
 // Verifies credentials and reports the store currency (checkout charges USD).
 app.post("/api/admin/shopify/test-connection", requireAdmin(), async (c) => {
-  const { config } = await getShopifyConfig(c.get("storage"), c.env);
-  if (!config) return c.json({ error: "Save a store domain and either a client ID + secret or an Admin API access token first" }, 400);
+  const { config, domainInvalid } = await getShopifyConfig(c.get("storage"), c.env);
+  if (!config) {
+    return c.json({
+      error: domainInvalid
+        ? SHOP_DOMAIN_HELP
+        : "Save a store domain and either a client ID + secret or an Admin API access token first",
+    }, 400);
+  }
   try {
     const shop = await getShopInfo(config);
     const usdEnabled = shop.currencyCode === "USD" || (shop.enabledPresentmentCurrencies || []).includes("USD");

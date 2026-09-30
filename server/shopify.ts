@@ -22,9 +22,20 @@ export type ShopifyConfig = {
   webhookSecret: string | null;
 };
 
+// Shopify's Admin API only answers on a store's myshopify.com address, never on
+// a custom domain (such as the one customers see on the checkout page).
+export const SHOP_DOMAIN_HELP =
+  "Store domain must be your store's .myshopify.com address (for example your-store.myshopify.com). " +
+  "Find it in Shopify admin → Settings → Domains. A custom domain such as pay.yoursite.com can't be used here, " +
+  "though customers will still see it on the payment page.";
+
 export function normalizeShopDomain(input: string | null | undefined): string | null {
   if (!input) return null;
-  let d = input.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const raw = input.trim().toLowerCase();
+  // An admin link, admin.shopify.com/store/<handle>, names the store too.
+  const adminLink = raw.match(/^(?:https?:\/\/)?admin\.shopify\.com\/store\/([a-z0-9][a-z0-9-]*)/);
+  if (adminLink) return `${adminLink[1]}.myshopify.com`;
+  let d = raw.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
   if (!d) return null;
   if (!d.includes(".")) d = `${d}.myshopify.com`;
   return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(d) ? d : null;

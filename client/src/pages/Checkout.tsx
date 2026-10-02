@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useMemo, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { analytics } from "@/lib/analytics";
+import { useCartPricing } from "@/hooks/use-multibuy";
+import { offerLabel } from "@shared/multibuy";
 import type { CartItemWithProduct } from "@shared/schema";
 import PayPalButton from "@/components/PayPalButton";
 import StripeCheckout from "@/components/StripeCheckout";
@@ -122,10 +124,9 @@ export default function Checkout() {
   });
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = item.product?.salePrice ? parseFloat(item.product.salePrice) : parseFloat(item.product?.price || "0");
-    return sum + price * item.quantity;
-  }, 0);
+  // The server charges this same discounted total.
+  const { pricing, lineFor } = useCartPricing(cartItems);
+  const { subtotal, discount, total } = pricing;
 
   // Only called once PayPal reports the payment COMPLETED, so from here on the
   // customer has paid and must never be told to try again.
@@ -135,7 +136,7 @@ export default function Checkout() {
     try {
       analytics.purchase({
         transactionId: order?.id || paypalOrderId,
-        value: subtotal,
+        value: total,
         items: cartItems
           .filter((i) => !!i.product)
           .map((i) => ({ product: i.product!, quantity: i.quantity })),
@@ -190,7 +191,7 @@ export default function Checkout() {
 
       analytics.purchase({
         transactionId: orderData.order.id,
-        value: subtotal,
+        value: total,
         items: cartItems
           .filter((i) => !!i.product)
           .map((i) => ({ product: i.product!, quantity: i.quantity })),
@@ -218,7 +219,7 @@ export default function Checkout() {
     queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
     analytics.purchase({
       transactionId: orderId,
-      value: subtotal,
+      value: total,
       items: cartItems
         .filter((i) => !!i.product)
         .map((i) => ({ product: i.product!, quantity: i.quantity })),
@@ -277,7 +278,7 @@ export default function Checkout() {
     <div className="min-h-screen flex flex-col bg-background">
       <SEO 
         title="Secure Checkout" 
-        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${subtotal.toFixed(2)}. Secure payment and instant digital delivery.`}
+        description={`Complete your order of ${cartCount} item${cartCount !== 1 ? 's' : ''} for $${total.toFixed(2)}. Secure payment and instant digital delivery.`}
       />
       <Header cartCount={cartCount} />
 
@@ -446,7 +447,7 @@ export default function Checkout() {
                       ) : activeMethod === "shopify" ? (
                         <div data-testid="shopify-checkout-container">
                           <ShopifyCheckout
-                            amount={subtotal.toFixed(2)}
+                            amount={total.toFixed(2)}
                             customerEmail={email}
                             customerName={`${firstName} ${lastName}`.trim()}
                             phone={phone}
@@ -458,7 +459,7 @@ export default function Checkout() {
                       ) : activeMethod === "stripe" ? (
                         <div data-testid="stripe-checkout-container">
                           <StripeCheckout
-                            amount={subtotal.toFixed(2)}
+                            amount={total.toFixed(2)}
                             customerEmail={email}
                             customerName={`${firstName} ${lastName}`.trim()}
                             phone={phone}
@@ -470,14 +471,14 @@ export default function Checkout() {
                       ) : (
                         <div className="space-y-4">
                           <p className="text-sm text-muted-foreground text-center">
-                            Pay ${subtotal.toFixed(2)} with your PayPal account, or choose
+                            Pay ${total.toFixed(2)} with your PayPal account, or choose
                             <span className="font-medium text-foreground"> Debit or Credit Card</span> — no PayPal
                             account needed. Card payments are processed securely by PayPal.
                           </p>
                           <div className="flex justify-center" data-testid="paypal-button-container">
                             <div className="w-full max-w-sm">
                               <PayPalButton
-                                amount={subtotal.toFixed(2)}
+                                amount={total.toFixed(2)}
                                 currency="USD"
                                 intent="CAPTURE"
                                 customerEmail={email}
@@ -526,8 +527,8 @@ export default function Checkout() {
                   <div className="space-y-4 max-h-64 overflow-y-auto mb-4">
                     {cartItems.map((item) => {
                       if (!item.product) return null;
-                      const price = item.product.salePrice ? parseFloat(item.product.salePrice) : parseFloat(item.product.price);
-                      
+                      const line = lineFor(item.id);
+
                       return (
                         <div key={item.id} className="flex gap-3">
                           <div className="w-12 h-12 bg-muted rounded-md overflow-hidden shrink-0">
@@ -541,10 +542,20 @@ export default function Checkout() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium line-clamp-1">{item.product.title}</p>
-                            <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Qty: {item.quantity}
+                              {line && line.discount > 0 && (
+                                <span className="text-primary font-medium"> · Multi-buy {offerLabel(line.percentOff)}</span>
+                              )}
+                            </p>
                           </div>
-                          <span className="text-sm font-medium shrink-0">
-                            ${(price * item.quantity).toFixed(2)}
+                          <span className="text-sm font-medium shrink-0 text-right">
+                            {line && line.discount > 0 && (
+                              <span className="block text-xs text-muted-foreground line-through">
+                                ${(line.unitPrice * line.quantity).toFixed(2)}
+                              </span>
+                            )}
+                            ${(line?.lineTotal ?? 0).toFixed(2)}
                           </span>
                         </div>
                       );
@@ -558,6 +569,12 @@ export default function Checkout() {
                       <span className="text-muted-foreground">Subtotal</span>
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm" data-testid="row-checkout-multibuy-discount">
+                        <span className="text-muted-foreground">Multi-buy discount</span>
+                        <span className="text-primary font-medium">−${discount.toFixed(2)}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Delivery</span>
                       <span className="text-primary font-medium">Instant</span>
@@ -568,7 +585,7 @@ export default function Checkout() {
 
                   <div className="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span className="text-primary" data-testid="text-checkout-total">${subtotal.toFixed(2)} USD</span>
+                    <span className="text-primary" data-testid="text-checkout-total">${total.toFixed(2)} USD</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 text-right">All prices in US Dollars (USD)</p>
 

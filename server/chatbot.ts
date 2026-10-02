@@ -1,5 +1,6 @@
 import type { ChatMessage, Order } from "@shared/schema";
 import type { IStorage } from "./storage";
+import { type MultibuyConfig, offerLabel, ordinal } from "../shared/multibuy";
 
 const BOT_NAME = "NursTestBank Assistant";
 
@@ -284,6 +285,7 @@ export async function generateBotReply(
   visitorEmail?: string | null,
   storage?: IStorage,
   resendOrderEmail?: ResendOrderEmail,
+  promo?: MultibuyConfig,
 ): Promise<string> {
   const intent = detectIntent(userMessage);
 
@@ -320,7 +322,25 @@ export async function generateBotReply(
     }
   }
 
+  if (intent === "pricing" && promo?.enabled) return buildPricingReply(promo);
+
   return STATIC_REPLIES[intent] ?? STATIC_REPLIES.fallback;
+}
+
+// The pricing answer while the multi-buy offer is on.
+function buildPricingReply(promo: MultibuyConfig): string {
+  const steps = promo.tiers
+    .map((percent, i) => ({ percent, position: i + 1 }))
+    .filter((t) => t.percent > 0)
+    .map((t) => `• ${ordinal(t.position)} item: **${offerLabel(t.percent)}**`);
+  return [
+    "Each product page shows the current price. Most test banks are between $15–$25, with frequent sale prices.",
+    "",
+    "**Multi-buy offer:** the more you add, the more you save. Your highest-priced item is full price, then:",
+    ...steps,
+    "",
+    "The discount is applied automatically in your cart, so there's no code to enter.",
+  ].join("\n");
 }
 
 export { BOT_NAME };

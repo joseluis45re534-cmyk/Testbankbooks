@@ -107,13 +107,40 @@ export async function createDraftOrderCheckout(
     checkoutId: string;
     email: string;
     currency: string;
-    lineItems: { title: string; unitPrice: string; quantity: number; sku?: string }[];
+    // `discount` is the multi-buy saving on one unit of the line, in dollars.
+    lineItems: { title: string; unitPrice: number; quantity: number; discount: number; percentOff: number; sku?: string }[];
+    // What the site charges. The draft order must come to at least this.
+    expectedTotal: number;
   },
 ): Promise<{ draftOrderId: string; invoiceUrl: string }> {
+  const line = (li: (typeof input.lineItems)[number], quantity: number, discount: number) => ({
+    title: li.title.slice(0, 255),
+    quantity,
+    sku: li.sku,
+    originalUnitPriceWithCurrency: { amount: li.unitPrice.toFixed(2), currencyCode: input.currency },
+    ...(discount > 0 && {
+      appliedDiscount: {
+        title: `Multi-buy ${li.percentOff >= 100 ? "free item" : `${li.percentOff}% off`}`,
+        valueType: "FIXED_AMOUNT",
+        value: discount,
+        amountWithCurrency: { amount: discount.toFixed(2), currencyCode: input.currency },
+      },
+    }),
+    requiresShipping: false,
+    taxable: false,
+  });
+  // A discount covers one unit, so a discounted line is sent as a single unit
+  // and any extra copies go on a full-price line of their own. Shopify then
+  // never has to decide whether a fixed amount is per unit or per line.
+  const lineItems = input.lineItems.flatMap((li) =>
+    li.discount > 0
+      ? [line(li, 1, li.discount), ...(li.quantity > 1 ? [line(li, li.quantity - 1, 0)] : [])]
+      : [line(li, li.quantity, 0)]);
+
   const data = await shopifyGraphql(cfg, `
     mutation CreateCheckout($input: DraftOrderInput!) {
       draftOrderCreate(input: $input) {
-        draftOrder { id invoiceUrl }
+        draftOrder { id invoiceUrl totalPriceSet { presentmentMoney { amount currencyCode } } }
         userErrors { field message }
       }
     }`, {
@@ -123,14 +150,7 @@ export async function createDraftOrderCheckout(
       tags: ["nurstestbank", `tbb:${input.checkoutId}`],
       customAttributes: [{ key: CHECKOUT_ATTRIBUTE_KEY, value: input.checkoutId }],
       allowDiscountCodesInCheckout: false,
-      lineItems: input.lineItems.map((li) => ({
-        title: li.title.slice(0, 255),
-        quantity: li.quantity,
-        sku: li.sku,
-        originalUnitPriceWithCurrency: { amount: li.unitPrice, currencyCode: input.currency },
-        requiresShipping: false,
-        taxable: false,
-      })),
+      lineItems,
     },
   });
   const result = data.draftOrderCreate;
@@ -138,6 +158,15 @@ export async function createDraftOrderCheckout(
     throw new Error(`Shopify draftOrderCreate: ${result.userErrors.map((e: any) => e.message).join("; ")}`);
   }
   if (!result.draftOrder?.invoiceUrl) throw new Error("Shopify draftOrderCreate returned no invoiceUrl");
+  // If Shopify worked out a lower total than the site, the orders/paid webhook
+  // would hold the order as underpaid after the customer has paid. Stop here,
+  // before they are sent to pay.
+  const shopifyTotal = parseFloat(result.draftOrder.totalPriceSet?.presentmentMoney?.amount ?? "NaN");
+  if (!Number.isFinite(shopifyTotal)) {
+    console.error("Shopify draftOrderCreate returned no total; the webhook will still check the paid amount", result.draftOrder.id);
+  } else if (shopifyTotal + 0.01 < input.expectedTotal) {
+    throw new Error(`Shopify draft order total ${shopifyTotal} is below the cart total ${input.expectedTotal} (draft ${result.draftOrder.id})`);
+  }
   return { draftOrderId: result.draftOrder.id, invoiceUrl: result.draftOrder.invoiceUrl };
 }
 

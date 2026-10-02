@@ -23,6 +23,7 @@ import AdminChat from "@/pages/admin/AdminChat";
 import AdminBlog from "@/pages/admin/AdminBlog";
 import AdminSEO from "@/pages/admin/AdminSEO";
 import AdminMedia from "@/pages/admin/AdminMedia";
+import AdminOffers from "@/pages/admin/AdminOffers";
 import ThankYou from "@/pages/ThankYou";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsConditions from "@/pages/TermsConditions";
@@ -34,6 +35,7 @@ import Blog from "@/pages/Blog";
 import BlogPost from "@/pages/BlogPost";
 import { ChatWidget } from "@/components/ChatWidget";
 import { CustomScripts } from "@/components/CustomScripts";
+import { MultibuyPopupProvider } from "@/components/MultibuyPopup";
 
 function ChatWidgetWrapper() {
   const [location] = useLocation();
@@ -71,6 +73,7 @@ function Router() {
       <Route path="/owner/media" component={AdminMedia} />
       <Route path="/owner/downloads" component={AdminDownloads} />
       <Route path="/owner/chat" component={AdminChat} />
+      <Route path="/owner/offers" component={AdminOffers} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-conditions" component={TermsConditions} />
       <Route path="/refund-policy" component={RefundPolicy} />
@@ -91,7 +94,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <CustomScripts />
-          <Router />
+          <MultibuyPopupProvider>
+            <Router />
+          </MultibuyPopupProvider>
           <ChatWidgetWrapper />
           <VisitTracker />
         </TooltipProvider>

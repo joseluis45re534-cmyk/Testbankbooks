@@ -1,16 +1,19 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { analytics } from "@/lib/analytics";
+import { useCartPricing, offerProgress } from "@/hooks/use-multibuy";
+import { offerLabel } from "@shared/multibuy";
 import type { CartItemWithProduct } from "@shared/schema";
 
 export default function Cart() {
@@ -41,10 +44,9 @@ export default function Cart() {
   });
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = item.product?.salePrice ? parseFloat(item.product.salePrice) : parseFloat(item.product?.price || "0");
-    return sum + price * item.quantity;
-  }, 0);
+  const { promo, pricing, lineFor } = useCartPricing(cartItems);
+  const { subtotal, discount, total } = pricing;
+  const progress = promo.enabled ? offerProgress(pricing) : null;
 
   if (isLoading) {
     return (
@@ -81,7 +83,7 @@ export default function Cart() {
       <SEO 
         title="Shopping Cart" 
         description={cartItems.length > 0 
-          ? `You have ${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart. Total: $${subtotal.toFixed(2)}`
+          ? `You have ${cartCount} item${cartCount !== 1 ? 's' : ''} in your cart. Total: $${total.toFixed(2)}`
           : "Your cart is empty. Browse our collection of test banks and study guides."
         } 
       />
@@ -105,9 +107,28 @@ export default function Cart() {
           ) : (
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4">
+                {progress && (
+                  <div
+                    className="flex items-start gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4 text-sm"
+                    data-testid="banner-multibuy"
+                  >
+                    <Tag className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold">Buy more, save more. </span>
+                      {progress}{" "}
+                      {pricing.nextTier && (
+                        <Link href="/shop" className="text-primary font-medium hover:underline">
+                          Browse test banks
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {cartItems.map((item) => {
                   if (!item.product) return null;
-                  const price = item.product.salePrice ? parseFloat(item.product.salePrice) : parseFloat(item.product.price);
+                  const line = lineFor(item.id);
+                  const price = line?.unitPrice ?? 0;
+                  const paid = line ? line.unitPrice - line.discount : price;
                   
                   return (
                     <Card key={item.id} data-testid={`card-cart-item-${item.id}`}>
@@ -135,9 +156,17 @@ export default function Cart() {
                                 {item.product.title}
                               </h3>
                             </Link>
-                            <p className="text-lg font-bold text-primary mt-1">
-                              ${price.toFixed(2)}
-                            </p>
+                            <div className="flex items-center flex-wrap gap-2 mt-1">
+                              <span className="text-lg font-bold text-primary">${paid.toFixed(2)}</span>
+                              {line && line.discount > 0 && (
+                                <>
+                                  <span className="text-sm text-muted-foreground line-through">${price.toFixed(2)}</span>
+                                  <Badge variant="secondary" data-testid={`badge-multibuy-${item.id}`}>
+                                    {offerLabel(line.percentOff)}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
 
                             <div className="flex items-center justify-end mt-3">
                               <Button
@@ -170,6 +199,12 @@ export default function Cart() {
                         <span className="text-muted-foreground">Subtotal ({cartCount} items)</span>
                         <span>${subtotal.toFixed(2)}</span>
                       </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-sm" data-testid="row-multibuy-discount">
+                          <span className="text-muted-foreground">Multi-buy discount</span>
+                          <span className="text-primary font-medium">−${discount.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Delivery</span>
                         <span className="text-primary font-medium">Free (Instant)</span>
@@ -180,7 +215,7 @@ export default function Cart() {
 
                     <div className="flex justify-between font-bold text-lg mb-6">
                       <span>Total</span>
-                      <span className="text-primary" data-testid="text-cart-total">${subtotal.toFixed(2)}</span>
+                      <span className="text-primary" data-testid="text-cart-total">${total.toFixed(2)}</span>
                     </div>
 
                     <Link href="/checkout">
@@ -193,7 +228,7 @@ export default function Cart() {
                             cartItems
                               .filter((i) => !!i.product)
                               .map((i) => ({ product: i.product!, quantity: i.quantity })),
-                            subtotal
+                            total
                           );
                         }}
                       >

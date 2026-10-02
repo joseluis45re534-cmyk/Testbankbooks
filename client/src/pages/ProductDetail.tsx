@@ -15,6 +15,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
+import { useMultibuyPopup } from "@/components/MultibuyPopup";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, CartItem } from "@shared/schema";
 
@@ -94,6 +95,7 @@ export default function ProductDetail() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const { toast } = useToast();
+  const showOffer = useMultibuyPopup();
 
   const { data: product, isLoading, error } = useQuery<Product>({
     queryKey: ["/api/products", params?.slug],
@@ -132,10 +134,12 @@ export default function ProductDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
       if (product) analytics.addToCart(product, 1);
-      toast({
-        title: "Added to cart",
-        description: "Item has been added to your cart",
-      });
+      if (!showOffer(product?.title)) {
+        toast({
+          title: "Added to cart",
+          description: "Item has been added to your cart",
+        });
+      }
     },
     onError: () => {
       toast({

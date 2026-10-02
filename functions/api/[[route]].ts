@@ -14,6 +14,9 @@ import {
   adminUsers, paymentSettings, blogPosts, pendingCheckouts,
   type CartItemWithProduct, type Order, type Product,
 } from "../../shared/schema";
+import {
+  type MultibuyConfig, MULTIBUY_SETTING_KEY, MAX_MULTIBUY_TIERS, parseMultibuyConfig, priceCart,
+} from "../../shared/multibuy";
 import { signedDownloadUrl } from "../../server/downloadLinks";
 import {
   type ShopifyConfig, normalizeShopDomain, isShopifyConfigured, getShopInfo, SHOP_DOMAIN_HELP,
@@ -228,21 +231,32 @@ async function getShopifyConfig(
   return { config: isShopifyConfigured(config) ? config : null, enabled };
 }
 
-function summarizeCart(items: CartItemWithProduct[]) {
-  let total = 0;
-  const productIds: string[] = [];
-  const productTitles: string[] = [];
-  const lineItems: { productId: string; title: string; unitPrice: number; quantity: number }[] = [];
-  for (const item of items) {
-    const p = item.product;
-    if (!p) continue;
-    const unitPrice = p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price);
-    total += unitPrice * item.quantity;
-    productIds.push(p.id);
-    productTitles.push(p.title);
-    lineItems.push({ productId: p.id, title: p.title, unitPrice, quantity: item.quantity });
+// The multi-buy offer saved in Admin -> Offers. No row means the offer is off.
+async function getMultibuyConfig(db: any): Promise<MultibuyConfig> {
+  try {
+    const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, MULTIBUY_SETTING_KEY));
+    return parseMultibuyConfig(row?.value);
+  } catch (err) {
+    console.error("Multi-buy setting read failed:", err);
+    return parseMultibuyConfig(null);
   }
-  return { total, productIds, productTitles, lineItems };
+}
+
+// What the cart costs, with the multi-buy discount applied. Every payment path
+// prices the cart here, so the amount charged always matches what the cart
+// and checkout pages showed.
+function summarizeCart(items: CartItemWithProduct[], promo: MultibuyConfig) {
+  const priced = priceCart(items, promo);
+  return {
+    total: priced.total,
+    productIds: priced.lines.map((l) => l.productId),
+    productTitles: priced.lines.map((l) => l.title),
+    lineItems: priced.lines,
+  };
+}
+
+async function summarizeSessionCart(c: any, items: CartItemWithProduct[]) {
+  return summarizeCart(items, await getMultibuyConfig(c.get("db")));
 }
 
 // Records a checkout step for Admin -> Analytics. Best effort: it runs inside
@@ -463,12 +477,7 @@ app.post("/api/paypal/order", rateLimit("pay", 20, 5 * 60), async (c) => {
     const cartItemsList = await storage.getCartItems(sessionId);
     if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
 
-    let total = 0;
-    for (const item of cartItemsList) {
-      const p = item.product;
-      if (!p) continue;
-      total += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
-    }
+    const { total } = await summarizeSessionCart(c, cartItemsList);
 
     const { clientId, clientSecret, enabled } = await getPayPalKeys(storage, c.env);
     if (!clientId || !clientSecret) return c.json({ error: "PayPal not configured" }, 500);
@@ -503,18 +512,9 @@ app.post("/api/paypal/order/:orderID/capture", async (c) => {
     const cartItemsList = await storage.getCartItems(sessionId);
     if (!cartItemsList.length) return c.json({ error: "Cart is empty", charged: false }, 400);
 
-    let serverTotal = 0;
-    const productIds: string[] = [];
-    const productTitles: string[] = [];
+    const { total: serverTotal, productIds, productTitles } = await summarizeSessionCart(c, cartItemsList);
     const savedName = customerName || cartItemsList[0]?.customerName || null;
     const savedPhone = phone || cartItemsList[0]?.phone || null;
-    for (const item of cartItemsList) {
-      const p = item.product;
-      if (!p) continue;
-      serverTotal += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
-      productIds.push(p.id);
-      productTitles.push(p.title);
-    }
 
     const { clientId, clientSecret } = await getPayPalKeys(storage, c.env);
     if (!clientId || !clientSecret) return c.json({ error: "PayPal not configured", charged: false }, 500);
@@ -603,16 +603,7 @@ app.post("/api/stripe/create-payment-intent", rateLimit("pay", 20, 5 * 60), asyn
     const cartItemsList = await storage.getCartItems(sessionId);
     if (!cartItemsList.length) return c.json({ error: "Cart is empty" }, 400);
 
-    let total = 0;
-    const productIds: string[] = [];
-    const productTitles: string[] = [];
-    for (const item of cartItemsList) {
-      const p = item.product;
-      if (!p) continue;
-      total += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
-      productIds.push(p.id);
-      productTitles.push(p.title);
-    }
+    const { total, productIds } = await summarizeSessionCart(c, cartItemsList);
 
     const { secretKey, enabled } = await getStripeKeys(storage, c.env);
     if (!secretKey) return c.json({ error: "Stripe not configured" }, 500);
@@ -661,18 +652,9 @@ app.post("/api/stripe/confirm-payment", async (c) => {
       return c.json({ error: "Cart is empty" }, 400);
     }
 
-    let serverTotal = 0;
-    const productIds: string[] = [];
-    const productTitles: string[] = [];
+    const { total: serverTotal, productIds, productTitles } = await summarizeSessionCart(c, cartItemsList);
     const savedName = customerName || cartItemsList[0]?.customerName || null;
     const savedPhone = phone || cartItemsList[0]?.phone || null;
-    for (const item of cartItemsList) {
-      const p = item.product;
-      if (!p) continue;
-      serverTotal += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
-      productIds.push(p.id);
-      productTitles.push(p.title);
-    }
 
     const paidAmount = pi.amount / 100;
     if (Math.abs(paidAmount - serverTotal) > 0.01) return c.json({ error: "Payment amount mismatch" }, 400);
@@ -745,18 +727,9 @@ app.post("/api/stripe/webhook", async (c) => {
       return c.json({ received: true, alreadyProcessed: true });
     }
 
-    let serverTotal = 0;
-    const productIds: string[] = [];
-    const productTitles: string[] = [];
+    const { total: serverTotal, productIds, productTitles } = await summarizeSessionCart(c, cartItemsList);
     const savedName = cartItemsList[0]?.customerName || null;
     const savedPhone = cartItemsList[0]?.phone || null;
-    for (const item of cartItemsList) {
-      const p = item.product;
-      if (!p) continue;
-      serverTotal += (p.salePrice ? parseFloat(p.salePrice) : parseFloat(p.price)) * item.quantity;
-      productIds.push(p.id);
-      productTitles.push(p.title);
-    }
 
     const paidAmount = pi.amount / 100;
     if (Math.abs(paidAmount - serverTotal) > 0.01) {
@@ -825,7 +798,7 @@ app.post("/api/shopify/checkout", rateLimit("pay", 20, 5 * 60), async (c) => {
     if (!config || !enabled) return c.json({ error: "Shopify Payments is not available" }, 503);
 
     const cartItemsList = await storage.getCartItems(sessionId);
-    const cart = summarizeCart(cartItemsList);
+    const cart = await summarizeSessionCart(c, cartItemsList);
     if (!cart.lineItems.length) return c.json({ error: "Cart is empty" }, 400);
 
     const checkoutId = crypto.randomUUID();
@@ -852,10 +825,13 @@ app.post("/api/shopify/checkout", rateLimit("pay", 20, 5 * 60), async (c) => {
       currency,
       lineItems: cart.lineItems.map((li) => ({
         title: li.title,
-        unitPrice: li.unitPrice.toFixed(2),
+        unitPrice: li.unitPrice,
         quantity: li.quantity,
+        discount: li.discount,
+        percentOff: li.percentOff,
         sku: li.productId,
       })),
+      expectedTotal: cart.total,
     });
 
     await db.update(pendingCheckouts)
@@ -1000,7 +976,11 @@ app.post("/api/cart", async (c) => {
 app.patch("/api/cart/:itemId", async (c) => {
   const { quantity } = await c.req.json();
   if (!quantity || quantity < 1) return c.json({ error: "Invalid quantity" }, 400);
-  const item = await c.get("storage").updateCartItemQuantity(c.req.param("itemId"), quantity);
+  // A cart holds one copy of each product (the multi-buy discount counts cart
+  // lines), and a caller may only change their own cart.
+  const [item] = await c.get("db").update(cartItems).set({ quantity: 1 })
+    .where(and(eq(cartItems.id, c.req.param("itemId")), eq(cartItems.sessionId, c.get("sessionId"))))
+    .returning();
   if (!item) return c.json({ error: "Cart item not found" }, 404);
   return c.json(item);
 });
@@ -1115,6 +1095,11 @@ app.post("/api/contact", rateLimit("contact", 5, 10 * 60), async (c) => {
 });
 
 // ─── Site settings (public) ───────────────────────────────────────────────────
+
+// The multi-buy offer, for the cart popup and the cart and checkout totals.
+app.get("/api/promo", async (c) => {
+  return c.json(await getMultibuyConfig(c.get("db")));
+});
 
 app.get("/api/site-settings/custom-html", async (c) => {
   const db = c.get("db");
@@ -1526,6 +1511,27 @@ app.post("/api/admin/settings", requireAdmin(), async (c) => {
   return c.json({ success: true });
 });
 
+// ─── Admin: Multi-buy offer ──────────────────────────────────────────────────
+
+const multibuySchema = z.object({
+  enabled: z.boolean(),
+  // tiers[i] is the percent off the (i+1)th item by price; the first is always 0.
+  tiers: z.array(z.number().int().min(0).max(100)).min(2).max(MAX_MULTIBUY_TIERS),
+});
+
+app.get("/api/admin/promo", requireAdmin(), async (c) => {
+  return c.json(await getMultibuyConfig(c.get("db")));
+});
+
+app.post("/api/admin/promo", requireAdmin(), async (c) => {
+  const v = multibuySchema.safeParse(await c.req.json().catch(() => null));
+  if (!v.success) return c.json({ error: "Each discount must be a whole number from 0 to 100" }, 400);
+  const value = JSON.stringify({ enabled: v.data.enabled, tiers: [0, ...v.data.tiers.slice(1)] });
+  await c.get("db").insert(siteSettings).values({ id: crypto.randomUUID(), key: MULTIBUY_SETTING_KEY, value, updatedAt: new Date() })
+    .onConflictDoUpdate({ target: siteSettings.key, set: { value, updatedAt: new Date() } });
+  return c.json(parseMultibuyConfig(value));
+});
+
 app.post("/api/admin/site-settings/custom-html", requireAdmin(), async (c) => {
   const { headerHtml, bodyHtml, footerHtml } = await c.req.json();
   const db = c.get("db");
@@ -1632,7 +1638,8 @@ app.post("/api/chat/message", rateLimit("chat", 20, 60), async (c) => {
               return !result?.error;
             }
           : undefined;
-        const reply = await generateBotReply(message, conv?.visitorEmail || null, storage, resendOrderEmail);
+        const promo = await getMultibuyConfig(c.get("db"));
+        const reply = await generateBotReply(message, conv?.visitorEmail || null, storage, resendOrderEmail, promo);
         await storage.createMessage({ conversationId, message: reply, senderType: "bot", isRead: false });
       }
     } catch (e) {

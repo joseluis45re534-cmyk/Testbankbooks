@@ -12,6 +12,7 @@ import type { BlogPost as BlogPostType, CartItem, Product } from "@shared/schema
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useMultibuyPopup } from "@/components/MultibuyPopup";
 
 function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "";
@@ -44,6 +45,7 @@ export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const showOffer = useMultibuyPopup();
 
   const { data: cartItems = [] } = useQuery<CartItem[]>({ queryKey: ["/api/cart"] });
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -74,7 +76,9 @@ export default function BlogPost() {
       apiRequest("POST", "/api/cart", { productId, quantity: 1 }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({ title: "Added to cart", description: "Item added successfully." });
+      if (!showOffer(relatedProduct?.title)) {
+        toast({ title: "Added to cart", description: "Item added successfully." });
+      }
     },
   });
 

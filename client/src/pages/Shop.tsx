@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMultibuyPopup } from "@/components/MultibuyPopup";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Product, CartItem } from "@shared/schema";
 
@@ -24,6 +25,7 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(urlCategory);
   const [addingProductId, setAddingProductId] = useState<string | undefined>();
   const { toast } = useToast();
+  const showOffer = useMultibuyPopup();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -64,12 +66,14 @@ export default function Shop() {
       setAddingProductId(productId);
       return apiRequest("POST", "/api/cart", { productId, quantity: 1 });
     },
-    onSuccess: () => {
+    onSuccess: (_data, productId) => {
       queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
-      toast({
-        title: "Added to cart",
-        description: "Item has been added to your cart",
-      });
+      if (!showOffer(products.find((p) => p.id === productId)?.title)) {
+        toast({
+          title: "Added to cart",
+          description: "Item has been added to your cart",
+        });
+      }
     },
     onError: () => {
       toast({
